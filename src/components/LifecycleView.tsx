@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   CheckCircle2,
   Clock,
@@ -26,14 +26,22 @@ import {
   Workflow,
   FileText,
   Paperclip,
+  UploadCloud,
+  Edit3,
+  ExternalLink,
+  HelpCircle,
+  FolderCheck,
+  ArrowRight,
+  Sparkle,
+  Lock,
+  Unlock,
 } from "lucide-react";
 import confetti from "canvas-confetti";
-import { UseCase, GateId, GateStatus, GateDetail } from "@/types";
+import { UseCase, GateId, GateStatus } from "@/types";
 import {
   TIER_CONFIG,
   DELIVERY_MODES_INFO,
   MODE_DEEP_DIVES,
-  TIER_DEEP_DIVES,
 } from "@/lib/constants";
 import { updateGateStatus } from "@/lib/storage";
 
@@ -45,6 +53,252 @@ interface LifecycleViewProps {
 }
 
 const GATE_ORDER: GateId[] = ["G1", "G2", "G3", "G4", "G5", "G6"];
+
+export interface PrerequisiteItem {
+  id: string;
+  title: string;
+  responsibleRole: string;
+  roleCategory: "Finance" | "Data & AI" | "Business" | "Governance" | "Change / P&C";
+  description: string;
+  defaultEvidence: string;
+  artifactName: string;
+  collected: boolean;
+  collectedAt?: string;
+  collectedBy?: string;
+  evidenceNotes?: string;
+}
+
+// Master configuration of the 4 mandatory prerequisites for each gate (G1 to G6)
+const GATE_PREREQUISITES_CONFIG: Record<GateId, Omit<PrerequisiteItem, "collected" | "collectedAt" | "collectedBy" | "evidenceNotes">[]> = {
+  G1: [
+    {
+      id: "g1_1",
+      title: "1. Problem Statement & Friction Baseline",
+      responsibleRole: "Business Owner & AI Catalyst",
+      roleCategory: "Business",
+      description: "Define the operational bottleneck, manual cycle time, and touchpoints causing current friction.",
+      defaultEvidence: "Manual Source-to-Pay quote handling and 7-tier approvals create 7–10 day turnaround bottleneck.",
+      artifactName: "Intake_Problem_Statement_v1.pdf",
+    },
+    {
+      id: "g1_2",
+      title: "2. Target User Community & Persona Scope",
+      responsibleRole: "AI Catalyst (Relay in Function)",
+      roleCategory: "Change / P&C",
+      description: "Identify user community, estimated seat count, and geographic/market footprint.",
+      defaultEvidence: "1,800 Procurement buyers and functional spenders across 14 markets in EULA, NA, and AMEA.",
+      artifactName: "Target_User_Persona_Matrix.xlsx",
+    },
+    {
+      id: "g1_3",
+      title: "3. Playbook 4-Questions Assessment",
+      responsibleRole: "OpellaGPT Triage Agent",
+      roleCategory: "Governance",
+      description: "Automated qualification against Slide 35 criteria (Big Bet, tools under €50k, pilot reach, or new hypothesis).",
+      defaultEvidence: "Qualified as T1 · Transform: Big Bet 6 anchor, SAP core write-back, multi-year spend >€1M.",
+      artifactName: "OpellaGPT_Triage_Certificate.json",
+    },
+    {
+      id: "g1_4",
+      title: "4. ORAI Responsible AI Screening",
+      responsibleRole: "Legal & Ethics (ORAI Team)",
+      roleCategory: "Governance",
+      description: "5-question preliminary risk check for patient data, autonomous write-back, and model boundary.",
+      defaultEvidence: "Assessed Medium Risk Tier: autonomous PO generation under human-in-the-loop threshold.",
+      artifactName: "ORAI_Preliminary_Screening.pdf",
+    },
+  ],
+  G2: [
+    {
+      id: "g2_1",
+      title: "1. Finance Baseline Sign-off",
+      responsibleRole: "Finance Business Partner (FP&A)",
+      roleCategory: "Finance",
+      description: "Formal Finance sign-off validating the unit economics baseline before any budget request.",
+      defaultEvidence: "Manual S2P processing cost benchmarked and locked at €142 per PO across 240,000 orders/year.",
+      artifactName: "Finance_Baseline_Signoff_Signed.pdf",
+    },
+    {
+      id: "g2_2",
+      title: "2. Architecture Decision Record (ADR)",
+      responsibleRole: "Digital Design Authority (DDA)",
+      roleCategory: "Data & AI",
+      description: "Architectural clearance for API integrations, tenant private link, and Opella IQ taxonomy.",
+      defaultEvidence: "ADR #2026-88 approved: SAP S/4HANA OData v4 + Azure GenAI Private Link with zero public ingress.",
+      artifactName: "Architecture_ADR_v2.docx",
+    },
+    {
+      id: "g2_3",
+      title: "3. Process Redesign Check: YES",
+      responsibleRole: "Transformation Office Business Architect",
+      roleCategory: "Business",
+      description: "Slide 47 mandate: 'Does the use case change how work is done?' (Eliminates manual approval hops).",
+      defaultEvidence: "YES: Eliminates 4 manual approval hops; shifts buyers from clerical transcription to category negotiations.",
+      artifactName: "AsIs_vs_ToBe_Process_Reshape.vsdx",
+    },
+    {
+      id: "g2_4",
+      title: "4. Data Boundary & Security Controls",
+      responsibleRole: "CISO & Data Governance Lead",
+      roleCategory: "Governance",
+      description: "Access controls, tokenization, RBAC, and confirmation of zero public LLM model training.",
+      defaultEvidence: "Azure Tenant isolation confirmed; SAP user-level RBAC tokenization; GDPR & EU AI Act compliant.",
+      artifactName: "CISO_Security_Clearance.pdf",
+    },
+  ],
+  G3: [
+    {
+      id: "g3_1",
+      title: "1. VCP Prioritisation Matrix Scorecard",
+      responsibleRole: "Transformation Office Lead",
+      roleCategory: "Governance",
+      description: "Slide 48 composite scoring: Value (30%), Strategic Fit (20%), Reach (20%), Feasibility (20%), Risk (10%).",
+      defaultEvidence: "VCP Score: 92/100 (Value: 28/30, Fit: 20/20, Reach: 18/20, Feasibility: 17/20, Risk: 9/10). Ranked #1 in Big Bet 6.",
+      artifactName: "BigBet6_VCP_Scorecard.xlsx",
+    },
+    {
+      id: "g3_2",
+      title: "2. Hub Delivery Capacity Allocation",
+      responsibleRole: "Data & AI Hub Lead",
+      roleCategory: "Data & AI",
+      description: "Booking of dedicated engineering slots from the 60% Big Bet quarterly capacity pool.",
+      defaultEvidence: "Committed from 60% Big Bet envelope: 1.0 Forward Deployed Engineer (FDE) + 0.5 Data Architect (6 months).",
+      artifactName: "Q3_Q4_Hub_Capacity_Booking.pdf",
+    },
+    {
+      id: "g3_3",
+      title: "3. Business Owner Dedication Agreement",
+      responsibleRole: "Function Head / CPO",
+      roleCategory: "Business",
+      description: "Formal commitment releasing business time for the designated Product Owner and testers.",
+      defaultEvidence: "Sarah Chen released at 80% dedicated PO allocation; 3 regional category leads for sprint UAT.",
+      artifactName: "PO_Time_Allocation_Charter.pdf",
+    },
+    {
+      id: "g3_4",
+      title: "4. Planisware Tracking Code & Stream Link",
+      responsibleRole: "Control Tower & PMO",
+      roleCategory: "Finance",
+      description: "Project setup in corporate Planisware system for monthly RAG and quarterly value audit tracking.",
+      defaultEvidence: "Planisware Initiative Code #TO-AI-2026-06 activated; linked to Corporate EBITDA Value Pool.",
+      artifactName: "Planisware_Project_Sheet.pdf",
+    },
+  ],
+  G4: [
+    {
+      id: "g4_1",
+      title: "1. Sourcing Mode Lock (Mode 1 / 2 / 3)",
+      responsibleRole: "Digital Design Authority",
+      roleCategory: "Data & AI",
+      description: "Slide 10–11: Mode chosen from Complexity, Budget & Capacity (Do it for me / with me / Enable me).",
+      defaultEvidence: "Mode 2 ('Do it with me') ratified: Function owns category rules; Hub provides dedicated FDE & platform.",
+      artifactName: "Mode_Selection_Ratification.pdf",
+    },
+    {
+      id: "g4_2",
+      title: "2. Tranche 1 Budget Unlock",
+      responsibleRole: "Transformation SteerCo & Finance",
+      roleCategory: "Finance",
+      description: "Initial envelope release specifically for the 6–8 week MVP build and pilot market integration.",
+      defaultEvidence: "Tranche 1 budget of €380,000 released for 8-week MVP Sprint in France and Spain.",
+      artifactName: "Tranche1_Budget_Release_Order.pdf",
+    },
+    {
+      id: "g4_3",
+      title: "3. Tri-Partite Squad Mobilization",
+      responsibleRole: "Transformation Office & Data & AI Hub",
+      roleCategory: "Governance",
+      description: "Slide 14: Named profiles co-assigned across Business, TO, and Data & AI Hub.",
+      defaultEvidence: "Squad mobilized: BO (Sarah Chen 80%), FDE (Lucas Vance 100%), Arch (Elena 40%), Change (Ana 30%).",
+      artifactName: "Tripartite_Squad_Roster.xlsx",
+    },
+    {
+      id: "g4_4",
+      title: "4. MVP Sprint Backlog & Training Plan",
+      responsibleRole: "Product Owner & AI Catalyst",
+      roleCategory: "Change / P&C",
+      description: "Prioritized user stories for Sprint 1 + ProcurLab prompt engineering enablement clinic dates.",
+      defaultEvidence: "Sprint 1 backlog groomed (14 user stories); ProcurLab AI Prompting clinics scheduled for 60 pilot buyers.",
+      artifactName: "MVP_Sprint_Backlog_Signed.docx",
+    },
+  ],
+  G5: [
+    {
+      id: "g5_1",
+      title: "1. MVP Pilot Results & KPI Report",
+      responsibleRole: "Product Owner & Lead Data Scientist",
+      roleCategory: "Data & AI",
+      description: "Actual pilot performance benchmarked against initial Gate G2 baseline.",
+      defaultEvidence: "Pilot in France/Spain delivered 28h PO turnaround (vs 7.2d baseline) with 94.2% quote match accuracy.",
+      artifactName: "Pilot_MVP_Results_Report.pdf",
+    },
+    {
+      id: "g5_2",
+      title: "2. 5-Pillar HR Workforce Impact Scan",
+      responsibleRole: "P&C Counterpart & Change Lead",
+      roleCategory: "Change / P&C",
+      description: "Slide 64: Formal assessment of Activities, Roles, Skills, Quality of Work Life, and Works Council dialogue.",
+      defaultEvidence: "5 Pillars reviewed: 42k hours freed, zero involuntary headcount cuts, ProcurLab prompt certification active.",
+      artifactName: "P&C_Workforce_Impact_Scan.pdf",
+    },
+    {
+      id: "g5_3",
+      title: "3. Tranche 2 Scaling Funding Request",
+      responsibleRole: "Finance BP & Transformation SteerCo",
+      roleCategory: "Finance",
+      description: "Budget release for enterprise expansion across all 14 markets (1,800 users).",
+      defaultEvidence: "Tranche 2 (€850,000) requested and confirmed for multi-market scaling and localized SAP integrations.",
+      artifactName: "Tranche2_Scale_Release_Approval.pdf",
+    },
+    {
+      id: "g5_4",
+      title: "4. Production Security Hardening Audit",
+      responsibleRole: "CISO & Cyber Audit Lead",
+      roleCategory: "Governance",
+      description: "Penetration testing, token spend throttles, and automated prompt injection red-teaming.",
+      defaultEvidence: "Zero policy violations across 420 pilot orders; rate-limiting and budget kill-switches active.",
+      artifactName: "Production_Cyber_Audit_Passed.pdf",
+    },
+  ],
+  G6: [
+    {
+      id: "g6_1",
+      title: "1. Annual Realized Value Audit",
+      responsibleRole: "Finance BP & Value Office",
+      roleCategory: "Finance",
+      description: "Formal audit confirming verified EBITDA and working capital improvements in the General Ledger.",
+      defaultEvidence: "Confirmed €3.8M net run-rate EBITDA savings realized in P&L Cost Center 4100.",
+      artifactName: "Unified_Value_Ledger_Audit.xlsx",
+    },
+    {
+      id: "g6_2",
+      title: "2. Live Cloud & Token OpEx Sentinel",
+      responsibleRole: "Infra & Cyber Team",
+      roleCategory: "Data & AI",
+      description: "Automated telemetry tracking monthly token usage, compute drift, and cloud infrastructure costs.",
+      defaultEvidence: "Live token consumption monitored under €4,500/month cap with automated anomaly alerts.",
+      artifactName: "Cloud_Token_Opex_Sentinel.json",
+    },
+    {
+      id: "g6_3",
+      title: "3. Sustained User Adoption Rate",
+      responsibleRole: "Change & Adoption Lead",
+      roleCategory: "Change / P&C",
+      description: "Weekly active users, repeat prompt engagement, and feature adoption across the buyer pool.",
+      defaultEvidence: "82% weekly active buyers across 1,800 user seats; CSAT score 4.7/5 on automated PO generation.",
+      artifactName: "Quarterly_Adoption_Scorecard.pdf",
+    },
+    {
+      id: "g6_4",
+      title: "4. BAU Operations Handover SLA",
+      responsibleRole: "GBS Service Delivery Lead",
+      roleCategory: "Business",
+      description: "Formal SLA sign-off transferring first-line maintenance to GBS with tier-3 Hub support.",
+      defaultEvidence: "Run SLAs formalized: 99.8% uptime target, 4h P1 incident response, model re-tuning scheduled bi-annually.",
+      artifactName: "BAU_Operations_Handover_SLA.pdf",
+    },
+  ],
+};
 
 export const LifecycleView: React.FC<LifecycleViewProps> = ({
   useCases,
@@ -62,6 +316,63 @@ export const LifecycleView: React.FC<LifecycleViewProps> = ({
   const [isSimulatingAgent, setIsSimulatingAgent] = useState(false);
   const [simulationLog, setSimulationLog] = useState<string | null>(null);
 
+  // Per-use-case and per-gate interactive collection items state
+  // Keyed by `${caseId}_${gateId}`
+  const [collectionState, setCollectionState] = useState<Record<string, PrerequisiteItem[]>>({});
+  const [editingItemId, setEditingItemId] = useState<string | null>(null);
+  const [tempNotes, setTempNotes] = useState<string>("");
+
+  // Initialize prerequisites for the current view
+  const currentKey = currentCase ? `${currentCase.id}_${activeGateTab}` : "";
+
+  useEffect(() => {
+    if (!currentCase) return;
+
+    const key = `${currentCase.id}_${activeGateTab}`;
+    if (!collectionState[key]) {
+      const gateDetail = currentCase.gates[activeGateTab];
+      const isPassed = gateDetail?.status === "PASSED";
+      const isCurrent = currentCase.currentGate === activeGateTab;
+
+      // Base items template
+      const itemsConfig = GATE_PREREQUISITES_CONFIG[activeGateTab] || [];
+      const initializedItems: PrerequisiteItem[] = itemsConfig.map((item, idx) => {
+        // If gate already passed: all are collected
+        if (isPassed) {
+          return {
+            ...item,
+            collected: true,
+            collectedAt: "Verified at Gate Approval",
+            collectedBy: item.responsibleRole,
+            evidenceNotes: item.defaultEvidence,
+          };
+        }
+        // If current gate (e.g. G2 for UC-GIDE): make 2 collected and 2 missing to create a real collection task!
+        if (isCurrent && gateDetail?.status === "IN_REVIEW") {
+          const isInitiallyCollected = idx < 2; // items 1 & 2 collected, items 3 & 4 missing
+          return {
+            ...item,
+            collected: isInitiallyCollected,
+            collectedAt: isInitiallyCollected ? "Collected Yesterday" : undefined,
+            collectedBy: isInitiallyCollected ? item.responsibleRole : undefined,
+            evidenceNotes: isInitiallyCollected ? item.defaultEvidence : "",
+          };
+        }
+        // Future / Pending gate: start uncollected (0 of 4)
+        return {
+          ...item,
+          collected: false,
+          evidenceNotes: "",
+        };
+      });
+
+      setCollectionState((prev) => ({
+        ...prev,
+        [key]: initializedItems,
+      }));
+    }
+  }, [currentCase, activeGateTab]);
+
   if (!currentCase) {
     return (
       <div className="max-w-7xl mx-auto px-4 py-12 text-center text-gray-500">
@@ -71,8 +382,93 @@ export const LifecycleView: React.FC<LifecycleViewProps> = ({
   }
 
   const tierCfg = TIER_CONFIG[currentCase.tier];
-  const modeCfg = DELIVERY_MODES_INFO[currentCase.mode];
   const activeGate = currentCase.gates[activeGateTab] || currentCase.gates.G1;
+  const isYouAreHere = currentCase.currentGate === activeGateTab;
+
+  // Current collection items
+  const currentPrerequisites: PrerequisiteItem[] =
+    collectionState[currentKey] ||
+    GATE_PREREQUISITES_CONFIG[activeGateTab].map((item, idx) => ({
+      ...item,
+      collected: activeGate.status === "PASSED" || (isYouAreHere && idx < 2),
+      evidenceNotes: item.defaultEvidence,
+    }));
+
+  const collectedCount = currentPrerequisites.filter((p) => p.collected).length;
+  const totalCount = currentPrerequisites.length || 4;
+  const isAllCollected = collectedCount === totalCount;
+  const collectionPercent = Math.round((collectedCount / totalCount) * 100);
+
+  // Interactive Collection Handlers
+  const handleToggleCollect = (itemId: string) => {
+    setCollectionState((prev) => {
+      const items = prev[currentKey] || currentPrerequisites;
+      const updated = items.map((it) => {
+        if (it.id === itemId) {
+          const nextCollected = !it.collected;
+          return {
+            ...it,
+            collected: nextCollected,
+            collectedAt: nextCollected ? "Collected Just Now" : undefined,
+            collectedBy: nextCollected ? it.responsibleRole : undefined,
+            evidenceNotes: nextCollected
+              ? it.evidenceNotes || it.defaultEvidence
+              : "",
+          };
+        }
+        return it;
+      });
+      return { ...prev, [currentKey]: updated };
+    });
+  };
+
+  const handleSaveEvidence = (itemId: string, customText: string) => {
+    setCollectionState((prev) => {
+      const items = prev[currentKey] || currentPrerequisites;
+      const updated = items.map((it) => {
+        if (it.id === itemId) {
+          return {
+            ...it,
+            collected: true,
+            collectedAt: "Verified & Uploaded",
+            collectedBy: it.responsibleRole,
+            evidenceNotes: customText || it.defaultEvidence,
+          };
+        }
+        return it;
+      });
+      return { ...prev, [currentKey]: updated };
+    });
+    setEditingItemId(null);
+  };
+
+  const handleAutoFillAll = () => {
+    setCollectionState((prev) => {
+      const items = prev[currentKey] || currentPrerequisites;
+      const updated = items.map((it) => ({
+        ...it,
+        collected: true,
+        collectedAt: "Auto-Verified via Comitology Connector",
+        collectedBy: it.responsibleRole,
+        evidenceNotes: it.defaultEvidence,
+      }));
+      return { ...prev, [currentKey]: updated };
+    });
+  };
+
+  const handleResetCollection = () => {
+    setCollectionState((prev) => {
+      const items = prev[currentKey] || currentPrerequisites;
+      const updated = items.map((it) => ({
+        ...it,
+        collected: false,
+        collectedAt: undefined,
+        collectedBy: undefined,
+        evidenceNotes: "",
+      }));
+      return { ...prev, [currentKey]: updated };
+    });
+  };
 
   const handleUpdateStatus = async (newStatus: GateStatus, customFeedback?: string) => {
     const updated = await updateGateStatus(
@@ -89,8 +485,8 @@ export const LifecycleView: React.FC<LifecycleViewProps> = ({
         if (activeGateTab === "G4" || activeGateTab === "G5") {
           try {
             confetti({
-              particleCount: 100,
-              spread: 70,
+              particleCount: 120,
+              spread: 80,
               origin: { y: 0.6 },
             });
           } catch (e) {}
@@ -171,8 +567,10 @@ export const LifecycleView: React.FC<LifecycleViewProps> = ({
   };
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
-      {/* Top Selector & Active Initiative Card */}
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8 animate-fade-in">
+      {/* ------------------------------------------------------------- */}
+      {/* TOP INITIATIVE BANNER */}
+      {/* ------------------------------------------------------------- */}
       <div className="bg-white rounded-2xl p-6 shadow-sm border border-opella-border">
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-5 border-b border-opella-border">
           {/* Initiative Picker */}
@@ -188,7 +586,7 @@ export const LifecycleView: React.FC<LifecycleViewProps> = ({
                   const target = useCases.find((u) => u.id === e.target.value);
                   if (target) setActiveGateTab(target.currentGate);
                 }}
-                className="text-base sm:text-lg font-bold text-opella-forest bg-gray-50 border border-gray-300 rounded-xl px-4 py-2 focus:ring-2 focus:ring-opella-forest focus:outline-none max-w-md w-full"
+                className="text-base sm:text-lg font-bold text-opella-forest bg-gray-50 border border-gray-300 rounded-xl px-4 py-2 focus:ring-2 focus:ring-opella-forest focus:outline-none max-w-md w-full shadow-sm"
               >
                 {useCases.map((uc) => (
                   <option key={uc.id} value={uc.id}>
@@ -202,7 +600,7 @@ export const LifecycleView: React.FC<LifecycleViewProps> = ({
             </div>
           </div>
 
-          {/* Quick Badges */}
+          {/* Quick Status Pills */}
           <div className="flex flex-wrap items-center gap-2 text-xs">
             <span className="px-3 py-1.5 rounded-lg bg-emerald-50 text-emerald-800 font-semibold border border-emerald-200 flex items-center gap-1.5">
               <Workflow className="w-3.5 h-3.5 text-emerald-600" />
@@ -226,10 +624,10 @@ export const LifecycleView: React.FC<LifecycleViewProps> = ({
           </div>
         </div>
 
-        {/* Overview Summary Bar */}
+        {/* Overview KPI Bar */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 pt-4 text-xs">
           <div>
-            <span className="text-gray-400 block font-medium">Current Status</span>
+            <span className="text-gray-400 block font-medium">Lifecycle Status</span>
             <span className="font-bold text-gray-900 text-sm">{currentCase.status}</span>
           </div>
           <div>
@@ -247,16 +645,18 @@ export const LifecycleView: React.FC<LifecycleViewProps> = ({
         </div>
       </div>
 
-      {/* Real-Time Chevron Stage Gates Pipeline (Slides 32, 44 & 46) */}
+      {/* ------------------------------------------------------------- */}
+      {/* 6 GATES CHEVRON BAR */}
+      {/* ------------------------------------------------------------- */}
       <div className="bg-white rounded-2xl p-6 shadow-sm border border-opella-border">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4">
           <div>
             <h3 className="text-lg font-bold text-opella-forest flex items-center gap-2">
               <Layers className="w-5 h-5 text-emerald-700" />
-              Real-Time Governance Spine (Gates G1 to G6)
+              Governance Pipeline: Gates G1 to G6
             </h3>
             <p className="text-xs text-gray-500">
-              Multi-dimensional review at every gate: Value (Finance), Complexity (Data & AI), Risk (ORAI), Adoption (Change/P&C).
+              Click on any gate to inspect required evidence, comitology forums, and pass criteria
             </p>
           </div>
           <div className="text-xs text-gray-500 flex items-center gap-3">
@@ -264,7 +664,7 @@ export const LifecycleView: React.FC<LifecycleViewProps> = ({
               <span className="w-2.5 h-2.5 rounded-full bg-emerald-500" /> Passed
             </span>
             <span className="flex items-center gap-1 font-medium">
-              <span className="w-2.5 h-2.5 rounded-full bg-amber-500" /> In Review
+              <span className="w-2.5 h-2.5 rounded-full bg-amber-500" /> Active Station
             </span>
             <span className="flex items-center gap-1 font-medium">
               <span className="w-2.5 h-2.5 rounded-full bg-gray-300" /> Pending
@@ -272,13 +672,13 @@ export const LifecycleView: React.FC<LifecycleViewProps> = ({
           </div>
         </div>
 
-        {/* The 6 Gates Bar */}
+        {/* 6 Gate Tabs */}
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 pt-2">
           {GATE_ORDER.map((gid) => {
             const gate = currentCase.gates[gid];
             const isSelected = activeGateTab === gid;
             const isPassed = gate.status === "PASSED";
-            const isInReview = gate.status === "IN_REVIEW";
+            const isStation = currentCase.currentGate === gid;
             const isSkipped = gate.status === "SKIPPED";
             const isFailed = gate.status === "FAILED";
 
@@ -291,8 +691,8 @@ export const LifecycleView: React.FC<LifecycleViewProps> = ({
                     ? "border-opella-forest bg-opella-forest text-white shadow-md ring-2 ring-opella-forest/20"
                     : isPassed
                     ? "border-emerald-300 bg-emerald-50/60 text-emerald-950 hover:bg-emerald-100/60"
-                    : isInReview
-                    ? "border-amber-400 bg-amber-50/60 text-amber-950 hover:bg-amber-100/60"
+                    : isStation
+                    ? "border-amber-400 bg-amber-50/70 text-amber-950 hover:bg-amber-100/60 ring-2 ring-amber-400/40"
                     : isSkipped
                     ? "border-gray-200 bg-gray-50 text-gray-400 opacity-60"
                     : "border-gray-200 bg-white text-gray-800 hover:border-gray-300"
@@ -305,15 +705,17 @@ export const LifecycleView: React.FC<LifecycleViewProps> = ({
                         ? "bg-white/20 text-white"
                         : isPassed
                         ? "bg-emerald-200 text-emerald-900"
-                        : isInReview
-                        ? "bg-amber-200 text-amber-900"
+                        : isStation
+                        ? "bg-amber-200 text-amber-950 font-bold"
                         : "bg-gray-100 text-gray-600"
                     }`}
                   >
                     {gid}
                   </span>
                   {isPassed && <CheckCircle2 className={`w-4 h-4 ${isSelected ? "text-white" : "text-emerald-600"}`} />}
-                  {isInReview && <Clock className={`w-4 h-4 ${isSelected ? "text-amber-300" : "text-amber-600"}`} />}
+                  {isStation && !isPassed && (
+                    <span className="w-2.5 h-2.5 rounded-full bg-amber-400 animate-ping" />
+                  )}
                   {isSkipped && <span className="text-[10px] uppercase font-bold">Skip</span>}
                   {isFailed && <X className="w-4 h-4 text-rose-500" />}
                 </div>
@@ -328,9 +730,11 @@ export const LifecycleView: React.FC<LifecycleViewProps> = ({
         </div>
       </div>
 
-      {/* Active Gate Inspector & Step Simulation Center */}
+      {/* ------------------------------------------------------------- */}
+      {/* ACTIVE GATE CARD & INTERACTIVE INFORMATION COLLECTION */}
+      {/* ------------------------------------------------------------- */}
       <div className="bg-white rounded-2xl p-6 shadow-sm border border-opella-border space-y-6">
-        {/* Gate Header */}
+        {/* Gate Top Meta Bar */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-5 border-b border-opella-border">
           <div>
             <div className="flex items-center gap-2">
@@ -371,253 +775,305 @@ export const LifecycleView: React.FC<LifecycleViewProps> = ({
           </div>
         </div>
 
-        {/* YOU ARE HERE & REQUIRED INFORMATION CHECKLIST BEFORE ADVANCING */}
-        <div className="bg-gradient-to-r from-emerald-950 via-opella-forest to-emerald-900 rounded-xl p-5 text-white shadow-sm space-y-4">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-white/15 pb-3">
-            <div className="flex items-center gap-2.5">
-              <span className="px-2.5 py-1 rounded-lg bg-amber-400 text-gray-950 font-black text-xs flex items-center gap-1 shadow-sm">
+        {/* ============================================================= */}
+        {/* "YOU ARE HERE" INTERACTIVE INFORMATION COLLECTION WORKSPACE  */}
+        {/* ============================================================= */}
+        <div className="bg-gradient-to-br from-[#0d2818] via-[#0b3d1c] to-[#04471c] rounded-2xl p-6 text-white shadow-lg space-y-5 border border-emerald-700/50">
+          {/* Header Bar */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-white/20 pb-4">
+            <div className="flex items-start gap-3">
+              <span className="px-3 py-1 rounded-lg bg-amber-400 text-gray-950 font-black text-xs flex items-center gap-1.5 shadow-md shrink-0 mt-0.5">
                 <span>📍</span>
                 <span>YOU ARE HERE</span>
               </span>
               <div>
-                <div className="text-[10px] font-mono uppercase tracking-wider text-emerald-300 font-bold">
-                  Current Lifecycle Station: Gate {activeGate.id} ({activeGate.phase} Phase)
+                <div className="text-[11px] font-mono uppercase tracking-wider text-emerald-300 font-bold flex items-center gap-2">
+                  <span>Current Station: Gate {activeGate.id} ({activeGate.phase} Phase)</span>
+                  {isYouAreHere && (
+                    <span className="bg-emerald-400/20 text-emerald-200 px-2 py-0.5 rounded text-[10px] font-sans">
+                      Active In-Flight Gate
+                    </span>
+                  )}
                 </div>
-                <h4 className="text-sm font-bold text-white">
-                  {activeGate.name}
+                <h4 className="text-base font-bold text-white mt-0.5">
+                  Information Collection & Prerequisite Verification
                 </h4>
+                <p className="text-xs text-white/70 mt-0.5">
+                  Mandatory governance artifacts that must be actively collected and verified before the comitology body can deliberate.
+                </p>
               </div>
             </div>
-            <span
-              className={`text-[11px] font-bold px-2.5 py-1 rounded-full self-start sm:self-auto ${
-                activeGate.status === "PASSED"
-                  ? "bg-emerald-400/20 text-emerald-200 border border-emerald-400/40"
-                  : "bg-amber-400/20 text-amber-200 border border-amber-400/40"
-              }`}
-            >
-              {activeGate.status === "PASSED"
-                ? "✓ Gate Requirements Validated"
-                : "⚠️ Information Collection & Review in Progress"}
-            </span>
+
+            {/* Quick Demo Helpers */}
+            <div className="flex items-center gap-2 self-start sm:self-auto shrink-0">
+              <button
+                type="button"
+                onClick={handleAutoFillAll}
+                className="px-3 py-1.5 rounded-lg bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-200 border border-emerald-400/30 text-xs font-bold flex items-center gap-1.5 transition-colors shadow-sm"
+                title="Instantly mark all 4 items as collected with certified evidence for presentation"
+              >
+                <Zap className="w-3.5 h-3.5 text-amber-300" />
+                Quick-Fill Demo Data
+              </button>
+
+              <button
+                type="button"
+                onClick={handleResetCollection}
+                className="px-2.5 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-white/80 text-xs font-medium flex items-center gap-1 transition-colors"
+                title="Reset prerequisites to uncollected state to demonstrate step-by-step collection"
+              >
+                <RotateCcw className="w-3 h-3" />
+                Reset
+              </button>
+            </div>
           </div>
 
-          <div className="space-y-2.5">
+          {/* Interactive Progress Meter */}
+          <div className="bg-black/25 rounded-xl p-3.5 border border-white/10 space-y-2">
             <div className="flex items-center justify-between text-xs">
+              <span className="font-bold text-emerald-200 flex items-center gap-2">
+                <span>Collection Progress:</span>
+                <span className="font-mono text-white text-sm">
+                  {collectedCount} of {totalCount} Items Collected ({collectionPercent}%)
+                </span>
+              </span>
+              <span
+                className={`text-[11px] font-bold px-2.5 py-0.5 rounded-full ${
+                  isAllCollected
+                    ? "bg-emerald-400 text-emerald-950"
+                    : "bg-amber-400/30 text-amber-200 border border-amber-400/40"
+                }`}
+              >
+                {isAllCollected
+                  ? "✓ Ready for Gate Review"
+                  : `⚠️ ${totalCount - collectedCount} Items Required`}
+              </span>
+            </div>
+
+            <div className="w-full bg-white/10 rounded-full h-2.5 overflow-hidden p-0.5">
+              <div
+                className={`h-full rounded-full transition-all duration-300 ${
+                  isAllCollected ? "bg-emerald-400" : "bg-gradient-to-r from-amber-400 to-emerald-400"
+                }`}
+                style={{ width: `${collectionPercent}%` }}
+              />
+            </div>
+          </div>
+
+          {/* 4 Interactive Prerequisite Collection Cards */}
+          <div className="space-y-3">
+            <div className="flex items-center justify-between text-xs text-white/80">
               <span className="font-bold uppercase tracking-wider text-emerald-200 flex items-center gap-1.5">
-                <FileText className="w-3.5 h-3.5 text-amber-400" />
-                Required Information & Artifacts to Collect Before Passing Gate {activeGate.id}:
+                <FileText className="w-4 h-4 text-amber-400" />
+                Mandatory Prerequisites to Collect Before Convening Gate {activeGate.id}:
               </span>
-              <span className="text-[10px] text-emerald-300 font-mono">
-                Mandatory Comitology Prerequisite
+              <span className="text-[11px] text-white/60">
+                Click on any card to confirm collection or edit evidence
               </span>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
-              {activeGateTab === "G1" && (
-                <>
-                  <div className="p-2.5 rounded-lg bg-white/10 border border-white/15 flex items-start justify-between gap-2">
-                    <div>
-                      <span className="font-bold text-white block">1. Problem Statement & Friction</span>
-                      <span className="text-[11px] text-white/70">Quantified baseline friction (7-10 days S2P turnaround)</span>
-                    </div>
-                    <span className="text-[10px] font-bold text-emerald-300 bg-emerald-500/20 px-1.5 py-0.5 rounded shrink-0">Collected</span>
-                  </div>
-                  <div className="p-2.5 rounded-lg bg-white/10 border border-white/15 flex items-start justify-between gap-2">
-                    <div>
-                      <span className="font-bold text-white block">2. Target User Community</span>
-                      <span className="text-[11px] text-white/70">Identified 1,800 buyers across 5 market clusters</span>
-                    </div>
-                    <span className="text-[10px] font-bold text-emerald-300 bg-emerald-500/20 px-1.5 py-0.5 rounded shrink-0">Collected</span>
-                  </div>
-                  <div className="p-2.5 rounded-lg bg-white/10 border border-white/15 flex items-start justify-between gap-2">
-                    <div>
-                      <span className="font-bold text-white block">3. Playbook 4-Questions Assessment</span>
-                      <span className="text-[11px] text-white/70">Qualified for T1 speed lane under Big Bet 6</span>
-                    </div>
-                    <span className="text-[10px] font-bold text-emerald-300 bg-emerald-500/20 px-1.5 py-0.5 rounded shrink-0">Collected</span>
-                  </div>
-                  <div className="p-2.5 rounded-lg bg-white/10 border border-white/15 flex items-start justify-between gap-2">
-                    <div>
-                      <span className="font-bold text-white block">4. ORAI Responsible AI Screening</span>
-                      <span className="text-[11px] text-white/70">Assessed Medium risk tier; human-in-the-loop mandated</span>
-                    </div>
-                    <span className="text-[10px] font-bold text-emerald-300 bg-emerald-500/20 px-1.5 py-0.5 rounded shrink-0">Collected</span>
-                  </div>
-                </>
-              )}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
+              {currentPrerequisites.map((prereq) => {
+                const isEditing = editingItemId === prereq.id;
 
-              {activeGateTab === "G2" && (
-                <>
-                  <div className="p-2.5 rounded-lg bg-white/10 border border-white/15 flex items-start justify-between gap-2">
-                    <div>
-                      <span className="font-bold text-white block">1. Finance Baseline Sign-off</span>
-                      <span className="text-[11px] text-white/70">€142/PO manual processing cost verified by Finance BP</span>
-                    </div>
-                    <span className="text-[10px] font-bold text-emerald-300 bg-emerald-500/20 px-1.5 py-0.5 rounded shrink-0">Collected</span>
-                  </div>
-                  <div className="p-2.5 rounded-lg bg-white/10 border border-white/15 flex items-start justify-between gap-2">
-                    <div>
-                      <span className="font-bold text-white block">2. Architecture Decision Record (ADR)</span>
-                      <span className="text-[11px] text-white/70">SAP S/4HANA OData & Azure GenAI private link approved</span>
-                    </div>
-                    <span className="text-[10px] font-bold text-emerald-300 bg-emerald-500/20 px-1.5 py-0.5 rounded shrink-0">Collected</span>
-                  </div>
-                  <div className="p-2.5 rounded-lg bg-white/10 border border-white/15 flex items-start justify-between gap-2">
-                    <div>
-                      <span className="font-bold text-white block">3. Process Redesign Check: YES</span>
-                      <span className="text-[11px] text-white/70">Process rewritten to remove manual handoffs & approvals</span>
-                    </div>
-                    <span className="text-[10px] font-bold text-emerald-300 bg-emerald-500/20 px-1.5 py-0.5 rounded shrink-0">Collected</span>
-                  </div>
-                  <div className="p-2.5 rounded-lg bg-white/10 border border-white/15 flex items-start justify-between gap-2">
-                    <div>
-                      <span className="font-bold text-white block">4. Data Boundary & Security Controls</span>
-                      <span className="text-[11px] text-white/70">CISO RBAC tokenization; zero external model training</span>
-                    </div>
-                    <span className="text-[10px] font-bold text-emerald-300 bg-emerald-500/20 px-1.5 py-0.5 rounded shrink-0">Collected</span>
-                  </div>
-                </>
-              )}
+                return (
+                  <div
+                    key={prereq.id}
+                    className={`rounded-xl p-4 transition-all border ${
+                      prereq.collected
+                        ? "bg-white/10 border-emerald-400/40 shadow-sm"
+                        : "bg-black/30 border-amber-400/50 shadow-md ring-1 ring-amber-400/20"
+                    }`}
+                  >
+                    {/* Item Top Bar */}
+                    <div className="flex items-start justify-between gap-2 mb-2">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-1 flex-wrap">
+                          <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-white/15 text-emerald-200 border border-white/10">
+                            {prereq.responsibleRole}
+                          </span>
+                          <span className="text-[10px] text-white/60">
+                            {prereq.roleCategory}
+                          </span>
+                        </div>
+                        <h5 className="font-bold text-white text-sm">
+                          {prereq.title}
+                        </h5>
+                      </div>
 
-              {activeGateTab === "G3" && (
-                <>
-                  <div className="p-2.5 rounded-lg bg-white/10 border border-white/15 flex items-start justify-between gap-2">
-                    <div>
-                      <span className="font-bold text-white block">1. VCP Prioritisation Matrix</span>
-                      <span className="text-[11px] text-white/70">Scored 92/100; ranked #1 in Big Bet 6 pipeline</span>
+                      {/* Status Badge */}
+                      <span
+                        className={`text-[10px] font-black uppercase tracking-wider px-2 py-1 rounded-full shrink-0 flex items-center gap-1 ${
+                          prereq.collected
+                            ? "bg-emerald-500 text-white shadow-sm"
+                            : "bg-amber-400 text-gray-950 animate-pulse font-bold"
+                        }`}
+                      >
+                        {prereq.collected ? (
+                          <>
+                            <Check className="w-3 h-3 stroke-[3]" /> Collected
+                          </>
+                        ) : (
+                          <>
+                            <AlertCircle className="w-3 h-3" /> Missing
+                          </>
+                        )}
+                      </span>
                     </div>
-                    <span className="text-[10px] font-bold text-emerald-300 bg-emerald-500/20 px-1.5 py-0.5 rounded shrink-0">Collected</span>
-                  </div>
-                  <div className="p-2.5 rounded-lg bg-white/10 border border-white/15 flex items-start justify-between gap-2">
-                    <div>
-                      <span className="font-bold text-white block">2. Hub Delivery Capacity Allocation</span>
-                      <span className="text-[11px] text-white/70">1.0 FDE + 0.5 Data Architect committed from Hub</span>
-                    </div>
-                    <span className="text-[10px] font-bold text-emerald-300 bg-emerald-500/20 px-1.5 py-0.5 rounded shrink-0">Collected</span>
-                  </div>
-                  <div className="p-2.5 rounded-lg bg-white/10 border border-white/15 flex items-start justify-between gap-2">
-                    <div>
-                      <span className="font-bold text-white block">3. Business Owner Dedication</span>
-                      <span className="text-[11px] text-white/70">Dedicated Business PO confirmed at 80% allocation</span>
-                    </div>
-                    <span className="text-[10px] font-bold text-emerald-300 bg-emerald-500/20 px-1.5 py-0.5 rounded shrink-0">Collected</span>
-                  </div>
-                  <div className="p-2.5 rounded-lg bg-white/10 border border-white/15 flex items-start justify-between gap-2">
-                    <div>
-                      <span className="font-bold text-white block">4. Planisware Tracking Code</span>
-                      <span className="text-[11px] text-white/70">Linked to Corporate Transformation Value Pool</span>
-                    </div>
-                    <span className="text-[10px] font-bold text-emerald-300 bg-emerald-500/20 px-1.5 py-0.5 rounded shrink-0">Collected</span>
-                  </div>
-                </>
-              )}
 
-              {activeGateTab === "G4" && (
-                <>
-                  <div className="p-2.5 rounded-lg bg-white/10 border border-white/15 flex items-start justify-between gap-2">
-                    <div>
-                      <span className="font-bold text-white block">1. Sourcing Mode Lock (Mode 1 / 2 / 3)</span>
-                      <span className="text-[11px] text-white/70">Mode 2 ('Do it with me') ratified by Design Authority</span>
-                    </div>
-                    <span className="text-[10px] font-bold text-emerald-300 bg-emerald-500/20 px-1.5 py-0.5 rounded shrink-0">Collected</span>
-                  </div>
-                  <div className="p-2.5 rounded-lg bg-white/10 border border-white/15 flex items-start justify-between gap-2">
-                    <div>
-                      <span className="font-bold text-white block">2. Tranche 1 Budget Unlock</span>
-                      <span className="text-[11px] text-white/70">€380k released for 8-week MVP agile build sprint</span>
-                    </div>
-                    <span className="text-[10px] font-bold text-emerald-300 bg-emerald-500/20 px-1.5 py-0.5 rounded shrink-0">Collected</span>
-                  </div>
-                  <div className="p-2.5 rounded-lg bg-white/10 border border-white/15 flex items-start justify-between gap-2">
-                    <div>
-                      <span className="font-bold text-white block">3. Tri-partite Squad Mobilized</span>
-                      <span className="text-[11px] text-white/70">Data & AI Hub, TO, and Business Function roles named</span>
-                    </div>
-                    <span className="text-[10px] font-bold text-emerald-300 bg-emerald-500/20 px-1.5 py-0.5 rounded shrink-0">Collected</span>
-                  </div>
-                  <div className="p-2.5 rounded-lg bg-white/10 border border-white/15 flex items-start justify-between gap-2">
-                    <div>
-                      <span className="font-bold text-white block">4. MVP Sprint Backlog & Training Plan</span>
-                      <span className="text-[11px] text-white/70">ProcurLab prompt engineering clinics scheduled</span>
-                    </div>
-                    <span className="text-[10px] font-bold text-emerald-300 bg-emerald-500/20 px-1.5 py-0.5 rounded shrink-0">Collected</span>
-                  </div>
-                </>
-              )}
+                    {/* Description */}
+                    <p className="text-white/70 text-[11px] leading-relaxed mb-3">
+                      {prereq.description}
+                    </p>
 
-              {activeGateTab === "G5" && (
-                <>
-                  <div className="p-2.5 rounded-lg bg-white/10 border border-white/15 flex items-start justify-between gap-2">
-                    <div>
-                      <span className="font-bold text-white block">1. MVP Pilot Results Report</span>
-                      <span className="text-[11px] text-white/70">28h turnaround (vs 7.2d baseline); 94.2% quote match accuracy</span>
-                    </div>
-                    <span className="text-[10px] font-bold text-emerald-300 bg-emerald-500/20 px-1.5 py-0.5 rounded shrink-0">Collected</span>
-                  </div>
-                  <div className="p-2.5 rounded-lg bg-white/10 border border-white/15 flex items-start justify-between gap-2">
-                    <div>
-                      <span className="font-bold text-white block">2. 5-Pillar Workforce Impact Scan</span>
-                      <span className="text-[11px] text-white/70">Activities, Roles, Skills, QWL, Ethics assessed by P&C</span>
-                    </div>
-                    <span className="text-[10px] font-bold text-emerald-300 bg-emerald-500/20 px-1.5 py-0.5 rounded shrink-0">Collected</span>
-                  </div>
-                  <div className="p-2.5 rounded-lg bg-white/10 border border-white/15 flex items-start justify-between gap-2">
-                    <div>
-                      <span className="font-bold text-white block">3. Tranche 2 Funding Request</span>
-                      <span className="text-[11px] text-white/70">€850k requested for global roll-out (1,800 users)</span>
-                    </div>
-                    <span className="text-[10px] font-bold text-emerald-300 bg-emerald-500/20 px-1.5 py-0.5 rounded shrink-0">Collected</span>
-                  </div>
-                  <div className="p-2.5 rounded-lg bg-white/10 border border-white/15 flex items-start justify-between gap-2">
-                    <div>
-                      <span className="font-bold text-white block">4. Production Security Hardening</span>
-                      <span className="text-[11px] text-white/70">No policy violations across 420 live pilot purchase orders</span>
-                    </div>
-                    <span className="text-[10px] font-bold text-emerald-300 bg-emerald-500/20 px-1.5 py-0.5 rounded shrink-0">Collected</span>
-                  </div>
-                </>
-              )}
+                    {/* Collected View */}
+                    {prereq.collected && !isEditing && (
+                      <div className="bg-emerald-950/60 border border-emerald-400/30 rounded-lg p-2.5 space-y-2">
+                        <div className="text-[11px] text-emerald-100 font-medium leading-relaxed">
+                          "{prereq.evidenceNotes || prereq.defaultEvidence}"
+                        </div>
 
-              {activeGateTab === "G6" && (
-                <>
-                  <div className="p-2.5 rounded-lg bg-white/10 border border-white/15 flex items-start justify-between gap-2">
-                    <div>
-                      <span className="font-bold text-white block">1. Annual Value Realization Audit</span>
-                      <span className="text-[11px] text-white/70">Confirmed €3.8M net run-rate EBITDA savings in P&L</span>
-                    </div>
-                    <span className="text-[10px] font-bold text-emerald-300 bg-emerald-500/20 px-1.5 py-0.5 rounded shrink-0">Collected</span>
+                        <div className="flex items-center justify-between text-[10px] text-emerald-300/80 pt-1 border-t border-emerald-800/40">
+                          <span className="flex items-center gap-1 font-mono">
+                            <Paperclip className="w-3 h-3 text-amber-300" />
+                            {prereq.artifactName}
+                          </span>
+                          <div className="flex items-center gap-2">
+                            <span>{prereq.collectedAt || "Verified"}</span>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setEditingItemId(prereq.id);
+                                setTempNotes(prereq.evidenceNotes || prereq.defaultEvidence);
+                              }}
+                              className="text-amber-300 hover:text-white underline font-semibold"
+                            >
+                              Edit
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleToggleCollect(prereq.id)}
+                              className="text-white/60 hover:text-rose-300 underline"
+                            >
+                              Undo
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Missing State / Inline Collection Input */}
+                    {(!prereq.collected || isEditing) && (
+                      <div className="bg-black/40 border border-amber-300/40 rounded-lg p-3 space-y-2.5">
+                        <div className="space-y-1">
+                          <label className="text-[10px] font-bold uppercase tracking-wider text-amber-300 flex items-center justify-between">
+                            <span>Input Verified Evidence / Reference:</span>
+                            <span className="text-white/50 text-[9px] font-normal">
+                              Default template ready to confirm
+                            </span>
+                          </label>
+                          <textarea
+                            rows={2}
+                            value={isEditing ? tempNotes : (prereq.evidenceNotes || prereq.defaultEvidence)}
+                            onChange={(e) => {
+                              if (isEditing) {
+                                setTempNotes(e.target.value);
+                              } else {
+                                const val = e.target.value;
+                                setCollectionState((prev) => {
+                                  const items = prev[currentKey] || currentPrerequisites;
+                                  return {
+                                    ...prev,
+                                    [currentKey]: items.map((it) =>
+                                      it.id === prereq.id ? { ...it, evidenceNotes: val } : it
+                                    ),
+                                  };
+                                });
+                              }
+                            }}
+                            className="w-full bg-white/10 border border-white/20 rounded-md p-2 text-xs text-white placeholder-white/40 focus:outline-none focus:ring-1 focus:ring-amber-400 font-sans leading-relaxed"
+                            placeholder="Describe collected sign-off, metrics, or decision..."
+                          />
+                        </div>
+
+                        <div className="flex items-center justify-between gap-2 pt-1">
+                          <div className="flex items-center gap-1.5 text-[10px] text-white/70">
+                            <Paperclip className="w-3 h-3 text-amber-300" />
+                            <span className="font-mono truncate max-w-[150px]">
+                              {prereq.artifactName}
+                            </span>
+                          </div>
+
+                          <div className="flex items-center gap-2">
+                            {isEditing && (
+                              <button
+                                type="button"
+                                onClick={() => setEditingItemId(null)}
+                                className="px-2.5 py-1 bg-white/10 hover:bg-white/20 text-white rounded text-xs"
+                              >
+                                Cancel
+                              </button>
+                            )}
+
+                            <button
+                              type="button"
+                              onClick={() => {
+                                if (isEditing) {
+                                  handleSaveEvidence(prereq.id, tempNotes);
+                                } else {
+                                  handleToggleCollect(prereq.id);
+                                }
+                              }}
+                              className="px-3.5 py-1.5 bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-400 hover:to-emerald-500 text-white rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all shadow-md active:scale-95"
+                            >
+                              <Check className="w-3.5 h-3.5 stroke-[3]" />
+                              {isEditing ? "Save & Verify" : "Confirm & Mark Collected"}
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    )}
                   </div>
-                  <div className="p-2.5 rounded-lg bg-white/10 border border-white/15 flex items-start justify-between gap-2">
-                    <div>
-                      <span className="font-bold text-white block">2. Live Cloud & Token Opex Sentinel</span>
-                      <span className="text-[11px] text-white/70">Infrastructure costs tracked under €4,500/month cap</span>
-                    </div>
-                    <span className="text-[10px] font-bold text-emerald-300 bg-emerald-500/20 px-1.5 py-0.5 rounded shrink-0">Collected</span>
-                  </div>
-                  <div className="p-2.5 rounded-lg bg-white/10 border border-white/15 flex items-start justify-between gap-2">
-                    <div>
-                      <span className="font-bold text-white block">3. Sustained User Adoption Rate</span>
-                      <span className="text-[11px] text-white/70">82% weekly active buyers across 1,800 user seats</span>
-                    </div>
-                    <span className="text-[10px] font-bold text-emerald-300 bg-emerald-500/20 px-1.5 py-0.5 rounded shrink-0">Collected</span>
-                  </div>
-                  <div className="p-2.5 rounded-lg bg-white/10 border border-white/15 flex items-start justify-between gap-2">
-                    <div>
-                      <span className="font-bold text-white block">4. Handover to BAU Operations & Support</span>
-                      <span className="text-[11px] text-white/70">Run SLAs and incident escalation paths formalized</span>
-                    </div>
-                    <span className="text-[10px] font-bold text-emerald-300 bg-emerald-500/20 px-1.5 py-0.5 rounded shrink-0">Collected</span>
-                  </div>
-                </>
-              )}
+                );
+              })}
             </div>
+          </div>
+
+          {/* Comitology Decision Readiness Callout */}
+          <div className="pt-2 border-t border-white/15 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+            <div className="flex items-center gap-2">
+              <span className={`w-3 h-3 rounded-full ${isAllCollected ? "bg-emerald-400 animate-pulse" : "bg-amber-400"}`} />
+              <span className="font-medium text-white/90">
+                {isAllCollected ? (
+                  <strong className="text-emerald-300 font-bold">
+                    All 4 prerequisites collected & verified. The dossier is complete for Gate {activeGate.id} decision.
+                  </strong>
+                ) : (
+                  <span className="text-amber-200">
+                    <strong>{totalCount - collectedCount} item(s) pending collection.</strong> Please confirm the required evidence above to proceed.
+                  </span>
+                )}
+              </span>
+            </div>
+
+            {/* Quick Auto-Advance if all collected */}
+            {isAllCollected && (
+              <span className="text-[11px] text-emerald-200 font-bold bg-emerald-500/20 px-3 py-1 rounded-full border border-emerald-400/30">
+                Ready for Comitology Sign-off
+              </span>
+            )}
           </div>
         </div>
 
-        {/* Multi-Dimensional Review Grid (Slide 45 & 79) */}
+        {/* ============================================================= */}
+        {/* MULTI-DIMENSIONAL REVIEW CRITERIA (SLIDE 45 & 79) */}
+        {/* ============================================================= */}
         <div>
-          <h4 className="text-xs font-bold uppercase tracking-wider text-gray-400 mb-3">
-            Multi-Dimensional Gate Review Criteria (Slide 79)
+          <h4 className="text-xs font-bold uppercase tracking-wider text-gray-400 mb-3 flex items-center justify-between">
+            <span>Multi-Dimensional Gate Review Criteria (Slide 79)</span>
+            <span className="text-[11px] text-gray-500 font-normal">
+              Evaluated across 4 streams
+            </span>
           </h4>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             {/* Value Driver */}
@@ -668,8 +1124,12 @@ export const LifecycleView: React.FC<LifecycleViewProps> = ({
 
         {/* Committee / Agent Feedback Note */}
         {activeGate.feedback && (
-          <div className="p-3 bg-gray-50 rounded-lg border border-gray-200 text-xs text-gray-700">
-            <strong>Committee Reviewer Feedback:</strong> {activeGate.feedback}
+          <div className="p-3.5 bg-gray-50 rounded-xl border border-gray-200 text-xs text-gray-700 flex items-start gap-2.5">
+            <AlertCircle className="w-4 h-4 text-opella-forest shrink-0 mt-0.5" />
+            <div>
+              <strong className="text-gray-900">Official Committee Verdict Note:</strong>{" "}
+              <span>{activeGate.feedback}</span>
+            </div>
           </div>
         )}
 
@@ -732,7 +1192,7 @@ export const LifecycleView: React.FC<LifecycleViewProps> = ({
               </div>
             </div>
 
-            {/* Dedicated Team at Disposition: 3-Way Stakeholder Split */}
+            {/* Dedicated Team at Disposition */}
             <div className="space-y-2">
               <div className="text-xs font-bold uppercase tracking-wider text-gray-800 flex items-center gap-1.5">
                 <Users className="w-4 h-4 text-emerald-700" />
@@ -802,7 +1262,7 @@ export const LifecycleView: React.FC<LifecycleViewProps> = ({
 
         {/* Live Simulation Banner */}
         {isSimulatingAgent && simulationLog && (
-          <div className="p-4 bg-emerald-900 text-emerald-100 rounded-xl text-xs font-mono space-y-1 flex items-start gap-3">
+          <div className="p-4 bg-emerald-900 text-emerald-100 rounded-xl text-xs font-mono space-y-1 flex items-start gap-3 border border-emerald-600">
             <Bot className="w-5 h-5 text-emerald-400 shrink-0 mt-0.5 animate-pulse" />
             <div>
               <div className="font-bold text-white mb-1">Simulating Committee & Agent Gate Review...</div>
@@ -816,7 +1276,7 @@ export const LifecycleView: React.FC<LifecycleViewProps> = ({
           <div className="w-full sm:w-auto flex-1 max-w-md">
             <input
               type="text"
-              placeholder="Add committee review notes or approval conditions..."
+              placeholder="Add optional committee review notes or approval conditions..."
               value={feedbackInput}
               onChange={(e) => setFeedbackInput(e.target.value)}
               className="w-full px-3.5 py-2 text-xs border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-opella-forest"
@@ -829,7 +1289,7 @@ export const LifecycleView: React.FC<LifecycleViewProps> = ({
               type="button"
               onClick={handleSimulateStep}
               disabled={isSimulatingAgent}
-              className="px-4 py-2 bg-purple-700 text-white rounded-lg text-xs font-bold hover:bg-purple-800 transition-colors flex items-center gap-1.5 shadow-sm"
+              className="px-4 py-2 bg-purple-700 text-white rounded-lg text-xs font-bold hover:bg-purple-800 transition-colors flex items-center gap-1.5 shadow-sm disabled:opacity-50"
               title="Run automated simulation of committee/agent decision"
             >
               <Bot className="w-4 h-4 text-purple-200" />
@@ -844,12 +1304,23 @@ export const LifecycleView: React.FC<LifecycleViewProps> = ({
               <X className="w-3.5 h-3.5" /> Re-scope / Block
             </button>
 
+            {/* Approve Button with Collection Check */}
             <button
               type="button"
               onClick={() => handleUpdateStatus("PASSED")}
-              className="px-5 py-2 bg-emerald-700 text-white rounded-lg text-xs font-bold hover:bg-emerald-800 transition-colors flex items-center gap-1.5 shadow-sm"
+              className={`px-5 py-2 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 shadow-sm ${
+                isAllCollected
+                  ? "bg-emerald-700 text-white hover:bg-emerald-800 active:scale-95"
+                  : "bg-emerald-800 text-emerald-100 hover:bg-emerald-900 border border-emerald-600"
+              }`}
+              title={
+                isAllCollected
+                  ? "Approve and advance use case to next lifecycle gate"
+                  : "Prerequisites partially collected. You can still approve or click Quick-Fill above."
+              }
             >
-              <Check className="w-4 h-4" /> Approve & Advance Gate
+              <Check className="w-4 h-4" />
+              {isAllCollected ? "Approve & Advance Gate" : `Advance Gate (${collectedCount}/4 Collected)`}
             </button>
           </div>
         </div>
