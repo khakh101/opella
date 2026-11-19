@@ -27,7 +27,12 @@ import {
 } from "lucide-react";
 import confetti from "canvas-confetti";
 import { UseCase, GateId, GateStatus, GateDetail } from "@/types";
-import { TIER_CONFIG, DELIVERY_MODES_INFO } from "@/lib/constants";
+import {
+  TIER_CONFIG,
+  DELIVERY_MODES_INFO,
+  MODE_DEEP_DIVES,
+  TIER_DEEP_DIVES,
+} from "@/lib/constants";
 import { updateGateStatus } from "@/lib/storage";
 
 interface LifecycleViewProps {
@@ -420,6 +425,133 @@ export const LifecycleView: React.FC<LifecycleViewProps> = ({
         {activeGate.feedback && (
           <div className="p-3 bg-gray-50 rounded-lg border border-gray-200 text-xs text-gray-700">
             <strong>Committee Reviewer Feedback:</strong> {activeGate.feedback}
+          </div>
+        )}
+
+        {/* Gate G4 Deep Dive: Mode Zoom, WHY Selected & 3-Way Team Disposition */}
+        {activeGateTab === "G4" && MODE_DEEP_DIVES[currentCase.mode] && (
+          <div className="p-5 rounded-2xl bg-emerald-50/60 border-2 border-emerald-600/30 space-y-4">
+            <div className="border-b border-emerald-200/80 pb-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <div>
+                <span className="text-[10px] font-black uppercase tracking-wider text-emerald-800 bg-emerald-200/60 px-2 py-0.5 rounded">
+                  Gate G4 Mode Selection Zoom
+                </span>
+                <h4 className="text-base font-black text-opella-forest mt-1">
+                  Selected Mode: {MODE_DEEP_DIVES[currentCase.mode].title} ·{" "}
+                  <span className="italic font-serif text-emerald-800 text-sm font-normal">
+                    {MODE_DEEP_DIVES[currentCase.mode].motto}
+                  </span>
+                </h4>
+                <p className="text-xs text-gray-700 mt-0.5">
+                  {MODE_DEEP_DIVES[currentCase.mode].ownershipSplit}
+                </p>
+              </div>
+              <span className="text-xs font-bold px-3 py-1 rounded bg-white text-emerald-900 border border-emerald-300 self-start sm:self-auto">
+                Design Authority Locked
+              </span>
+            </div>
+
+            {/* WHY this Mode was selected */}
+            <div className="bg-white p-4 rounded-xl border border-emerald-200 space-y-2 text-xs">
+              <div className="font-bold uppercase tracking-wider text-emerald-950 flex items-center gap-1.5">
+                <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                WHY Was {currentCase.mode} Selected for this Use Case?
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 text-[11px] pt-1">
+                <div className="p-2.5 rounded bg-gray-50 border border-gray-200">
+                  <span className="text-gray-400 font-bold block uppercase text-[10px]">Complexity</span>
+                  <span className="font-semibold text-gray-900">
+                    {MODE_DEEP_DIVES[currentCase.mode].whySelected.technicalComplexityProfile}
+                  </span>
+                </div>
+                <div className="p-2.5 rounded bg-gray-50 border border-gray-200">
+                  <span className="text-gray-400 font-bold block uppercase text-[10px]">Function Capability</span>
+                  <span className="font-semibold text-gray-900">
+                    {MODE_DEEP_DIVES[currentCase.mode].whySelected.functionTechCapabilityRequired}
+                  </span>
+                </div>
+                <div className="p-2.5 rounded bg-gray-50 border border-gray-200">
+                  <span className="text-gray-400 font-bold block uppercase text-[10px]">Platform Fit</span>
+                  <span className="font-semibold text-emerald-800">
+                    {MODE_DEEP_DIVES[currentCase.mode].whySelected.platformFit}
+                  </span>
+                </div>
+              </div>
+              <div className="space-y-1 pt-1 text-gray-700 text-xs">
+                {MODE_DEEP_DIVES[currentCase.mode].whySelected.primaryDrivers.map((driver, idx) => (
+                  <div key={idx} className="flex items-start gap-1.5">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-600 mt-1.5 shrink-0" />
+                    <span>{driver}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Dedicated Team at Disposition: 3-Way Stakeholder Split */}
+            <div className="space-y-2">
+              <div className="text-xs font-bold uppercase tracking-wider text-gray-800 flex items-center gap-1.5">
+                <Users className="w-4 h-4 text-emerald-700" />
+                Team Put at the Disposition of this Use Case:
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs">
+                {/* Data & AI */}
+                <div className="p-3.5 rounded-xl bg-white border border-blue-200 space-y-2">
+                  <div className="font-bold text-blue-900 uppercase text-[11px] border-b border-blue-100 pb-1 flex items-center justify-between">
+                    <span>Data & AI Hub Team</span>
+                    <span className="text-[10px] bg-blue-100 px-1.5 py-0.2 rounded">Engineering</span>
+                  </div>
+                  <div className="space-y-2">
+                    {MODE_DEEP_DIVES[currentCase.mode].teamDisposition.dataAndAiTeam.map((mem, i) => (
+                      <div key={i} className="text-[11px] leading-tight">
+                        <div className="font-bold text-gray-900 flex justify-between">
+                          <span>{mem.role}</span>
+                          <span className="text-blue-800 font-mono text-[10px]">{mem.allocation}</span>
+                        </div>
+                        <div className="text-gray-500 mt-0.5">{mem.responsibility}</div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* TO */}
+                <div className="p-3.5 rounded-xl bg-white border border-purple-200 space-y-2">
+                  <div className="font-bold text-purple-900 uppercase text-[11px] border-b border-purple-100 pb-1 flex items-center justify-between">
+                    <span>Transformation Office</span>
+                    <span className="text-[10px] bg-purple-100 px-1.5 py-0.2 rounded">Governance</span>
+                  </div>
+                  <div className="space-y-2">
+                    {MODE_DEEP_DIVES[currentCase.mode].teamDisposition.transformationOffice.map((mem, i) => (
+                      <div key={i} className="text-[11px] leading-tight">
+                        <div className="font-bold text-gray-900 flex justify-between">
+                          <span>{mem.role}</span>
+                          <span className="text-purple-800 font-mono text-[10px]">{mem.allocation}</span>
+                        </div>
+                        <div className="text-gray-500 mt-0.5">{mem.responsibility}</div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Function */}
+                <div className="p-3.5 rounded-xl bg-white border border-emerald-200 space-y-2">
+                  <div className="font-bold text-emerald-900 uppercase text-[11px] border-b border-emerald-100 pb-1 flex items-center justify-between">
+                    <span>Business Function</span>
+                    <span className="text-[10px] bg-emerald-100 px-1.5 py-0.2 rounded">Domain PO</span>
+                  </div>
+                  <div className="space-y-2">
+                    {MODE_DEEP_DIVES[currentCase.mode].teamDisposition.businessFunction.map((mem, i) => (
+                      <div key={i} className="text-[11px] leading-tight">
+                        <div className="font-bold text-gray-900 flex justify-between">
+                          <span>{mem.role}</span>
+                          <span className="text-emerald-800 font-mono text-[10px]">{mem.allocation}</span>
+                        </div>
+                        <div className="text-gray-500 mt-0.5">{mem.responsibility}</div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         )}
 

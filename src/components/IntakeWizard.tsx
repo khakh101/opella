@@ -21,6 +21,8 @@ import {
   Workflow,
   HelpCircle,
   FileText,
+  Cpu,
+  UserCheck,
 } from "lucide-react";
 import confetti from "canvas-confetti";
 import {
@@ -36,7 +38,14 @@ import {
   GateDetail,
   GateId,
 } from "@/types";
-import { BIG_BETS, TIER_CONFIG, DELIVERY_MODES_INFO, INITIAL_GATES } from "@/lib/constants";
+import {
+  BIG_BETS,
+  TIER_CONFIG,
+  DELIVERY_MODES_INFO,
+  INITIAL_GATES,
+  MODE_DEEP_DIVES,
+  TIER_DEEP_DIVES,
+} from "@/lib/constants";
 import { evaluateIntake } from "@/lib/decisionEngine";
 import { saveUseCase } from "@/lib/storage";
 
@@ -865,6 +874,79 @@ export const IntakeWizard: React.FC<IntakeWizardProps> = ({
                 </div>
               ))}
             </div>
+
+            {/* WHAT IT MEANS TO BE THIS TIER (EXECUTIVE GOVERNANCE DEEP DIVE) */}
+            {TIER_DEEP_DIVES[decision.tier] && (
+              <div className="bg-white rounded-xl p-5 border border-gray-200 space-y-4 text-xs">
+                <div className="flex items-center justify-between border-b border-gray-100 pb-2.5">
+                  <span className="font-bold text-gray-900 uppercase tracking-wider flex items-center gap-1.5 text-xs">
+                    <Building className="w-4 h-4 text-emerald-700" />
+                    What It Means to be {TIER_DEEP_DIVES[decision.tier].name} ({TIER_DEEP_DIVES[decision.tier].subtitle})
+                  </span>
+                  <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-emerald-100 text-emerald-800">
+                    Playbook Mandate
+                  </span>
+                </div>
+
+                <div className="p-3 rounded-lg bg-emerald-50/60 border border-emerald-200/70 text-gray-800 space-y-1">
+                  <div className="font-bold text-emerald-950">Strategic Mandate:</div>
+                  <p className="leading-relaxed">{TIER_DEEP_DIVES[decision.tier].whatItMeans}</p>
+                  <div className="pt-1.5 border-t border-emerald-200/60 text-emerald-900">
+                    <strong>Decision for this Use Case:</strong> {TIER_DEEP_DIVES[decision.tier].decisionForUseCase}
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                  {/* Comitology & Committees */}
+                  <div className="p-3 rounded-lg bg-gray-50 border border-gray-200 space-y-1.5">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-gray-500 block">
+                      1. Governing Committees
+                    </span>
+                    <div className="font-bold text-gray-900 text-[11px]">
+                      {TIER_DEEP_DIVES[decision.tier].committeesAndComitology.primaryForum}
+                    </div>
+                    <div className="text-[11px] text-gray-600">
+                      Cadence: <strong>{TIER_DEEP_DIVES[decision.tier].committeesAndComitology.cadence}</strong>
+                    </div>
+                    <div className="text-[11px] text-gray-500 italic">
+                      {TIER_DEEP_DIVES[decision.tier].committeesAndComitology.decisionRights}
+                    </div>
+                  </div>
+
+                  {/* Teams & Resourcing */}
+                  <div className="p-3 rounded-lg bg-gray-50 border border-gray-200 space-y-1.5">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-gray-500 block">
+                      2. Teams & Resourcing
+                    </span>
+                    <div className="font-bold text-gray-900 text-[11px]">
+                      {TIER_DEEP_DIVES[decision.tier].teamsAndResourcing.squadModel}
+                    </div>
+                    <div className="text-[11px] text-gray-600">
+                      Hub: {TIER_DEEP_DIVES[decision.tier].teamsAndResourcing.dataAndAiAllocation}
+                    </div>
+                    <div className="text-[11px] text-emerald-800 font-semibold">
+                      Function: {TIER_DEEP_DIVES[decision.tier].teamsAndResourcing.businessFunctionCommitment}
+                    </div>
+                  </div>
+
+                  {/* Delivery & PMO Tracking */}
+                  <div className="p-3 rounded-lg bg-gray-50 border border-gray-200 space-y-1.5">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-gray-500 block">
+                      3. Delivery & Tracking
+                    </span>
+                    <div className="font-bold text-gray-900 text-[11px]">
+                      {TIER_DEEP_DIVES[decision.tier].deliveryAndTracking.trackingTool}
+                    </div>
+                    <div className="text-[11px] text-gray-600">
+                      Funding: {TIER_DEEP_DIVES[decision.tier].deliveryAndTracking.fundingMechanism}
+                    </div>
+                    <div className="text-[11px] text-gray-600">
+                      Audit: {TIER_DEEP_DIVES[decision.tier].deliveryAndTracking.valueRealizationAudit}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
 
           <div className="flex justify-between pt-4 border-t border-opella-border">
@@ -1358,6 +1440,183 @@ export const IntakeWizard: React.FC<IntakeWizardProps> = ({
               </div>
             </div>
           </div>
+
+          {/* MODE ZOOM: WHY THIS MODE WAS SELECTED & 3-WAY SQUAD DISPOSITION */}
+          {MODE_DEEP_DIVES[chosenMode] && (
+            <div className="bg-emerald-50/50 rounded-2xl p-6 border-2 border-emerald-600/30 space-y-6">
+              {/* Header: Selected Mode & WHY */}
+              <div className="border-b border-emerald-200/80 pb-4">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                  <div className="flex items-center gap-2">
+                    <span className="p-1 rounded-md bg-emerald-700 text-white text-xs font-bold px-2 py-0.5">
+                      Mode Zoom
+                    </span>
+                    <h3 className="text-lg font-black text-opella-forest">
+                      {MODE_DEEP_DIVES[chosenMode].title} ·{" "}
+                      <span className="italic font-serif text-emerald-800 text-base font-normal">
+                        {MODE_DEEP_DIVES[chosenMode].motto}
+                      </span>
+                    </h3>
+                  </div>
+                  <span className="text-xs font-semibold px-2.5 py-1 rounded bg-white border border-emerald-300 text-emerald-900">
+                    Gate G4 Decision Focus
+                  </span>
+                </div>
+                <p className="text-xs text-gray-700 mt-1 font-medium">
+                  {MODE_DEEP_DIVES[chosenMode].ownershipSplit}
+                </p>
+              </div>
+
+              {/* WHY Was This Mode Selected? */}
+              <div className="bg-white rounded-xl p-5 border border-emerald-200 shadow-2xs space-y-3 text-xs">
+                <div className="flex items-center justify-between">
+                  <span className="font-bold uppercase tracking-wider text-emerald-900 flex items-center gap-1.5">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                    WHY This Mode Was Selected for this Use Case:
+                  </span>
+                  <span className="text-[11px] text-gray-500 font-semibold">
+                    Operating Model Sourcing Criteria
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                  <div className="p-3 rounded-lg bg-gray-50 border border-gray-200">
+                    <span className="text-[10px] font-bold text-gray-400 uppercase block">
+                      Technical Complexity Profile
+                    </span>
+                    <span className="font-semibold text-gray-900 block mt-0.5">
+                      {MODE_DEEP_DIVES[chosenMode].whySelected.technicalComplexityProfile}
+                    </span>
+                  </div>
+                  <div className="p-3 rounded-lg bg-gray-50 border border-gray-200">
+                    <span className="text-[10px] font-bold text-gray-400 uppercase block">
+                      Function Capability Required
+                    </span>
+                    <span className="font-semibold text-gray-900 block mt-0.5">
+                      {MODE_DEEP_DIVES[chosenMode].whySelected.functionTechCapabilityRequired}
+                    </span>
+                  </div>
+                  <div className="p-3 rounded-lg bg-gray-50 border border-gray-200">
+                    <span className="text-[10px] font-bold text-gray-400 uppercase block">
+                      Enterprise Platform Fit
+                    </span>
+                    <span className="font-semibold text-emerald-800 block mt-0.5">
+                      {MODE_DEEP_DIVES[chosenMode].whySelected.platformFit}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="space-y-1.5 pt-1">
+                  <div className="font-bold text-gray-900">Decision Rationale Drivers:</div>
+                  {MODE_DEEP_DIVES[chosenMode].whySelected.primaryDrivers.map((driver, i) => (
+                    <div key={i} className="flex items-start gap-2 text-gray-700">
+                      <div className="w-1.5 h-1.5 rounded-full bg-emerald-600 mt-1.5 shrink-0" />
+                      <span>{driver}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* THE TEAM PUT AT THE DISPOSITION OF THE USE CASE */}
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <h4 className="text-xs font-bold text-gray-900 uppercase tracking-wider flex items-center gap-2">
+                    <Users className="w-4 h-4 text-emerald-700" />
+                    Dedicated Team Put at the Disposition of the Use Case
+                  </h4>
+                  <span className="text-[11px] text-gray-500">
+                    3-Way Resourcing: Data & AI + TO + Function
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  {/* 1. DATA & AI TEAM */}
+                  <div className="p-4 rounded-xl bg-white border border-blue-200 shadow-2xs space-y-2.5">
+                    <div className="flex items-center justify-between border-b border-blue-100 pb-2">
+                      <div className="font-bold text-xs text-blue-900 uppercase tracking-wider flex items-center gap-1.5">
+                        <Cpu className="w-3.5 h-3.5 text-blue-700" />
+                        From Data & AI Hub
+                      </div>
+                      <span className="text-[10px] font-bold bg-blue-100 text-blue-800 px-1.5 py-0.5 rounded">
+                        Engineering
+                      </span>
+                    </div>
+                    <div className="space-y-2 text-xs">
+                      {MODE_DEEP_DIVES[chosenMode].teamDisposition.dataAndAiTeam.map((mem, i) => (
+                        <div key={i} className="p-2.5 rounded-lg bg-blue-50/50 border border-blue-100 space-y-1">
+                          <div className="flex items-center justify-between">
+                            <span className="font-bold text-gray-900">{mem.role}</span>
+                            <span className="text-[10px] font-mono font-bold text-blue-800 bg-white px-1.5 py-0.5 rounded border border-blue-200">
+                              {mem.allocation}
+                            </span>
+                          </div>
+                          <p className="text-[11px] text-gray-600 leading-snug">
+                            {mem.responsibility}
+                          </p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* 2. TRANSFORMATION OFFICE (TO) */}
+                  <div className="p-4 rounded-xl bg-white border border-purple-200 shadow-2xs space-y-2.5">
+                    <div className="flex items-center justify-between border-b border-purple-100 pb-2">
+                      <div className="font-bold text-xs text-purple-900 uppercase tracking-wider flex items-center gap-1.5">
+                        <Building className="w-3.5 h-3.5 text-purple-700" />
+                        From Transformation Office
+                      </div>
+                      <span className="text-[10px] font-bold bg-purple-100 text-purple-800 px-1.5 py-0.5 rounded">
+                        Change & Value
+                      </span>
+                    </div>
+                    <div className="space-y-2 text-xs">
+                      {MODE_DEEP_DIVES[chosenMode].teamDisposition.transformationOffice.map((mem, i) => (
+                        <div key={i} className="p-2.5 rounded-lg bg-purple-50/50 border border-purple-100 space-y-1">
+                          <div className="flex items-center justify-between">
+                            <span className="font-bold text-gray-900">{mem.role}</span>
+                            <span className="text-[10px] font-mono font-bold text-purple-800 bg-white px-1.5 py-0.5 rounded border border-purple-200">
+                              {mem.allocation}
+                            </span>
+                          </div>
+                          <p className="text-[11px] text-gray-600 leading-snug">
+                            {mem.responsibility}
+                          </p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* 3. BUSINESS FUNCTION */}
+                  <div className="p-4 rounded-xl bg-white border border-emerald-200 shadow-2xs space-y-2.5">
+                    <div className="flex items-center justify-between border-b border-emerald-100 pb-2">
+                      <div className="font-bold text-xs text-emerald-900 uppercase tracking-wider flex items-center gap-1.5">
+                        <UserCheck className="w-3.5 h-3.5 text-emerald-700" />
+                        From Business Function
+                      </div>
+                      <span className="text-[10px] font-bold bg-emerald-100 text-emerald-800 px-1.5 py-0.5 rounded">
+                        Business PO
+                      </span>
+                    </div>
+                    <div className="space-y-2 text-xs">
+                      {MODE_DEEP_DIVES[chosenMode].teamDisposition.businessFunction.map((mem, i) => (
+                        <div key={i} className="p-2.5 rounded-lg bg-emerald-50/50 border border-emerald-100 space-y-1">
+                          <div className="flex items-center justify-between">
+                            <span className="font-bold text-gray-900">{mem.role}</span>
+                            <span className="text-[10px] font-mono font-bold text-emerald-800 bg-white px-1.5 py-0.5 rounded border border-emerald-200">
+                              {mem.allocation}
+                            </span>
+                          </div>
+                          <p className="text-[11px] text-gray-600 leading-snug">
+                            {mem.responsibility}
+                          </p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Sourcing Summary Box */}
           <div className="bg-gray-50 p-4 rounded-xl border border-gray-200 text-xs text-gray-700 space-y-1">

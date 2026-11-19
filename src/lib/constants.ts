@@ -1,4 +1,12 @@
-import { BigBetInfo, GateDetail, GateId, Tier, DeliveryMode } from "@/types";
+import {
+  BigBetInfo,
+  GateDetail,
+  GateId,
+  Tier,
+  DeliveryMode,
+  ModeDeepDive,
+  TierDeepDive,
+} from "@/types";
 
 export const BIG_BETS: BigBetInfo[] = [
   {
@@ -184,6 +192,482 @@ export const DELIVERY_MODES_INFO: Record<
     iconName: "Zap",
   },
 };
+
+export const MODE_DEEP_DIVES: Record<DeliveryMode, ModeDeepDive> = {
+  "Mode 1": {
+    mode: "Mode 1",
+    title: "Mode 1: Do it for me",
+    motto: "“We ride for you”",
+    ownershipSplit:
+      "Function owns the business problem & outcome; Data & AI Hub leads build, deployment, and ongoing run.",
+    whySelected: {
+      primaryDrivers: [
+        "High technical complexity requiring custom LLM/agent engineering on central foundations (Databricks, Snowflake, Azure GenAI)",
+        "Business function has zero or minimal internal technical engineering capacity",
+        "Strategic multi-market or enterprise-wide scope requiring strict latency, security, and unified data ontology",
+      ],
+      technicalComplexityProfile:
+        "High (Custom agent orchestration, vector retrieval, ERP/SAP write-back)",
+      functionTechCapabilityRequired:
+        "Low / None (Function focuses purely on business rules & UAT)",
+      platformFit:
+        "Central Foundation Platforms (Databricks Delta Lake, Azure OpenAI Private Endpoints, Opella IQ)",
+      bestFitScenarios:
+        "Lumen Commercial Content Engine, Enterprise Brand Matrix compliance, Cross-functional GenAI agents",
+    },
+    teamDisposition: {
+      dataAndAiTeam: [
+        {
+          role: "Forward Deployed Engineer (FDE)",
+          allocation: "1.0 FTE (Full-time)",
+          responsibility:
+            "Architects and builds agent pipelines, LangChain chains, API connectors, and model prompting.",
+          profileType: "Tech",
+        },
+        {
+          role: "Data & Semantic Architect",
+          allocation: "0.5 FTE",
+          responsibility:
+            "Connects ERP/SAP data sources, builds Databricks delta lake ingestion, maps Opella IQ ontology.",
+          profileType: "Tech",
+        },
+        {
+          role: "AI / MLOps Engineer",
+          allocation: "0.5 FTE",
+          responsibility:
+            "Manages Azure GenAI tenant security boundaries, token consumption caps, latency, and automated drift tests.",
+          profileType: "Tech",
+        },
+      ],
+      transformationOffice: [
+        {
+          role: "AI Catalyst / Stream Lead",
+          allocation: "0.4 FTE",
+          responsibility:
+            "Orchestrates gate comitology (G1–G6), aligns with Butterfly core releases, and tracks milestone progress.",
+          profileType: "Governance",
+        },
+        {
+          role: "Change & Adoption Specialist",
+          allocation: "0.5 FTE",
+          responsibility:
+            "Executes 5-Pillar Workforce Impact Scan, designs role evolution, and delivers user training clinics.",
+          profileType: "Change",
+        },
+        {
+          role: "Value & Portfolio Lead",
+          allocation: "0.2 FTE",
+          responsibility:
+            "Validates financial baseline with Finance BP, reconciles P&L impact in Unified Value Ledger.",
+          profileType: "Governance",
+        },
+      ],
+      businessFunction: [
+        {
+          role: "Accountable Business Owner (BO/PO)",
+          allocation: "0.8 - 1.0 FTE (Dedicated)",
+          responsibility:
+            "Full ownership of user stories, backlog priorities, acceptance criteria, and P&L value realization.",
+          profileType: "Business",
+        },
+        {
+          role: "Subject Matter Experts (SMEs)",
+          allocation: "2 x 0.3 FTE",
+          responsibility:
+            "Provide operational ground truth, review edge cases, validate generated outputs against business rules.",
+          profileType: "Business",
+        },
+        {
+          role: "Business Unit Sponsor / SteerCo Lead",
+          allocation: "Executive Sponsor",
+          responsibility:
+            "ExCo / BU Vice President providing executive sponsorship and unblocking regional adoption.",
+          profileType: "Business",
+        },
+      ],
+    },
+  },
+  "Mode 2": {
+    mode: "Mode 2",
+    title: "Mode 2: Do it with me",
+    motto: "“We ride together”",
+    ownershipSplit:
+      "Function leads the initiative; Data & AI Hub builds with it via dedicated Hub capacity and shared squads.",
+    whySelected: {
+      primaryDrivers: [
+        "Medium-to-high technical complexity requiring intimate operational business logic combined with specialized AI engineering",
+        "Business function has capable business analysts or aspiring builders who need Hub engineering backing",
+        "Co-funded investment model between central transformation capacity and business function budget",
+      ],
+      technicalComplexityProfile:
+        "Medium to High (Domain logic + Agentic automation + System integration)",
+      functionTechCapabilityRequired:
+        "Medium (Business has strong process analysts and technical champions)",
+      platformFit:
+        "Hybrid (Central platform components customized for specific functional workflows)",
+      bestFitScenarios:
+        "GIDE / BOWIE S2P Procurement Agent, IBP Demand Sensing & Replenishment, M&Q Plant Assistant",
+    },
+    teamDisposition: {
+      dataAndAiTeam: [
+        {
+          role: "Forward Deployed Engineer (FDE)",
+          allocation: "0.8 FTE (Embedded in squad)",
+          responsibility:
+            "Embedded in the function squad to co-engineer the core agent workflow and API connectors.",
+          profileType: "Tech",
+        },
+        {
+          role: "Data Engineer",
+          allocation: "0.5 FTE",
+          responsibility:
+            "Prepares domain datasets, validates data freshness in Snowflake/Databricks, and sets up data pipelines.",
+          profileType: "Tech",
+        },
+        {
+          role: "MLOps & Security Reviewer",
+          allocation: "0.2 FTE",
+          responsibility:
+            "Conducts design authority reviews, anti-hallucination guardrails, and role-based access controls.",
+          profileType: "Tech",
+        },
+      ],
+      transformationOffice: [
+        {
+          role: "AI Catalyst (Procurement / Function Stream)",
+          allocation: "0.5 FTE",
+          responsibility:
+            "Facilitates agile sprints, unblocks governance gates, and bridges function with Data & AI Hub.",
+          profileType: "Governance",
+        },
+        {
+          role: "Workforce Change & Adoption Lead",
+          allocation: "0.5 FTE",
+          responsibility:
+            "Drives ProcurLab AI Prompting curriculum, monitors weekly active user rate, assesses QWL and task substitution.",
+          profileType: "Change",
+        },
+        {
+          role: "Finance BP Partner",
+          allocation: "0.2 FTE",
+          responsibility:
+            "Audits €142/PO manual processing baseline and verifies €3.8M run-rate EBITDA savings.",
+          profileType: "Governance",
+        },
+      ],
+      businessFunction: [
+        {
+          role: "Accountable Product Owner (BO/PO)",
+          allocation: "0.8 - 1.0 FTE (Dedicated Lead)",
+          responsibility:
+            "Drives squad day-to-day, manages Jira backlog, signs off on sprint demos, owns business KPIs.",
+          profileType: "Business",
+        },
+        {
+          role: "Functional AI Builder (Citizen/No-Code)",
+          allocation: "0.5 FTE",
+          responsibility:
+            "Configures user prompt templates, agent policies, and user interface workflows in Copilot Studio / custom app.",
+          profileType: "Business",
+        },
+        {
+          role: "Lead Pilot Champions & Buyers",
+          allocation: "3 x 0.25 FTE",
+          responsibility:
+            "Front-line category buyers in pilot markets (Spain, France) testing live POs and reporting edge cases.",
+          profileType: "Business",
+        },
+      ],
+    },
+  },
+  "Mode 3": {
+    mode: "Mode 3",
+    title: "Mode 3: Enable me",
+    motto: "“We give you the right bike and the map”",
+    ownershipSplit:
+      "Function frames, builds, or sources the solution; Data & AI Hub provides architectural guardrails and platform access.",
+    whySelected: {
+      primaryDrivers: [
+        "Solution utilizes external SaaS tools or can be assembled autonomously by certified AI builders in the business",
+        "Business function has autonomous delivery capacity or external niche vendor partners",
+        "Accelerates time-to-value by bypassing central Hub engineering backlog while adhering to ORAI guardrails",
+      ],
+      technicalComplexityProfile:
+        "Low to Medium (Configuration of approved SaaS or low-code tools)",
+      functionTechCapabilityRequired:
+        "High (Autonomous functional delivery with certified citizen builders)",
+      platformFit:
+        "SaaS & Approved Ecosystem (Opella low-code sandbox, certified 3rd party SaaS)",
+      bestFitScenarios:
+        "Wonka Vendor Intelligence SaaS, LEO Procurement contract intelligence, local automated report generators",
+    },
+    teamDisposition: {
+      dataAndAiTeam: [
+        {
+          role: "Design Authority & Platform Advisor",
+          allocation: "0.2 FTE (Gating check)",
+          responsibility:
+            "Conducts Architecture Decision Record (ADR) review, approves security boundary and data export.",
+          profileType: "Tech",
+        },
+        {
+          role: "ORAI Compliance Officer",
+          allocation: "0.1 FTE",
+          responsibility:
+            "Verifies zero public model training, data residency, and EU AI Act classification.",
+          profileType: "Governance",
+        },
+      ],
+      transformationOffice: [
+        {
+          role: "AI Catalyst Relay",
+          allocation: "0.2 FTE",
+          responsibility:
+            "Supports front-door registration, guides 10-day fast-track gating SLA, and enrolls builders in community of practice.",
+          profileType: "Governance",
+        },
+      ],
+      businessFunction: [
+        {
+          role: "Accountable Business Owner (BO/PO)",
+          allocation: "0.5 FTE",
+          responsibility:
+            "Owns business requirement, vendor contract/SLA (if SaaS), and end-user rollout.",
+          profileType: "Business",
+        },
+        {
+          role: "Certified AI Builder (Business Unit)",
+          allocation: "0.8 FTE (Builder)",
+          responsibility:
+            "Develops, tests, and maintains the configured solution within approved enterprise guardrails.",
+          profileType: "Business",
+        },
+        {
+          role: "Department Head / Sponsor",
+          allocation: "0.1 FTE",
+          responsibility:
+            "Funds the build from operational budget and ensures team adoption.",
+          profileType: "Business",
+        },
+      ],
+    },
+  },
+  "Self-Service AI": {
+    mode: "Self-Service AI",
+    title: "Self-Service AI (Builder & User)",
+    motto: "“Build with instant guardrails”",
+    ownershipSplit:
+      "100% user-owned with automated token caps, security screening, and catalog registration.",
+    whySelected: {
+      primaryDrivers: [
+        "Budget under €50k and uses only approved enterprise tools (Copilot, Opella GPT, Power Automate)",
+        "Zero core production write-back or sensitive employee health/patient data",
+        "Immediate speed desired without any committee or comitology delays",
+      ],
+      technicalComplexityProfile:
+        "Low (Prompt engineering, workflow chaining, document search)",
+      functionTechCapabilityRequired:
+        "Basic digital literacy (Supported by Prompting Academy)",
+      platformFit:
+        "Sanctioned Enterprise AI Tools (Copilot Studio, Opella GPT)",
+      bestFitScenarios:
+        "Meeting summarizers, email draft bots, slide deck assistants, document comparison helpers",
+    },
+    teamDisposition: {
+      dataAndAiTeam: [
+        {
+          role: "Automated Governance & Token Sentinel Bots",
+          allocation: "Automated (0 FTE)",
+          responsibility:
+            "Enforces auto-expiry, monthly token cost caps (<€50k/yr), and automated data boundary scans.",
+          profileType: "Tech",
+        },
+      ],
+      transformationOffice: [
+        {
+          role: "AI for All Self-Serve Portal",
+          allocation: "Digital Hub",
+          responsibility:
+            "Provides prompt templates, best practices, and automated registry listing.",
+          profileType: "Governance",
+        },
+      ],
+      businessFunction: [
+        {
+          role: "Citizen Builder / End User",
+          allocation: "Self-Serve",
+          responsibility:
+            "Creates, tests, and uses the tool responsibly under approved AI usage guardrails.",
+          profileType: "Business",
+        },
+      ],
+    },
+  },
+};
+
+export const TIER_DEEP_DIVES: Record<Tier, TierDeepDive> = {
+  T1: {
+    tier: "T1",
+    name: "T1 · Transform",
+    subtitle: "Enterprise Big Bets & Core Reshapes",
+    threshold:
+      "Part of AmplifAI Big Bet, alters Butterfly core platforms/scope, > €1M, or multi-market multi-functional reach",
+    whatItMeans:
+      "A Tier 1 (T1) initiative is an enterprise-defining strategic bet. It alters core Butterfly enterprise workflows (SAP, IBP, Databricks), impacts multi-million Euro P&L lines, and commands dedicated cross-functional squads funded from the 60% Hub transformation envelope.",
+    decisionForUseCase:
+      "Routes directly to Full Business Case (T1 Dossier) & Butterfly Comitology. Requires full 6-gate butterfly progression (G1 -> G2 -> G3 -> G4 -> MVP Build -> G5 -> Scale -> G6) with formal SteerCo approval.",
+    committeesAndComitology: {
+      governingBodies: [
+        "Transformation SteerCo (Monthly) chaired by Gentiane Barret (TO Lead) & ExCo Stream Sponsors",
+        "Digital Design Authority (DDA - Weekly) for architecture ADR & Mode 1/2/3 selection at G4",
+        "Butterfly Comitology for synchronization with enterprise SAP release trains",
+        "AI Portfolio Board (Fortnightly) for ongoing milestone and risk tracking",
+      ],
+      cadence: "Monthly SteerCo Review & Fortnightly Portfolio Board",
+      decisionRights:
+        "SteerCo holds ultimate funding and kill/scale decision rights; Design Authority holds architecture veto.",
+      primaryForum:
+        "Transformation SteerCo (Monthly) · Chaired by ExCo Stream Sponsors",
+    },
+    teamsAndResourcing: {
+      squadModel:
+        "Dedicated Co-Located / Dedicated Cross-Functional Squad (Full-Stack)",
+      dataAndAiAllocation:
+        "1.0 FDE (Dedicated) + 0.5 Data Architect + 0.5 MLOps Engineer (Funded by Central Hub 60% envelope)",
+      toAllocation:
+        "Dedicated AI Catalyst (0.5 FTE) + Change & Adoption Lead (0.5 FTE) + Value Lead (0.2 FTE)",
+      businessFunctionCommitment:
+        "Dedicated Accountable Business Owner (BO/PO, 80% to 100% full-time commitment mandatory)",
+    },
+    deliveryAndTracking: {
+      businessCaseDossier:
+        "Full 5-Page T1 Business Case: Recurring P&L drivers, SI/BI non-staff, 5-year NPV, Control Tower sign-off.",
+      trackingTool:
+        "Planisware (Enterprise transformation PMO system) with formal milestone tracking and bi-weekly sprint reviews.",
+      fundingMechanism:
+        "Tranche releases: Tranche 1 (€300k–€500k) at G4 for 6–8 week MVP; Tranche 2 at G5 for enterprise scaling.",
+      valueRealizationAudit:
+        "Mandatory Unified Value Ledger audit at +6 and +12 months by Finance Business Partner to prove realized EBITDA.",
+      sprintDuration:
+        "6–8 week MVP sprint, followed by multi-wave regional rollout.",
+    },
+  },
+  T2: {
+    tier: "T2",
+    name: "T2 · Scale",
+    subtitle: "Proven Pilot & Cross-Functional Scaling",
+    threshold:
+      "Value proven in a pilot; needs reach (2+ functions/regions, 500+ users), Hub capacity, or €200k–€1M build cost",
+    whatItMeans:
+      "A Tier 2 (T2) initiative scales a concept that has already demonstrated pilot feasibility. It expands reach across functions or regions and is delivered via shared squads co-funded between central capacity and business budgets.",
+    decisionForUseCase:
+      "Routes to Light Business Case (T2 Dossier) & AI Portfolio Board Tranche Releases. Streamlined comitology focused on scaling mechanics and adoption.",
+    committeesAndComitology: {
+      governingBodies: [
+        "AI Portfolio Board (Fortnightly) as primary approval body",
+        "Dedicated Stream Approvers (Function VP & Finance BP) for co-funding sign-off",
+        "Design Authority for platform fit check",
+      ],
+      cadence: "Fortnightly AI Portfolio Board review",
+      decisionRights: "AI Portfolio Board unlocks milestone funding tranches.",
+      primaryForum: "AI Portfolio Board (Fortnightly)",
+    },
+    teamsAndResourcing: {
+      squadModel: "Shared Co-Delivery Squad (Joint Function & Hub)",
+      dataAndAiAllocation: "Shared Hub capacity: 0.5 FDE + 0.5 Data Engineer",
+      toAllocation: "AI Catalyst (0.4 FTE) + Adoption Specialist (0.3 FTE)",
+      businessFunctionCommitment:
+        "Business PO (0.5 - 0.8 FTE) + Functional AI Builder (0.5 FTE)",
+    },
+    deliveryAndTracking: {
+      businessCaseDossier:
+        "Light Business Case (Problem statement, directional value, approved data sources, ORAI confirmation).",
+      trackingTool: "AI Portfolio Board Tracker & Stream Dashboards.",
+      fundingMechanism: "Co-funded tranches unlocked per milestone.",
+      valueRealizationAudit:
+        "+6 month value realization pulse in unified value ledger.",
+      sprintDuration: "8–10 week scaling sprints.",
+    },
+  },
+  T3: {
+    tier: "T3",
+    name: "T3 · Fast Lane",
+    subtitle: "Quick Wins & Agile Exploration",
+    threshold:
+      "Budget up to €200k, 1 single function, new hypothesis to test, agile pace",
+    whatItMeans:
+      "A Tier 3 (T3) Fast Lane initiative is designed for speed and agility. It tests a specific business value hypothesis within 6–8 weeks with a strict 10-day decision SLA. AI Portfolio Board is the ONLY forum seen.",
+    decisionForUseCase:
+      "Routes to 1-Page T3 Canvas. Skips heavy PMO and comitology. Funded from ring-fenced 25% Fast Lane envelope. 10 days to decision.",
+    committeesAndComitology: {
+      governingBodies: [
+        "AI Portfolio Board (Delegated by Program Leadership) · Only forum seen",
+        "Function Process Owner approval",
+      ],
+      cadence: "10-day decision SLA · 6–8 week sprint check-in",
+      decisionRights:
+        "AI Portfolio Board chair holds single-point decision authority.",
+      primaryForum: "AI Portfolio Board (Delegated 10-Day SLA)",
+    },
+    teamsAndResourcing: {
+      squadModel: "Agile Rapid Squad (Function-led with Hub Coaching)",
+      dataAndAiAllocation:
+        "Platform templates & coaching from 25% Fast Lane Hub pool",
+      toAllocation: "AI Catalyst coaching & front-door gating (0.2 FTE)",
+      businessFunctionCommitment:
+        "Functional Process Owner + Certified AI Builder (0.8 FTE)",
+    },
+    deliveryAndTracking: {
+      businessCaseDossier:
+        "1-Page T3 Canvas (Hypothesis, baseline metrics, 3 core KPIs, kill/scale date, budget envelope).",
+      trackingTool: "Lightweight agile sprint backlog (No Planisware).",
+      fundingMechanism:
+        "Ring-fenced sprint envelope released upfront for 6–8 week pilot.",
+      valueRealizationAudit:
+        "Gate G5 (Scale Gate) at end of sprint: Pass to scale, or Kill immediately.",
+      sprintDuration: "6–8 week fail-fast sprint.",
+    },
+  },
+  "Self-Serve": {
+    tier: "Self-Serve",
+    name: "Self-Serve · Register & Go",
+    subtitle: "Personal & Team Productivity",
+    threshold:
+      "Under €50k, approved tools & data, configured rather than built, no core write-back",
+    whatItMeans:
+      "Self-Serve allows individuals and citizen builders to leverage sanctioned enterprise AI tools (Copilot, Opella GPT) instantly with automated guardrails, avoiding all comitology queues.",
+    decisionForUseCase:
+      "Instant automated registration. Skips Gates G2, G3, G4 directly to build. Automated screening agent verifies data boundaries.",
+    committeesAndComitology: {
+      governingBodies: [
+        "Automated Charter Agent (OpellaGPT) & Function Head Notification",
+        "No governance committee required",
+      ],
+      cadence: "Instant / Real-time",
+      decisionRights: "Automated qualification based on guardrail checklist.",
+      primaryForum: "Automated Self-Service AI Registry",
+    },
+    teamsAndResourcing: {
+      squadModel: "Individual Citizen Builder / End User",
+      dataAndAiAllocation:
+        "Automated Sentinel Bots & Token Cap Monitors (0 manual FTE)",
+      toAllocation: "Self-service prompt library & knowledge base",
+      businessFunctionCommitment:
+        "End user / Citizen builder (100% self-directed)",
+    },
+    deliveryAndTracking: {
+      businessCaseDossier:
+        "AI Registry Entry with guardrails confirmation checklist.",
+      trackingTool:
+        "Listed in Opella AI Registry with auto-expiry and token caps.",
+      fundingMechanism:
+        "Function software license & existing SaaS allocation.",
+      valueRealizationAudit: "Automated quarterly token and usage monitoring.",
+      sprintDuration: "Days to configure and deploy.",
+    },
+  },
+};
+
 
 export const INITIAL_GATES: Record<GateId, GateDetail> = {
   G1: {

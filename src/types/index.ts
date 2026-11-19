@@ -27,6 +27,62 @@ export interface GateDecisionRecord {
   conditionsOrFeedback: string[];
 }
 
+export interface SquadRole {
+  role: string;
+  allocation: string; // e.g. "1.0 FTE Dedicated", "0.5 FTE"
+  responsibility: string;
+  profileType?: "Tech" | "Business" | "Governance" | "Change";
+}
+
+export interface ThreeWayTeamDisposition {
+  dataAndAiTeam: SquadRole[];
+  transformationOffice: SquadRole[];
+  businessFunction: SquadRole[];
+}
+
+export interface ModeDeepDive {
+  mode: DeliveryMode;
+  title: string;
+  motto: string;
+  ownershipSplit: string;
+  whySelected: {
+    primaryDrivers: string[];
+    technicalComplexityProfile: string;
+    functionTechCapabilityRequired: string;
+    platformFit: string;
+    bestFitScenarios: string;
+  };
+  teamDisposition: ThreeWayTeamDisposition;
+}
+
+export interface TierDeepDive {
+  tier: Tier;
+  name: string;
+  subtitle: string;
+  threshold: string;
+  whatItMeans: string;
+  decisionForUseCase: string;
+  committeesAndComitology: {
+    governingBodies: string[];
+    cadence: string;
+    decisionRights: string;
+    primaryForum: string;
+  };
+  teamsAndResourcing: {
+    squadModel: string;
+    dataAndAiAllocation: string;
+    toAllocation: string;
+    businessFunctionCommitment: string;
+  };
+  deliveryAndTracking: {
+    businessCaseDossier: string;
+    trackingTool: string;
+    fundingMechanism: string;
+    valueRealizationAudit: string;
+    sprintDuration: string;
+  };
+}
+
 export interface GateDetail {
   id: GateId;
   name: string;
