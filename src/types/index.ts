@@ -17,6 +17,22 @@ export interface GateSubmissionData {
   artifactsAttached?: string[];
 }
 
+export interface GateTimelineAction {
+  id: string;
+  stepNumber: number;
+  actionTitle: string;
+  actionType: "UPLOAD" | "MEETING_REVIEW" | "DECISION" | "CONSEQUENCE";
+  date: string;
+  actor: string;
+  actorRole: string;
+  details: string;
+  docsUploaded?: string[];
+  meetingName?: string;
+  decisionVerdict?: string;
+  consequenceResult?: string;
+  whyApprovedReasons?: string[];
+}
+
 export interface GateDecisionRecord {
   verdict: "APPROVED" | "CONDITIONALLY_APPROVED" | "RE_SCOPE" | "STOP" | "IN_REVIEW" | "APPROVED (GO BUILD)";
   decisionTitle: string;
@@ -103,6 +119,7 @@ export interface GateDetail {
   };
   submissionData?: GateSubmissionData;
   decisionRecord?: GateDecisionRecord;
+  timelineActions?: GateTimelineAction[];
 }
 
 export type BigBetId =

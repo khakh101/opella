@@ -23,6 +23,10 @@ import {
   Users,
   Briefcase,
   Zap,
+  Calendar,
+  Rocket,
+  Scale,
+  FolderOpen,
 } from "lucide-react";
 import { UseCase, GateId, GateDetail, GateSubmissionData, GateDecisionRecord } from "@/types";
 import { GATES_CONFIG } from "@/lib/constants";
@@ -304,6 +308,335 @@ export const HistoryView: React.FC<HistoryViewProps> = ({
     }
   };
 
+  const getChronologicalNarrative = (gateId: GateId) => {
+    const isGide = currentUseCase.id === "UC-GIDE";
+    const title = currentUseCase.title;
+    const owner = currentUseCase.owner;
+    const tier = currentUseCase.tier;
+    const mode = currentUseCase.mode;
+
+    switch (gateId) {
+      case "G1":
+        return {
+          headline: `Gate G1 Action Narrative: From Problem Intake to T1 Speed Lane Qualification`,
+          step1_upload: {
+            date: "15 Jun 2026 · 09:30 CET",
+            actor: `${owner} & AI Catalyst`,
+            action: "Uploaded Initial Charter & Problem Dossier",
+            docs: isGide
+              ? ["GIDE_Project_Charter_v1.pdf", "Procurement_S2P_AsIs_Process.vsdx", "ORAI_Intake_Screening.pdf"]
+              : [`${currentUseCase.id}_Project_Charter.pdf`, "ORAI_Initial_Screening.pdf"],
+            summary: isGide
+              ? "Documented manual S2P friction (7-10 days per PO, €142 processing cost) and proposed BOWIE autonomous agent."
+              : `Submitted intake charter outlining operational friction and proposed AI solution for ${currentUseCase.functionName}.`,
+            consequence: "Triggered Front Door Charter intake workflow and scheduled review on committee agenda.",
+          },
+          step2_meeting: {
+            date: "18 Jun 2026 · 14:00 CET",
+            meetingName: "Front Door Charter Triage Session #24",
+            forum: "Front Door Intake (Triage to T1/T2/T3/Self-serve)",
+            attendees: [
+              "Charter Agent (OpellaGPT)",
+              "Lead AI Catalyst (Data & AI Hub)",
+              "Procurement Finance BP",
+              "ORAI Compliance Officer",
+            ],
+            keyChecks: [
+              "Verified manual processing baseline benchmark against operational spend.",
+              `Confirmed target user reach (${currentUseCase.intakeAnswers?.targetUserCount || 1800} users across key market clusters).`,
+              "Screened Responsible AI boundaries under EU AI Act rules (Medium risk, no patient data).",
+            ],
+            consequence: "Drafted favorable triage recommendation and routed dossier to deciding authority.",
+          },
+          step3_decision: {
+            date: "20 Jun 2026 · 11:00 CET",
+            verdict: "APPROVED",
+            decidedBy: "OpellaGPT Charter Agent & AI Catalyst Lead",
+            forum: "Front Door Charter Triage",
+            reasons: [
+              "Reason X: Strategic Mandate — Problem aligns directly with Butterfly Big Bet 6 (Touchless S2P Process Reshapes).",
+              `Reason Y: Value Sizing — Expected return (${currentUseCase.roiEstimate || "€3.8M savings"}) clears the >€1M T1 threshold with 11-month payback.`,
+              "Reason Z: Risk Controls — ORAI boundary secured within private Azure GenAI boundary with mandatory human review for orders >€50k.",
+            ],
+          },
+          step4_consequence: {
+            date: "20 Jun 2026 · 11:05 CET",
+            actor: "Transformation Office PMO",
+            actionTitle: "Downstream Actions Triggered ('Which Made This Happen')",
+            actionsUnlocked: [
+              `🚀 Classified initiative into ${tier} Speed Lane with monthly SteerCo governance oversight.`,
+              "🚀 Automatically unlocked Gate G2 Feasibility dossier in the Opella AmplifAI portal.",
+              "🚀 Assigned dedicated Hub Forward Deployed Engineer (1.0 FTE) and Data Architect (0.5 FTE).",
+              `🚀 Initialized tracking code BUTTERFLY-${currentUseCase.id} in Planisware corporate ledger.`,
+            ],
+          },
+        };
+
+      case "G2":
+        return {
+          headline: `Gate G2 Action Narrative: Feasibility Validation & Financial Baseline Sign-off`,
+          step1_upload: {
+            date: "28 Jun 2026 · 14:00 CET",
+            actor: `${owner} & Data Architecture Squad`,
+            action: "Uploaded Feasibility Dossier & Architectural Decision Record",
+            docs: isGide
+              ? ["GIDE_Architecture_ADR_v2.docx", "Finance_Baseline_Signoff_Signed.pdf", "Data_Cleanliness_Audit.xlsx"]
+              : ["Architecture_Decision_Record_ADR.pdf", "Finance_Baseline_Signoff.pdf"],
+            summary: "Grounded the financial baseline cost (€142/PO) and verified SAP S/4HANA OData API bi-directional connectivity.",
+            consequence: "Convened Digital Design Authority technical panel and Finance Business Partner validation.",
+          },
+          step2_meeting: {
+            date: "04 Jul 2026 · 10:30 CET",
+            meetingName: "Digital Design Authority (DDA) Technical Review #14",
+            forum: "Digital Design Authority & Stream Approvers",
+            attendees: [
+              "Thomas Rouckout (TO Lead)",
+              "Enterprise AI Architect (Data & AI Hub)",
+              "Senior Finance BP",
+              "CISO Cyber Security Specialist",
+            ],
+            keyChecks: [
+              "Validated 2-year historical purchase order dataset cleaned in Databricks gold layer.",
+              "Explicit Process Redesign verified: YES (removes 4 manual approval hops).",
+              "Confirmed zero public LLM training; private tenant endpoint verified.",
+            ],
+            consequence: "Issued formal technical endorsement and signed off financial baseline model.",
+          },
+          step3_decision: {
+            date: "08 Jul 2026 · 15:30 CET",
+            verdict: "APPROVED",
+            decidedBy: "Digital Design Authority & Finance BP",
+            forum: "Digital Design Authority (DDA)",
+            reasons: [
+              "Reason X: Architectural Integrity — Azure GenAI Private Link and SAP OData APIs proven with synthetic payload.",
+              "Reason Y: Financial Grounding — Finance BP certified €142 baseline cost per manual PO across 240,000 annual transactions.",
+              "Reason Z: Process Transformation — Confirmed buyer role shift from manual transactional entry to high-value supplier negotiation.",
+            ],
+          },
+          step4_consequence: {
+            date: "08 Jul 2026 · 15:35 CET",
+            actor: "Transformation SteerCo Secretariat",
+            actionTitle: "Downstream Actions Triggered ('Which Made This Happen')",
+            actionsUnlocked: [
+              "🚀 Unlocked Gate G3 Enterprise Prioritisation slot on the upcoming SteerCo executive agenda.",
+              "🚀 Mandated Spain and France pilot wave before broader European rollout.",
+              "🚀 Reserved dedicated semantic layer architect in Data & AI Hub for taxonomy mapping.",
+            ],
+          },
+        };
+
+      case "G3":
+        return {
+          headline: `Gate G3 Action Narrative: Enterprise Prioritisation & Hub Capacity Allocation`,
+          step1_upload: {
+            date: "15 Jul 2026 · 10:00 CET",
+            actor: "Transformation Office Stream Lead",
+            action: "Uploaded Prioritisation Dossier & Capacity Request",
+            docs: ["BigBet6_Prioritisation_Matrix.xlsx", "Hub_Resource_Allocation_Request.pdf"],
+            summary: "Submitted VCP alignment scoring (92/100) and requested 1.0 FDE + 0.5 Data Architect capacity for Q3/Q4.",
+            consequence: "Placed initiative at top of agenda for Transformation SteerCo monthly prioritization.",
+          },
+          step2_meeting: {
+            date: "20 Jul 2026 · 16:00 CET",
+            meetingName: "Transformation SteerCo Executive Session",
+            forum: "Transformation SteerCo (Monthly) / AI Portfolio Board",
+            attendees: [
+              "Gentiane Barret (CDO / SteerCo Lead)",
+              "Marc Lefebvre (CPO / ExCo Bet Sponsor)",
+              "Chief Financial Officer Representative",
+              "Head of Transformation Office",
+            ],
+            keyChecks: [
+              "Reviewed capacity envelope split (60% Big Bets allocation confirmed).",
+              "Verified business resource commitment (Sarah Chen named at 80% time).",
+              "Evaluated interdependencies with Opella IQ product taxonomy release.",
+            ],
+            consequence: "Confirmed priority slotting and authorized Hub staffing commitment.",
+          },
+          step3_decision: {
+            date: "22 Jul 2026 · 16:00 CET",
+            verdict: "APPROVED",
+            decidedBy: "Transformation SteerCo (CDO & ExCo Sponsors)",
+            forum: "Transformation SteerCo (Monthly)",
+            reasons: [
+              "Reason X: Strategic Ranking — Ranked #1 in Big Bet 6 pipeline with 92/100 VCP aggregate score.",
+              "Reason Y: Executive Commitment — CPO committed dedicated business leadership and full regional sponsorship.",
+              "Reason Z: Hub Capacity Fit — Delivery slots allocated from the 60% strategic Big Bet quarterly pool.",
+            ],
+          },
+          step4_consequence: {
+            date: "22 Jul 2026 · 16:10 CET",
+            actor: "Data & AI Hub Resource Manager",
+            actionTitle: "Downstream Actions Triggered ('Which Made This Happen')",
+            actionsUnlocked: [
+              "🚀 Formally booked 1 Forward Deployed Engineer (1.0 FTE) and 1 Data Architect (0.5 FTE) in Hub sprint schedule.",
+              "🚀 Advanced initiative to Gate G4 to finalize Delivery Mode and release Tranche 1 budget.",
+              "🚀 Initialized corporate PMO milestone tracking in Planisware.",
+            ],
+          },
+        };
+
+      case "G4":
+        return {
+          headline: `Gate G4 Action Narrative: Mode Lock & Tranche 1 Budget Unlock (GO BUILD)`,
+          step1_upload: {
+            date: "29 Jul 2026 · 11:00 CET",
+            actor: `${owner} & Lead AI Catalyst`,
+            action: "Uploaded Sourcing Mode Dossier & MVP Sprint Plan",
+            docs: ["GIDE_Sprint_Backlog_Jira.pdf", "ProcurLab_Training_Plan.pdf", "Make_vs_Buy_Assessment.docx"],
+            summary: `Proposed ${mode} joint squad delivery model, 8-week agile sprint backlog, and requested Tranche 1 MVP budget.`,
+            consequence: "Convened Design Authority mode lock panel and triggered budget release approval.",
+          },
+          step2_meeting: {
+            date: "03 Aug 2026 · 14:00 CET",
+            meetingName: "Design Authority & Mode Lock Committee",
+            forum: "Design Authority (Weekly) + Tier Approver",
+            attendees: [
+              "Design Authority Chair",
+              "Marc Lefebvre (CPO)",
+              "Data & AI Hub Delivery Lead",
+              "Transformation Office Change Lead",
+            ],
+            keyChecks: [
+              "Evaluated Make vs Buy: custom agent orchestration on Azure GenAI preferred over rigid SaaS for core ERP write-back.",
+              "Audited squad composition: tri-partite staffing verified across Hub, TO, and Business Function.",
+              "Reviewed change enablement: ProcurLab prompt coaching clinics scheduled for pilot buyers.",
+            ],
+            consequence: "Locked delivery mode and issued official GO BUILD authorization.",
+          },
+          step3_decision: {
+            date: "05 Aug 2026 · 17:00 CET",
+            verdict: "APPROVED (GO BUILD)",
+            decidedBy: "Design Authority & CPO / CDO on Portfolio Board",
+            forum: "AI Portfolio Board / Design Authority",
+            reasons: [
+              "Reason X: Sourcing Fit — Mode 2 ('Do it with me') ratified as optimal joint model: Hub engineers build with Function buyers.",
+              "Reason Y: Budget Governance — Tranche 1 MVP budget (€380k) approved with strict 8-week sprint expenditure envelope.",
+              "Reason Z: Adoption Pathway — ProcurLab training curriculum validated to ensure immediate buyer engagement from Day 1.",
+            ],
+          },
+          step4_consequence: {
+            date: "05 Aug 2026 · 17:05 CET",
+            actor: "Corporate Finance & Hub Agile PMO",
+            actionTitle: "Downstream Actions Triggered ('Which Made This Happen')",
+            actionsUnlocked: [
+              "🚀 Issued official GO BUILD verdict: launched 8-week MVP sprint with target go-live October 2026.",
+              "🚀 Unlocked Tranche 1 capital funding (€380,000) into dedicated agile sprint cost center.",
+              "🚀 Mobilized full tri-partite squad (Hub FDE, TO Change Lead, Business PO & Certified Builders).",
+            ],
+          },
+        };
+
+      case "G5":
+        return {
+          headline: `Gate G5 Action Narrative: Pre-Scale Validation (MVP Results & Scale Unlock)`,
+          step1_upload: {
+            date: "10 Nov 2026 · 16:00 CET",
+            actor: `${owner} (PO) & MVP Delivery Squad`,
+            action: "Uploaded Pilot MVP Results & 5-Pillar HR Workforce Scan",
+            docs: [
+              "GIDE_MVP_Pilot_Results_Report.pdf",
+              "5_Pillar_Workforce_Impact_Scan.pdf",
+              "Global_Rollout_Architecture.pdf",
+            ],
+            summary: "Documented 28h turnaround (vs 7.2d baseline) across 420 live POs in France & Spain and requested Tranche 2 scaling budget.",
+            consequence: "Convened Transformation SteerCo Scale Review Committee for formal Go/No-Go decision.",
+          },
+          step2_meeting: {
+            date: "16 Nov 2026 · 15:00 CET",
+            meetingName: "Transformation SteerCo Scale Review Committee",
+            forum: "Transformation SteerCo Scale Committee",
+            attendees: [
+              "Transformation SteerCo Members",
+              "Marc Lefebvre (CPO)",
+              "HR / P&C Workforce Transformation Counterpart",
+              "Hub Lead MLOps Engineer",
+            ],
+            keyChecks: [
+              "Audited pilot KPIs: 94.2% buyer acceptance rate, 28h turnaround time, €280k actual spend vs €380k budget.",
+              "Scanned 5-pillar HR workforce impact: 62% task substitution, 45 buyers trained, zero staff redundancy.",
+              "Inspected enterprise scaling architecture for multi-region rollout (EULA, NA, AMEA).",
+            ],
+            consequence: "SteerCo formulated favorable pre-scale recommendation with phased market release.",
+          },
+          step3_decision: {
+            date: "18 Nov 2026 · 14:30 CET",
+            verdict: isGide ? "IN_REVIEW" : "APPROVED",
+            decidedBy: "Transformation SteerCo Scale Committee",
+            forum: "Transformation SteerCo Scale Committee",
+            reasons: [
+              "Reason X: Performance Proven — 420 live POs executed in Spain and France with 94.2% accuracy and 28h turnaround.",
+              "Reason Y: Capital Efficiency — MVP delivered for €280k (€100k under Tranche 1 ceiling), proving technical viability.",
+              "Reason Z: Responsible Workforce Impact — 5-pillar workforce scan validated with constructive upskilling across buyer teams.",
+            ],
+          },
+          step4_consequence: {
+            date: "18 Nov 2026 · 14:35 CET",
+            actor: "Global Rollout PMO",
+            actionTitle: "Downstream Actions Triggered ('Which Made This Happen')",
+            actionsUnlocked: [
+              "🚀 Authorized immediate enterprise scale deployment in Spain and France markets.",
+              "🚀 Scheduled release of Tranche 2 scaling capital (€850,000) for global cluster rollout (1,800 users).",
+              "🚀 Formulated Workday integration synchronization milestone for NA launch wave in Q1 2027.",
+            ],
+          },
+        };
+
+      case "G6":
+      default:
+        return {
+          headline: `Gate G6 Action Narrative: Maintain & Run Annual Value Realization Audit`,
+          step1_upload: {
+            date: "15 Feb 2027 · 09:00 CET",
+            actor: `${owner} (Run Owner) & Finance Business Partner`,
+            action: "Uploaded Annual Value Realization Audit Dossier",
+            docs: ["Annual_Value_Realization_Audit.pdf", "Cloud_FinOps_Token_Report.pdf", "ORAI_Drift_Audit.pdf"],
+            summary: "Submitted audited P&L savings (€3.8M net EBITDA benefit) and ongoing token consumption monitoring under €4,500/mo cap.",
+            consequence: "Convened Scale & Adoption Committee for permanent BAU Run certification.",
+          },
+          step2_meeting: {
+            date: "20 Apr 2027 · 11:00 CET",
+            meetingName: "Scale & Adoption Committee Annual Review",
+            forum: "Scale & Adoption Committee (Quarterly)",
+            attendees: [
+              "Corporate Finance Audit Lead",
+              "Sarah Chen (Run Owner)",
+              "Cloud FinOps Architect",
+              "Enterprise Risk & ORAI Lead",
+            ],
+            keyChecks: [
+              "Audited realized EBITDA savings against corporate value ledger: €3.8M confirmed.",
+              "Monitored live token opex: actual €3,900/month vs €4,500 monthly cap.",
+              "Checked model drift and bias metrics over 12 months with zero compliance violations.",
+            ],
+            consequence: "Certified initiative for permanent BAU Run operations.",
+          },
+          step3_decision: {
+            date: "22 Apr 2027 · 14:00 CET",
+            verdict: "APPROVED",
+            decidedBy: "Finance Audit Committee & Run Sponsor",
+            forum: "Scale & Adoption Committee",
+            reasons: [
+              "Reason X: Value Verified — Audited net EBITDA savings of €3.8M confirmed in official P&L ledger.",
+              "Reason Y: Operational Stability — 76.4% touchless PO rate sustained across 1,800 active buyer user accounts.",
+              "Reason Z: FinOps & Compliance — Token opex remains strictly within budgetary cap with zero model drift.",
+            ],
+          },
+          step4_consequence: {
+            date: "22 Apr 2027 · 14:05 CET",
+            actor: "Global AI Platform Operations",
+            actionTitle: "Downstream Actions Triggered ('Which Made This Happen')",
+            actionsUnlocked: [
+              "🚀 Completed formal handover from transformation project to permanent BAU Run operations.",
+              "🚀 Signed off ongoing run SLA and established bi-annual value realization audit cadence.",
+              "🚀 Published BOWIE procurement agent architecture as reusable Opella enterprise template.",
+            ],
+          },
+        };
+    }
+  };
+
+  const narrative = getChronologicalNarrative(activeGateId);
   const submission = getSubmissionDossier(activeGateId);
   const decision = getDecisionRecord(activeGateId);
 
@@ -601,6 +934,210 @@ export const HistoryView: React.FC<HistoryViewProps> = ({
             <div className="bg-white px-3 py-1.5 rounded-lg border border-gray-200">
               <span className="text-gray-400 text-[10px] block">Decision SLA</span>
               <span className="font-bold text-emerald-700">{currentGateDetail.sla}</span>
+            </div>
+          </div>
+        </div>
+
+        {/* ================= CHRONOLOGICAL AUDIT TRAIL & ACTION NARRATIVE ================= */}
+        <div className="p-6 bg-gradient-to-b from-emerald-50/50 via-white to-gray-50/40 border-b border-opella-border space-y-6">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+            <div>
+              <span className="text-[10px] font-black uppercase tracking-wider text-emerald-800 bg-emerald-100 px-2.5 py-0.5 rounded-full">
+                Chronological Narrative Audit Trail
+              </span>
+              <h4 className="text-base font-black text-opella-forest mt-1 flex items-center gap-2">
+                <History className="w-4 h-4 text-emerald-700" />
+                {narrative.headline}
+              </h4>
+              <p className="text-xs text-gray-600 mt-0.5">
+                Exact sequential audit trail: "This action was taken on date → which made this happen"
+              </p>
+            </div>
+            <span className="text-xs font-mono font-bold text-gray-500 bg-white px-2.5 py-1 rounded-lg border border-gray-200 self-start sm:self-auto">
+              Gate {activeGateId} Event Stream
+            </span>
+          </div>
+
+          {/* 4 Interactive Sequential Milestones */}
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 relative">
+            {/* MILESTONE 1: UPLOAD */}
+            <div className="p-4 rounded-xl border border-blue-200 bg-blue-50/50 space-y-3 relative flex flex-col justify-between shadow-2xs">
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded bg-blue-600 text-white">
+                    Step 1 · Upload
+                  </span>
+                  <span className="text-[11px] font-mono font-semibold text-blue-900">
+                    {narrative.step1_upload.date}
+                  </span>
+                </div>
+                <div className="font-bold text-xs text-gray-900">
+                  {narrative.step1_upload.action}
+                </div>
+                <div className="text-[11px] text-gray-600">
+                  By: <strong>{narrative.step1_upload.actor}</strong>
+                </div>
+                <p className="text-[11px] text-gray-700 leading-snug">
+                  {narrative.step1_upload.summary}
+                </p>
+
+                {/* Uploaded Docs Badges */}
+                <div className="space-y-1 pt-1">
+                  <div className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">
+                    Uploaded These Docs:
+                  </div>
+                  <div className="flex flex-wrap gap-1">
+                    {narrative.step1_upload.docs.map((doc, idx) => (
+                      <span
+                        key={idx}
+                        className="inline-flex items-center gap-1 text-[10px] font-medium bg-white px-2 py-0.5 rounded border border-blue-200 text-blue-900 truncate max-w-full"
+                        title={doc}
+                      >
+                        <FileText className="w-3 h-3 text-blue-600 shrink-0" />
+                        <span className="truncate">{doc}</span>
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              <div className="text-[10px] font-medium text-blue-900 pt-2 border-t border-blue-200/60">
+                <strong>Triggered:</strong> {narrative.step1_upload.consequence}
+              </div>
+            </div>
+
+            {/* MILESTONE 2: MEETING REVIEW */}
+            <div className="p-4 rounded-xl border border-purple-200 bg-purple-50/50 space-y-3 relative flex flex-col justify-between shadow-2xs">
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded bg-purple-700 text-white">
+                    Step 2 · Meeting Review
+                  </span>
+                  <span className="text-[11px] font-mono font-semibold text-purple-900">
+                    {narrative.step2_meeting.date}
+                  </span>
+                </div>
+                <div className="font-bold text-xs text-gray-900">
+                  Reviewed in This Meeting:
+                </div>
+                <div className="text-xs font-bold text-purple-950">
+                  {narrative.step2_meeting.meetingName}
+                </div>
+                <div className="text-[11px] text-gray-500">
+                  Forum: <em>{narrative.step2_meeting.forum}</em>
+                </div>
+
+                {/* Attendees */}
+                <div className="space-y-1 pt-1">
+                  <div className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">
+                    Reviewers Present:
+                  </div>
+                  <div className="text-[10px] text-gray-700 space-y-0.5">
+                    {narrative.step2_meeting.attendees.map((att, idx) => (
+                      <div key={idx} className="flex items-center gap-1">
+                        <Users className="w-3 h-3 text-purple-600 shrink-0" />
+                        <span className="truncate">{att}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Key Checks */}
+                <div className="space-y-1 pt-1">
+                  <div className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">
+                    What Was Scrutinized:
+                  </div>
+                  <ul className="text-[10px] text-gray-600 space-y-1 list-disc pl-3">
+                    {narrative.step2_meeting.keyChecks.map((kc, idx) => (
+                      <li key={idx} className="leading-tight">{kc}</li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+
+              <div className="text-[10px] font-medium text-purple-900 pt-2 border-t border-purple-200/60">
+                <strong>Result:</strong> {narrative.step2_meeting.consequence}
+              </div>
+            </div>
+
+            {/* MILESTONE 3: DECISION (DECIDED TO APPROVE BECAUSE X Y) */}
+            <div className="p-4 rounded-xl border-2 border-emerald-500 bg-emerald-50/70 space-y-3 relative flex flex-col justify-between shadow-2xs">
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded bg-emerald-700 text-white">
+                    Step 3 · Decision
+                  </span>
+                  <span className="text-[11px] font-mono font-semibold text-emerald-900">
+                    {narrative.step3_decision.date}
+                  </span>
+                </div>
+                <div className="flex items-center gap-1.5 font-black text-sm text-emerald-950">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                  Verdict: {narrative.step3_decision.verdict}
+                </div>
+                <div className="text-[11px] text-gray-600">
+                  By: <strong>{narrative.step3_decision.decidedBy}</strong> via <em>{narrative.step3_decision.forum}</em>
+                </div>
+
+                {/* DECIDED TO APPROVE BECAUSE X Y */}
+                <div className="space-y-1.5 pt-1.5">
+                  <div className="text-[10px] font-bold text-emerald-800 uppercase tracking-wider">
+                    Decided to Approve Because:
+                  </div>
+                  <div className="space-y-1">
+                    {narrative.step3_decision.reasons.map((reason, idx) => (
+                      <div
+                        key={idx}
+                        className="p-1.5 rounded bg-white/90 border border-emerald-200 text-[10.5px] text-emerald-950 font-medium leading-tight"
+                      >
+                        {reason}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              <div className="text-[10px] font-bold text-emerald-800 pt-2 border-t border-emerald-200/60 flex items-center gap-1">
+                <Check className="w-3.5 h-3.5 text-emerald-600" />
+                Officially Approved & Signed Off
+              </div>
+            </div>
+
+            {/* MILESTONE 4: CONSEQUENCE (WHICH MADE THIS HAPPEN) */}
+            <div className="p-4 rounded-xl border-2 border-amber-400 bg-amber-50/60 space-y-3 relative flex flex-col justify-between shadow-2xs">
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded bg-amber-600 text-white">
+                    Step 4 · Consequence
+                  </span>
+                  <span className="text-[11px] font-mono font-semibold text-amber-900">
+                    {narrative.step4_consequence.date}
+                  </span>
+                </div>
+                <div className="font-bold text-xs text-amber-950 uppercase tracking-wider flex items-center gap-1">
+                  <Rocket className="w-3.5 h-3.5 text-amber-600" />
+                  Which Made This Happen:
+                </div>
+                <div className="text-[11px] text-gray-600">
+                  Executed by: <strong>{narrative.step4_consequence.actor}</strong>
+                </div>
+
+                {/* Downstream Actions Unlocked */}
+                <div className="space-y-1.5 pt-1">
+                  {narrative.step4_consequence.actionsUnlocked.map((act, idx) => (
+                    <div
+                      key={idx}
+                      className="p-2 rounded-lg bg-white border border-amber-200 text-[11px] text-gray-900 font-semibold shadow-2xs leading-snug"
+                    >
+                      {act}
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="text-[10px] font-bold text-amber-800 pt-2 border-t border-amber-200/60">
+                Actionable Pipeline Progression
+              </div>
             </div>
           </div>
         </div>

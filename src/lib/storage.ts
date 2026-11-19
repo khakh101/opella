@@ -168,6 +168,36 @@ export async function updateGateStatus(
   return await saveUseCase(updatedCase);
 }
 
+export async function deleteUseCase(id: string): Promise<boolean> {
+  // 1. Supabase deletion
+  if (isSupabaseConfigured && supabase) {
+    try {
+      const { error } = await supabase.from("opella_use_cases").delete().eq("id", id);
+      if (error) {
+        console.warn("Supabase delete returned error:", error);
+      }
+    } catch (err) {
+      console.error("Supabase delete failed:", err);
+    }
+  }
+
+  // 2. localStorage persistence
+  if (typeof window !== "undefined") {
+    try {
+      const stored = localStorage.getItem(STORAGE_KEY);
+      if (stored) {
+        const list: UseCase[] = JSON.parse(stored);
+        const filtered = list.filter((item) => item.id !== id);
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(filtered));
+      }
+    } catch (e) {
+      console.error("Local storage delete error:", e);
+    }
+  }
+
+  return true;
+}
+
 export async function resetToDefaults(): Promise<UseCase[]> {
   if (typeof window !== "undefined") {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(INITIAL_USE_CASES));

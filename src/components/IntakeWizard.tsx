@@ -376,6 +376,225 @@ export const IntakeWizard: React.FC<IntakeWizardProps> = ({
       {/* ================= STEP 1: THE 4 QUESTIONS ASSESSMENT ================= */}
       {step === 1 && (
         <div className="bg-white rounded-2xl p-7 shadow-sm border border-opella-border space-y-7">
+          {/* 📍 YOU ARE HERE & REQUIRED INFORMATION CHECKLIST */}
+          <div className="bg-gradient-to-r from-emerald-950 via-opella-forest to-emerald-900 rounded-2xl p-6 text-white shadow-md space-y-5">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-white/15 pb-4">
+              <div className="flex items-center gap-3">
+                <span className="p-2.5 rounded-xl bg-amber-400 text-gray-950 font-black text-xs sm:text-sm flex items-center gap-1.5 shadow-sm">
+                  <span>📍</span>
+                  <span>YOU ARE HERE</span>
+                </span>
+                <div>
+                  <div className="text-[11px] font-mono uppercase tracking-wider text-emerald-300 font-bold">
+                    Phase 1: Framing · Gate G1 Candidate
+                  </div>
+                  <h3 className="text-lg font-black text-white">
+                    Front Door Intake & 4-Question Playbook Assessment
+                  </h3>
+                </div>
+              </div>
+              <div className="self-start sm:self-auto">
+                <span
+                  className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold ${
+                    isStep1Valid
+                      ? "bg-emerald-400/20 text-emerald-200 border border-emerald-400/40"
+                      : "bg-amber-400/20 text-amber-200 border border-amber-400/40"
+                  }`}
+                >
+                  {isStep1Valid ? (
+                    <>
+                      <Check className="w-3.5 h-3.5 text-emerald-400" /> All Mandatory Information Collected
+                    </>
+                  ) : (
+                    <>
+                      <Clock className="w-3.5 h-3.5 text-amber-300" /> Information Collection in Progress
+                    </>
+                  )}
+                </span>
+              </div>
+            </div>
+
+            {/* Checklist: What we need you to collect before continuing */}
+            <div className="space-y-3">
+              <div className="flex items-center justify-between text-xs">
+                <span className="font-bold uppercase tracking-wider text-emerald-200 flex items-center gap-1.5">
+                  <FileText className="w-4 h-4 text-amber-400" />
+                  We need you to collect the following information before continuing:
+                </span>
+                <span className="text-[11px] text-emerald-300 font-mono font-semibold">
+                  {[
+                    Boolean(answers.initiativeTitle?.trim()),
+                    Boolean(answers.description?.trim()),
+                    Boolean(answers.targetUserGroupDescription?.trim()),
+                    true,
+                    true,
+                  ].filter(Boolean).length}{" "}
+                  / 5 required items collected
+                </span>
+              </div>
+
+              {/* Live Status Cards */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5 text-xs">
+                {/* 1. Initiative Title */}
+                <div
+                  className={`p-3 rounded-xl border transition-all ${
+                    answers.initiativeTitle?.trim()
+                      ? "bg-white/10 border-emerald-400/50 text-white"
+                      : "bg-white/5 border-white/10 text-white/70"
+                  }`}
+                >
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="font-bold text-[11px] uppercase tracking-wider text-emerald-300">
+                      1. Title *
+                    </span>
+                    {answers.initiativeTitle?.trim() ? (
+                      <span className="text-emerald-400 text-[10px] font-bold">✓ Collected</span>
+                    ) : (
+                      <span className="text-rose-300 text-[10px] font-bold">● Mandatory</span>
+                    )}
+                  </div>
+                  <p className="text-[11px] text-white/80 truncate">
+                    {answers.initiativeTitle || "Name of initiative or AI agent"}
+                  </p>
+                </div>
+
+                {/* 2. Description */}
+                <div
+                  className={`p-3 rounded-xl border transition-all ${
+                    answers.description?.trim()
+                      ? "bg-white/10 border-emerald-400/50 text-white"
+                      : "bg-white/5 border-white/10 text-white/70"
+                  }`}
+                >
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="font-bold text-[11px] uppercase tracking-wider text-emerald-300">
+                      2. Description *
+                    </span>
+                    {answers.description?.trim() ? (
+                      <span className="text-emerald-400 text-[10px] font-bold">✓ Collected</span>
+                    ) : (
+                      <span className="text-rose-300 text-[10px] font-bold">● Mandatory</span>
+                    )}
+                  </div>
+                  <p className="text-[11px] text-white/80 truncate">
+                    {answers.description || "Business context & intended AI solution"}
+                  </p>
+                </div>
+
+                {/* 3. Who are the users */}
+                <div
+                  className={`p-3 rounded-xl border transition-all ${
+                    answers.targetUserGroupDescription?.trim()
+                      ? "bg-white/10 border-emerald-400/50 text-white"
+                      : "bg-white/5 border-white/10 text-white/70"
+                  }`}
+                >
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="font-bold text-[11px] uppercase tracking-wider text-emerald-300">
+                      3. Target Users *
+                    </span>
+                    {answers.targetUserGroupDescription?.trim() ? (
+                      <span className="text-emerald-400 text-[10px] font-bold">✓ Collected</span>
+                    ) : (
+                      <span className="text-rose-300 text-[10px] font-bold">● Mandatory</span>
+                    )}
+                  </div>
+                  <p className="text-[11px] text-white/80 truncate">
+                    {answers.targetUserGroupDescription || "Roles, user count & locations"}
+                  </p>
+                </div>
+
+                {/* 4. Playbook 4 Questions */}
+                <div className="p-3 rounded-xl border bg-white/10 border-emerald-400/50 text-white">
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="font-bold text-[11px] uppercase tracking-wider text-emerald-300">
+                      4. Playbook 4 Questions *
+                    </span>
+                    <span className="text-emerald-400 text-[10px] font-bold">✓ Ready</span>
+                  </div>
+                  <p className="text-[11px] text-white/80">
+                    Determines Tier (T1 / T2 / T3 / Self-Serve)
+                  </p>
+                </div>
+
+                {/* 5. ORAI Screening */}
+                <div className="p-3 rounded-xl border bg-white/10 border-emerald-400/50 text-white">
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="font-bold text-[11px] uppercase tracking-wider text-emerald-300">
+                      5. ORAI Risk Checks *
+                    </span>
+                    <span className="text-emerald-400 text-[10px] font-bold">✓ Ready</span>
+                  </div>
+                  <p className="text-[11px] text-white/80">
+                    Evaluates safety, patient data & compliance
+                  </p>
+                </div>
+
+                {/* 6. Estimated Value (Optional) */}
+                <div
+                  className={`p-3 rounded-xl border ${
+                    answers.estimatedValueDescription
+                      ? "bg-white/10 border-emerald-400/50 text-white"
+                      : "bg-white/5 border-white/10 text-white/60"
+                  }`}
+                >
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="font-bold text-[11px] uppercase tracking-wider text-white/80">
+                      6. Estimated Value
+                    </span>
+                    <span className="text-white/60 text-[10px] font-normal">Optional</span>
+                  </div>
+                  <p className="text-[11px] text-white/70 truncate">
+                    {answers.estimatedValueDescription || "ROI / Savings / Hours Freed"}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* TEAMS WITH YOU: Profiles accompanying the user in Step 1 */}
+            <div className="pt-3 border-t border-white/15">
+              <div className="text-[11px] uppercase tracking-wider font-bold text-emerald-300 mb-2.5 flex items-center gap-1.5">
+                <Users className="w-3.5 h-3.5 text-amber-400" />
+                Teams & Profiles Accompanying You in This Intake Phase:
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 text-xs">
+                <div className="p-2.5 rounded-lg bg-black/20 border border-white/10 flex items-center gap-2.5">
+                  <div className="w-8 h-8 rounded-full bg-blue-500/30 text-blue-300 font-bold flex items-center justify-center shrink-0 border border-blue-400/30 text-xs">
+                    Hub
+                  </div>
+                  <div>
+                    <div className="font-bold text-white text-[11px]">Front Door AI Catalyst</div>
+                    <div className="text-[10px] text-white/70">
+                      Data & AI Hub (0.2 FTE) · Intake guidance & registry check
+                    </div>
+                  </div>
+                </div>
+                <div className="p-2.5 rounded-lg bg-black/20 border border-white/10 flex items-center gap-2.5">
+                  <div className="w-8 h-8 rounded-full bg-purple-500/30 text-purple-300 font-bold flex items-center justify-center shrink-0 border border-purple-400/30 text-xs">
+                    TO
+                  </div>
+                  <div>
+                    <div className="font-bold text-white text-[11px]">Portfolio Intake Lead</div>
+                    <div className="text-[10px] text-white/70">
+                      Transformation Office (0.1 FTE) · Speed lane routing & SLA
+                    </div>
+                  </div>
+                </div>
+                <div className="p-2.5 rounded-lg bg-black/20 border border-white/10 flex items-center gap-2.5">
+                  <div className="w-8 h-8 rounded-full bg-emerald-500/30 text-emerald-300 font-bold flex items-center justify-center shrink-0 border border-emerald-400/30 text-xs">
+                    Fn
+                  </div>
+                  <div>
+                    <div className="font-bold text-white text-[11px]">Function Domain Lead</div>
+                    <div className="text-[10px] text-white/70">
+                      Business Function (0.3 FTE) · Friction context & user reach
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
           <div className="border-b border-opella-border pb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div>
               <h2 className="text-xl font-bold text-opella-forest flex items-center gap-2">
@@ -949,6 +1168,37 @@ export const IntakeWizard: React.FC<IntakeWizardProps> = ({
             )}
           </div>
 
+          {/* USER JOURNEY COMPANIONS: TEAMS WITH YOU AT TRIAGE */}
+          <div className="p-4 rounded-xl bg-gray-50 border border-gray-200 space-y-3">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-bold uppercase tracking-wider text-gray-700 flex items-center gap-1.5">
+                <Users className="w-4 h-4 text-emerald-700" />
+                Your Triage & Sizing Governance Squad (Gate G1 Evaluation):
+              </span>
+              <span className="text-[11px] font-semibold text-gray-500">
+                Playbook Comitology Relay
+              </span>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-4 gap-2.5 text-xs">
+              <div className="p-2.5 rounded-lg bg-white border border-gray-200">
+                <div className="font-bold text-gray-900">OpellaGPT Charter Agent</div>
+                <div className="text-[10px] text-gray-500">AI Front Door · Rule triage</div>
+              </div>
+              <div className="p-2.5 rounded-lg bg-white border border-gray-200">
+                <div className="font-bold text-gray-900">Portfolio Secretariat</div>
+                <div className="text-[10px] text-gray-500">Transformation Office · SLA & Backlog</div>
+              </div>
+              <div className="p-2.5 rounded-lg bg-white border border-gray-200">
+                <div className="font-bold text-gray-900">Enterprise AI Architect</div>
+                <div className="text-[10px] text-gray-500">Data & AI Hub · Tech sizing</div>
+              </div>
+              <div className="p-2.5 rounded-lg bg-white border border-gray-200">
+                <div className="font-bold text-gray-900">Function Business Sponsor</div>
+                <div className="text-[10px] text-gray-500">Business Unit · Value priority</div>
+              </div>
+            </div>
+          </div>
+
           <div className="flex justify-between pt-4 border-t border-opella-border">
             <button
               onClick={() => setStep(1)}
@@ -987,6 +1237,37 @@ export const IntakeWizard: React.FC<IntakeWizardProps> = ({
               </p>
             </div>
             <FileText className="w-8 h-8 text-gray-300 hidden sm:block" />
+          </div>
+
+          {/* USER JOURNEY COMPANIONS: TEAMS WITH YOU IN BUSINESS CASE FORMULATION */}
+          <div className="p-4 rounded-xl bg-gray-50 border border-gray-200 space-y-3">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-bold uppercase tracking-wider text-gray-700 flex items-center gap-1.5">
+                <Users className="w-4 h-4 text-emerald-700" />
+                Working Group Accompanying Your Business Case Formulation:
+              </span>
+              <span className="text-[11px] font-semibold text-gray-500">
+                Four-in-a-Box Working Group
+              </span>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-4 gap-2.5 text-xs">
+              <div className="p-2.5 rounded-lg bg-white border border-gray-200">
+                <div className="font-bold text-gray-900">Finance Business Partner</div>
+                <div className="text-[10px] text-gray-500">Finance · Baseline validation (€/unit)</div>
+              </div>
+              <div className="p-2.5 rounded-lg bg-white border border-gray-200">
+                <div className="font-bold text-gray-900">Value Realization Lead</div>
+                <div className="text-[10px] text-gray-500">Transformation Office · VCP scorecard</div>
+              </div>
+              <div className="p-2.5 rounded-lg bg-white border border-gray-200">
+                <div className="font-bold text-gray-900">Data & AI Architect</div>
+                <div className="text-[10px] text-gray-500">Data & AI Hub · Enabler costs & tokens</div>
+              </div>
+              <div className="p-2.5 rounded-lg bg-white border border-gray-200">
+                <div className="font-bold text-gray-900">Business Product Owner</div>
+                <div className="text-[10px] text-gray-500">Business Function · Process owner</div>
+              </div>
+            </div>
           </div>
 
           {/* DYNAMIC FORMS BASED ON TIER */}

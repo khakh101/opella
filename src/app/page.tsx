@@ -8,7 +8,7 @@ import { PortfolioView } from "@/components/PortfolioView";
 import { HistoryView } from "@/components/HistoryView";
 import { OperatingModelMap } from "@/components/OperatingModelMap";
 import { UseCase } from "@/types";
-import { fetchUseCases } from "@/lib/storage";
+import { fetchUseCases, deleteUseCase } from "@/lib/storage";
 import { INITIAL_USE_CASES } from "@/lib/mockData";
 
 export default function Home() {
@@ -49,6 +49,17 @@ export default function Home() {
     setUseCases((prev) =>
       prev.map((uc) => (uc.id === updatedCase.id ? updatedCase : uc))
     );
+  };
+
+  const handleUseCaseDeleted = async (id: string) => {
+    await deleteUseCase(id);
+    setUseCases((prev) => {
+      const remaining = prev.filter((uc) => uc.id !== id);
+      if (selectedUseCaseId === id) {
+        setSelectedUseCaseId(remaining[0]?.id || "");
+      }
+      return remaining;
+    });
   };
 
   const handleSelectUseCaseAndGoToLifecycle = (id: string) => {
@@ -96,6 +107,7 @@ export default function Home() {
               <PortfolioView
                 useCases={useCases}
                 onSelectUseCase={handleSelectUseCaseAndGoToLifecycle}
+                onDeleteUseCase={handleUseCaseDeleted}
                 onNavigateToWizard={() => setActiveTab("wizard")}
               />
             )}

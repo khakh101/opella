@@ -14,6 +14,7 @@ import {
   Play,
   CheckCircle2,
   Clock,
+  Trash2,
 } from "lucide-react";
 import { UseCase, Tier, DeliveryMode, GateId } from "@/types";
 import { TIER_CONFIG } from "@/lib/constants";
@@ -21,12 +22,14 @@ import { TIER_CONFIG } from "@/lib/constants";
 interface PortfolioViewProps {
   useCases: UseCase[];
   onSelectUseCase: (id: string) => void;
+  onDeleteUseCase?: (id: string) => void;
   onNavigateToWizard: () => void;
 }
 
 export const PortfolioView: React.FC<PortfolioViewProps> = ({
   useCases,
   onSelectUseCase,
+  onDeleteUseCase,
   onNavigateToWizard,
 }) => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -326,16 +329,35 @@ export const PortfolioView: React.FC<PortfolioViewProps> = ({
                     </td>
 
                     <td className="px-5 py-4 text-right">
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          onSelectUseCase(uc.id);
-                        }}
-                        className="p-1.5 rounded-lg text-opella-forest hover:bg-opella-forest hover:text-white transition-colors"
-                        title="Open in Lifecycle Manager"
+                      <div
+                        className="flex items-center justify-end gap-1.5"
+                        onClick={(e) => e.stopPropagation()}
                       >
-                        <ArrowUpRight className="w-4 h-4" />
-                      </button>
+                        <button
+                          onClick={() => onSelectUseCase(uc.id)}
+                          className="p-1.5 rounded-lg text-opella-forest hover:bg-opella-forest hover:text-white transition-colors"
+                          title="Open in Lifecycle Manager"
+                        >
+                          <ArrowUpRight className="w-4 h-4" />
+                        </button>
+                        {onDeleteUseCase && (
+                          <button
+                            onClick={() => {
+                              if (
+                                window.confirm(
+                                  `Are you sure you want to delete "${uc.title}" from the registry?\n\nThis will remove the use case, its gate history, and dossiers.`
+                                )
+                              ) {
+                                onDeleteUseCase(uc.id);
+                              }
+                            }}
+                            className="p-1.5 rounded-lg text-gray-400 hover:text-rose-600 hover:bg-rose-50 transition-colors"
+                            title="Delete use case from registry"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 );

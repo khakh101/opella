@@ -24,6 +24,8 @@ import {
   FastForward,
   Activity,
   Workflow,
+  FileText,
+  Paperclip,
 } from "lucide-react";
 import confetti from "canvas-confetti";
 import { UseCase, GateId, GateStatus, GateDetail } from "@/types";
@@ -365,6 +367,249 @@ export const LifecycleView: React.FC<LifecycleViewProps> = ({
             <div className="border-l border-gray-200 pl-3">
               <span className="text-gray-400 block font-semibold">Decision SLA</span>
               <span className="font-bold text-emerald-700">{activeGate.sla}</span>
+            </div>
+          </div>
+        </div>
+
+        {/* YOU ARE HERE & REQUIRED INFORMATION CHECKLIST BEFORE ADVANCING */}
+        <div className="bg-gradient-to-r from-emerald-950 via-opella-forest to-emerald-900 rounded-xl p-5 text-white shadow-sm space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-white/15 pb-3">
+            <div className="flex items-center gap-2.5">
+              <span className="px-2.5 py-1 rounded-lg bg-amber-400 text-gray-950 font-black text-xs flex items-center gap-1 shadow-sm">
+                <span>📍</span>
+                <span>YOU ARE HERE</span>
+              </span>
+              <div>
+                <div className="text-[10px] font-mono uppercase tracking-wider text-emerald-300 font-bold">
+                  Current Lifecycle Station: Gate {activeGate.id} ({activeGate.phase} Phase)
+                </div>
+                <h4 className="text-sm font-bold text-white">
+                  {activeGate.name}
+                </h4>
+              </div>
+            </div>
+            <span
+              className={`text-[11px] font-bold px-2.5 py-1 rounded-full self-start sm:self-auto ${
+                activeGate.status === "PASSED"
+                  ? "bg-emerald-400/20 text-emerald-200 border border-emerald-400/40"
+                  : "bg-amber-400/20 text-amber-200 border border-amber-400/40"
+              }`}
+            >
+              {activeGate.status === "PASSED"
+                ? "✓ Gate Requirements Validated"
+                : "⚠️ Information Collection & Review in Progress"}
+            </span>
+          </div>
+
+          <div className="space-y-2.5">
+            <div className="flex items-center justify-between text-xs">
+              <span className="font-bold uppercase tracking-wider text-emerald-200 flex items-center gap-1.5">
+                <FileText className="w-3.5 h-3.5 text-amber-400" />
+                Required Information & Artifacts to Collect Before Passing Gate {activeGate.id}:
+              </span>
+              <span className="text-[10px] text-emerald-300 font-mono">
+                Mandatory Comitology Prerequisite
+              </span>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+              {activeGateTab === "G1" && (
+                <>
+                  <div className="p-2.5 rounded-lg bg-white/10 border border-white/15 flex items-start justify-between gap-2">
+                    <div>
+                      <span className="font-bold text-white block">1. Problem Statement & Friction</span>
+                      <span className="text-[11px] text-white/70">Quantified baseline friction (7-10 days S2P turnaround)</span>
+                    </div>
+                    <span className="text-[10px] font-bold text-emerald-300 bg-emerald-500/20 px-1.5 py-0.5 rounded shrink-0">Collected</span>
+                  </div>
+                  <div className="p-2.5 rounded-lg bg-white/10 border border-white/15 flex items-start justify-between gap-2">
+                    <div>
+                      <span className="font-bold text-white block">2. Target User Community</span>
+                      <span className="text-[11px] text-white/70">Identified 1,800 buyers across 5 market clusters</span>
+                    </div>
+                    <span className="text-[10px] font-bold text-emerald-300 bg-emerald-500/20 px-1.5 py-0.5 rounded shrink-0">Collected</span>
+                  </div>
+                  <div className="p-2.5 rounded-lg bg-white/10 border border-white/15 flex items-start justify-between gap-2">
+                    <div>
+                      <span className="font-bold text-white block">3. Playbook 4-Questions Assessment</span>
+                      <span className="text-[11px] text-white/70">Qualified for T1 speed lane under Big Bet 6</span>
+                    </div>
+                    <span className="text-[10px] font-bold text-emerald-300 bg-emerald-500/20 px-1.5 py-0.5 rounded shrink-0">Collected</span>
+                  </div>
+                  <div className="p-2.5 rounded-lg bg-white/10 border border-white/15 flex items-start justify-between gap-2">
+                    <div>
+                      <span className="font-bold text-white block">4. ORAI Responsible AI Screening</span>
+                      <span className="text-[11px] text-white/70">Assessed Medium risk tier; human-in-the-loop mandated</span>
+                    </div>
+                    <span className="text-[10px] font-bold text-emerald-300 bg-emerald-500/20 px-1.5 py-0.5 rounded shrink-0">Collected</span>
+                  </div>
+                </>
+              )}
+
+              {activeGateTab === "G2" && (
+                <>
+                  <div className="p-2.5 rounded-lg bg-white/10 border border-white/15 flex items-start justify-between gap-2">
+                    <div>
+                      <span className="font-bold text-white block">1. Finance Baseline Sign-off</span>
+                      <span className="text-[11px] text-white/70">€142/PO manual processing cost verified by Finance BP</span>
+                    </div>
+                    <span className="text-[10px] font-bold text-emerald-300 bg-emerald-500/20 px-1.5 py-0.5 rounded shrink-0">Collected</span>
+                  </div>
+                  <div className="p-2.5 rounded-lg bg-white/10 border border-white/15 flex items-start justify-between gap-2">
+                    <div>
+                      <span className="font-bold text-white block">2. Architecture Decision Record (ADR)</span>
+                      <span className="text-[11px] text-white/70">SAP S/4HANA OData & Azure GenAI private link approved</span>
+                    </div>
+                    <span className="text-[10px] font-bold text-emerald-300 bg-emerald-500/20 px-1.5 py-0.5 rounded shrink-0">Collected</span>
+                  </div>
+                  <div className="p-2.5 rounded-lg bg-white/10 border border-white/15 flex items-start justify-between gap-2">
+                    <div>
+                      <span className="font-bold text-white block">3. Process Redesign Check: YES</span>
+                      <span className="text-[11px] text-white/70">Process rewritten to remove manual handoffs & approvals</span>
+                    </div>
+                    <span className="text-[10px] font-bold text-emerald-300 bg-emerald-500/20 px-1.5 py-0.5 rounded shrink-0">Collected</span>
+                  </div>
+                  <div className="p-2.5 rounded-lg bg-white/10 border border-white/15 flex items-start justify-between gap-2">
+                    <div>
+                      <span className="font-bold text-white block">4. Data Boundary & Security Controls</span>
+                      <span className="text-[11px] text-white/70">CISO RBAC tokenization; zero external model training</span>
+                    </div>
+                    <span className="text-[10px] font-bold text-emerald-300 bg-emerald-500/20 px-1.5 py-0.5 rounded shrink-0">Collected</span>
+                  </div>
+                </>
+              )}
+
+              {activeGateTab === "G3" && (
+                <>
+                  <div className="p-2.5 rounded-lg bg-white/10 border border-white/15 flex items-start justify-between gap-2">
+                    <div>
+                      <span className="font-bold text-white block">1. VCP Prioritisation Matrix</span>
+                      <span className="text-[11px] text-white/70">Scored 92/100; ranked #1 in Big Bet 6 pipeline</span>
+                    </div>
+                    <span className="text-[10px] font-bold text-emerald-300 bg-emerald-500/20 px-1.5 py-0.5 rounded shrink-0">Collected</span>
+                  </div>
+                  <div className="p-2.5 rounded-lg bg-white/10 border border-white/15 flex items-start justify-between gap-2">
+                    <div>
+                      <span className="font-bold text-white block">2. Hub Delivery Capacity Allocation</span>
+                      <span className="text-[11px] text-white/70">1.0 FDE + 0.5 Data Architect committed from Hub</span>
+                    </div>
+                    <span className="text-[10px] font-bold text-emerald-300 bg-emerald-500/20 px-1.5 py-0.5 rounded shrink-0">Collected</span>
+                  </div>
+                  <div className="p-2.5 rounded-lg bg-white/10 border border-white/15 flex items-start justify-between gap-2">
+                    <div>
+                      <span className="font-bold text-white block">3. Business Owner Dedication</span>
+                      <span className="text-[11px] text-white/70">Dedicated Business PO confirmed at 80% allocation</span>
+                    </div>
+                    <span className="text-[10px] font-bold text-emerald-300 bg-emerald-500/20 px-1.5 py-0.5 rounded shrink-0">Collected</span>
+                  </div>
+                  <div className="p-2.5 rounded-lg bg-white/10 border border-white/15 flex items-start justify-between gap-2">
+                    <div>
+                      <span className="font-bold text-white block">4. Planisware Tracking Code</span>
+                      <span className="text-[11px] text-white/70">Linked to Corporate Transformation Value Pool</span>
+                    </div>
+                    <span className="text-[10px] font-bold text-emerald-300 bg-emerald-500/20 px-1.5 py-0.5 rounded shrink-0">Collected</span>
+                  </div>
+                </>
+              )}
+
+              {activeGateTab === "G4" && (
+                <>
+                  <div className="p-2.5 rounded-lg bg-white/10 border border-white/15 flex items-start justify-between gap-2">
+                    <div>
+                      <span className="font-bold text-white block">1. Sourcing Mode Lock (Mode 1 / 2 / 3)</span>
+                      <span className="text-[11px] text-white/70">Mode 2 ('Do it with me') ratified by Design Authority</span>
+                    </div>
+                    <span className="text-[10px] font-bold text-emerald-300 bg-emerald-500/20 px-1.5 py-0.5 rounded shrink-0">Collected</span>
+                  </div>
+                  <div className="p-2.5 rounded-lg bg-white/10 border border-white/15 flex items-start justify-between gap-2">
+                    <div>
+                      <span className="font-bold text-white block">2. Tranche 1 Budget Unlock</span>
+                      <span className="text-[11px] text-white/70">€380k released for 8-week MVP agile build sprint</span>
+                    </div>
+                    <span className="text-[10px] font-bold text-emerald-300 bg-emerald-500/20 px-1.5 py-0.5 rounded shrink-0">Collected</span>
+                  </div>
+                  <div className="p-2.5 rounded-lg bg-white/10 border border-white/15 flex items-start justify-between gap-2">
+                    <div>
+                      <span className="font-bold text-white block">3. Tri-partite Squad Mobilized</span>
+                      <span className="text-[11px] text-white/70">Data & AI Hub, TO, and Business Function roles named</span>
+                    </div>
+                    <span className="text-[10px] font-bold text-emerald-300 bg-emerald-500/20 px-1.5 py-0.5 rounded shrink-0">Collected</span>
+                  </div>
+                  <div className="p-2.5 rounded-lg bg-white/10 border border-white/15 flex items-start justify-between gap-2">
+                    <div>
+                      <span className="font-bold text-white block">4. MVP Sprint Backlog & Training Plan</span>
+                      <span className="text-[11px] text-white/70">ProcurLab prompt engineering clinics scheduled</span>
+                    </div>
+                    <span className="text-[10px] font-bold text-emerald-300 bg-emerald-500/20 px-1.5 py-0.5 rounded shrink-0">Collected</span>
+                  </div>
+                </>
+              )}
+
+              {activeGateTab === "G5" && (
+                <>
+                  <div className="p-2.5 rounded-lg bg-white/10 border border-white/15 flex items-start justify-between gap-2">
+                    <div>
+                      <span className="font-bold text-white block">1. MVP Pilot Results Report</span>
+                      <span className="text-[11px] text-white/70">28h turnaround (vs 7.2d baseline); 94.2% quote match accuracy</span>
+                    </div>
+                    <span className="text-[10px] font-bold text-emerald-300 bg-emerald-500/20 px-1.5 py-0.5 rounded shrink-0">Collected</span>
+                  </div>
+                  <div className="p-2.5 rounded-lg bg-white/10 border border-white/15 flex items-start justify-between gap-2">
+                    <div>
+                      <span className="font-bold text-white block">2. 5-Pillar Workforce Impact Scan</span>
+                      <span className="text-[11px] text-white/70">Activities, Roles, Skills, QWL, Ethics assessed by P&C</span>
+                    </div>
+                    <span className="text-[10px] font-bold text-emerald-300 bg-emerald-500/20 px-1.5 py-0.5 rounded shrink-0">Collected</span>
+                  </div>
+                  <div className="p-2.5 rounded-lg bg-white/10 border border-white/15 flex items-start justify-between gap-2">
+                    <div>
+                      <span className="font-bold text-white block">3. Tranche 2 Funding Request</span>
+                      <span className="text-[11px] text-white/70">€850k requested for global roll-out (1,800 users)</span>
+                    </div>
+                    <span className="text-[10px] font-bold text-emerald-300 bg-emerald-500/20 px-1.5 py-0.5 rounded shrink-0">Collected</span>
+                  </div>
+                  <div className="p-2.5 rounded-lg bg-white/10 border border-white/15 flex items-start justify-between gap-2">
+                    <div>
+                      <span className="font-bold text-white block">4. Production Security Hardening</span>
+                      <span className="text-[11px] text-white/70">No policy violations across 420 live pilot purchase orders</span>
+                    </div>
+                    <span className="text-[10px] font-bold text-emerald-300 bg-emerald-500/20 px-1.5 py-0.5 rounded shrink-0">Collected</span>
+                  </div>
+                </>
+              )}
+
+              {activeGateTab === "G6" && (
+                <>
+                  <div className="p-2.5 rounded-lg bg-white/10 border border-white/15 flex items-start justify-between gap-2">
+                    <div>
+                      <span className="font-bold text-white block">1. Annual Value Realization Audit</span>
+                      <span className="text-[11px] text-white/70">Confirmed €3.8M net run-rate EBITDA savings in P&L</span>
+                    </div>
+                    <span className="text-[10px] font-bold text-emerald-300 bg-emerald-500/20 px-1.5 py-0.5 rounded shrink-0">Collected</span>
+                  </div>
+                  <div className="p-2.5 rounded-lg bg-white/10 border border-white/15 flex items-start justify-between gap-2">
+                    <div>
+                      <span className="font-bold text-white block">2. Live Cloud & Token Opex Sentinel</span>
+                      <span className="text-[11px] text-white/70">Infrastructure costs tracked under €4,500/month cap</span>
+                    </div>
+                    <span className="text-[10px] font-bold text-emerald-300 bg-emerald-500/20 px-1.5 py-0.5 rounded shrink-0">Collected</span>
+                  </div>
+                  <div className="p-2.5 rounded-lg bg-white/10 border border-white/15 flex items-start justify-between gap-2">
+                    <div>
+                      <span className="font-bold text-white block">3. Sustained User Adoption Rate</span>
+                      <span className="text-[11px] text-white/70">82% weekly active buyers across 1,800 user seats</span>
+                    </div>
+                    <span className="text-[10px] font-bold text-emerald-300 bg-emerald-500/20 px-1.5 py-0.5 rounded shrink-0">Collected</span>
+                  </div>
+                  <div className="p-2.5 rounded-lg bg-white/10 border border-white/15 flex items-start justify-between gap-2">
+                    <div>
+                      <span className="font-bold text-white block">4. Handover to BAU Operations & Support</span>
+                      <span className="text-[11px] text-white/70">Run SLAs and incident escalation paths formalized</span>
+                    </div>
+                    <span className="text-[10px] font-bold text-emerald-300 bg-emerald-500/20 px-1.5 py-0.5 rounded shrink-0">Collected</span>
+                  </div>
+                </>
+              )}
             </div>
           </div>
         </div>
