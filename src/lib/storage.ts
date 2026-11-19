@@ -18,6 +18,25 @@ export async function fetchUseCases(): Promise<UseCase[]> {
           id: row.id,
           updatedAt: row.updated_at,
         }));
+      } else if (!error && data && data.length === 0) {
+        // Table exists in Supabase but is brand new/empty: auto-seed default Opella use cases
+        try {
+          const rowsToInsert = INITIAL_USE_CASES.map((uc) => ({
+            id: uc.id,
+            title: uc.title,
+            tier: uc.tier,
+            mode: uc.mode,
+            risk_tier: uc.riskTier,
+            current_gate: uc.currentGate,
+            status: uc.status,
+            data: uc,
+            updated_at: uc.updatedAt,
+          }));
+          await supabase.from("opella_use_cases").insert(rowsToInsert);
+          return INITIAL_USE_CASES;
+        } catch (seedErr) {
+          console.warn("Could not auto-seed Supabase:", seedErr);
+        }
       }
     } catch (err) {
       console.warn("Supabase fetch error, falling back to local storage:", err);
