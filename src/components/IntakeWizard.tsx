@@ -23,6 +23,12 @@ import {
   FileText,
   Cpu,
   UserCheck,
+  RotateCcw,
+  Globe,
+  Sliders,
+  ChevronDown,
+  Layers,
+  Info,
 } from "lucide-react";
 import confetti from "canvas-confetti";
 import {
@@ -224,12 +230,157 @@ export const IntakeWizard: React.FC<IntakeWizardProps> = ({
   const decision = evaluateIntake(answers);
   const tierConfig = TIER_CONFIG[decision.tier];
 
-  // Mandatory Validation for Step 1
-  const isStep1Valid = Boolean(
-    answers.initiativeTitle?.trim() &&
-      answers.description?.trim() &&
-      answers.targetUserGroupDescription?.trim()
-  );
+  // Step 1 Active Collection Confirmation States
+  const [qQuestionsConfirmed, setQQuestionsConfirmed] = useState<boolean>(false);
+  const [oraiConfirmed, setOraiConfirmed] = useState<boolean>(false);
+
+  // Live item collection checks (5 mandatory items)
+  const item1Collected = Boolean(answers.initiativeTitle?.trim());
+  const item2Collected = Boolean(answers.description?.trim());
+  const item3Collected = Boolean(answers.targetUserGroupDescription?.trim());
+  const item4Collected = qQuestionsConfirmed;
+  const item5Collected = oraiConfirmed;
+
+  const collectedCount = [
+    item1Collected,
+    item2Collected,
+    item3Collected,
+    item4Collected,
+    item5Collected,
+  ].filter(Boolean).length;
+  const totalCount = 5;
+  const collectionPercent = Math.round((collectedCount / totalCount) * 100);
+  const isStep1Valid = collectedCount === totalCount;
+
+  // Presets & Reset Handlers for live demo collection
+  const handleLoadPreset = (preset: "GIDE" | "IBP" | "WONKA") => {
+    if (preset === "GIDE") {
+      setAnswers({
+        ...answers,
+        initiativeTitle: "GIDE / BOWIE Procurement Agent",
+        description:
+          "Shifts Opella procurement from manual S2P steps to agentic execution. BOWIE agent automatically evaluates supplier quotes against commercial contracts, checks internal compliance rules, and creates SAP Purchase Orders within 48 hours.",
+        targetUserGroupDescription:
+          "1,800 Procurement buyers, category directors, and functional spenders across EULA, NA, and AMEA regions.",
+        estimatedValueDescription:
+          "€3.8M net run-rate EBITDA savings; 42,000 manual buyer hours repurposed; 75% touchless PO rate.",
+        technologyProposed:
+          "Azure GenAI (GPT-4o), LangChain Agent Orchestrator, SAP S/4HANA OData APIs, Databricks.",
+        functionName: "Procurement",
+        region: "Global",
+        businessOwnerName: "Sarah Chen (Global Head of S2P)",
+        businessOwnerEmail: "sarah.chen@opella.com",
+        estimatedCost: 1450000,
+        targetUserCount: 1800,
+        q1_bigBetOrOver1m: true,
+        q2_approvedToolsUnder50k: false,
+        q3_provenPilotOrReach: true,
+        q4_newHypothesis: false,
+        risk_personalHealthData: false,
+        risk_autonomousDecisions: false,
+        risk_coreProdWriteBack: true,
+        risk_externalOutputNoReview: false,
+        risk_unapprovedSaaSOrCustomModel: false,
+        techComplexity: "High",
+        functionTechCapacity: "Medium",
+        fundingSource: "Central Hub",
+      });
+      setQQuestionsConfirmed(true);
+      setOraiConfirmed(true);
+    } else if (preset === "IBP") {
+      setAnswers({
+        ...answers,
+        initiativeTitle: "IBP Demand Sensing & Replenishment Agent",
+        description:
+          "Consolidates weekly demand signals across 28 regional warehouse spreadsheets, ERP demand tables, and promotional calendars to predict stockout risks 14 days in advance.",
+        targetUserGroupDescription:
+          "450 Supply Chain planners, regional demand managers, and plant logistics directors across Europe and NA.",
+        estimatedValueDescription:
+          "-€1.5M working capital reduction; 25 hours saved per analyst weekly; 60% turnaround time improvement.",
+        technologyProposed:
+          "Azure GenAI, Snowflake Data Mart, PowerBI Embedded, SAP IBP OData.",
+        functionName: "Supply Chain",
+        region: "Global",
+        businessOwnerName: "Marc Delon (Supply Chain VP)",
+        businessOwnerEmail: "marc.delon@opella.com",
+        estimatedCost: 420000,
+        targetUserCount: 450,
+        q1_bigBetOrOver1m: false,
+        q2_approvedToolsUnder50k: false,
+        q3_provenPilotOrReach: true,
+        q4_newHypothesis: false,
+        risk_personalHealthData: false,
+        risk_autonomousDecisions: false,
+        risk_coreProdWriteBack: false,
+        risk_externalOutputNoReview: false,
+        risk_unapprovedSaaSOrCustomModel: false,
+        techComplexity: "Medium",
+        functionTechCapacity: "Medium",
+        fundingSource: "Co-funded",
+      });
+      setQQuestionsConfirmed(true);
+      setOraiConfirmed(true);
+    } else if (preset === "WONKA") {
+      setAnswers({
+        ...answers,
+        initiativeTitle: "WONKA Regulatory Claim Substantiation Pilot",
+        description:
+          "Autonomous document intelligence agent to cross-reference cosmetic and OTC marketing claims against local health authority regulatory guidance and clinical trial dossiers.",
+        targetUserGroupDescription:
+          "65 Regulatory affairs specialists, legal counsels, and brand compliance managers.",
+        estimatedValueDescription:
+          "Accelerates claim review from 7 days to <24h with 94% first-time accuracy.",
+        technologyProposed:
+          "Copilot Studio + Azure Document Intelligence, Opella GPT prompt layer.",
+        functionName: "Science",
+        region: "EULA",
+        businessOwnerName: "Thomas Brun (Regulatory Director)",
+        businessOwnerEmail: "thomas.brun@opella.com",
+        estimatedCost: 95000,
+        targetUserCount: 65,
+        q1_bigBetOrOver1m: false,
+        q2_approvedToolsUnder50k: false,
+        q3_provenPilotOrReach: false,
+        q4_newHypothesis: true,
+        risk_personalHealthData: false,
+        risk_autonomousDecisions: false,
+        risk_coreProdWriteBack: false,
+        risk_externalOutputNoReview: false,
+        risk_unapprovedSaaSOrCustomModel: false,
+        techComplexity: "Low",
+        functionTechCapacity: "High",
+        fundingSource: "Function Budget",
+      });
+      setQQuestionsConfirmed(true);
+      setOraiConfirmed(true);
+    }
+  };
+
+  const handleResetIntake = () => {
+    setAnswers({
+      ...answers,
+      initiativeTitle: "",
+      description: "",
+      targetUserGroupDescription: "",
+      estimatedValueDescription: "",
+      technologyProposed: "",
+      businessOwnerName: "",
+      businessOwnerEmail: "",
+      estimatedCost: 150000,
+      targetUserCount: 100,
+      q1_bigBetOrOver1m: false,
+      q2_approvedToolsUnder50k: false,
+      q3_provenPilotOrReach: false,
+      q4_newHypothesis: true,
+      risk_personalHealthData: false,
+      risk_autonomousDecisions: false,
+      risk_coreProdWriteBack: false,
+      risk_externalOutputNoReview: false,
+      risk_unapprovedSaaSOrCustomModel: false,
+    });
+    setQQuestionsConfirmed(false);
+    setOraiConfirmed(false);
+  };
 
   // Keep chosen mode in sync with suggested default
   useEffect(() => {
@@ -373,192 +524,757 @@ export const IntakeWizard: React.FC<IntakeWizardProps> = ({
         </div>
       </div>
 
-      {/* ================= STEP 1: THE 4 QUESTIONS ASSESSMENT ================= */}
+      {/* ================= STEP 1: THE 4 QUESTIONS ASSESSMENT & ACTIVE INTAKE COLLECTION ================= */}
       {step === 1 && (
-        <div className="bg-white rounded-2xl p-7 shadow-sm border border-opella-border space-y-7">
-          {/* 📍 YOU ARE HERE & REQUIRED INFORMATION CHECKLIST */}
-          <div className="bg-gradient-to-r from-emerald-950 via-opella-forest to-emerald-900 rounded-2xl p-6 text-white shadow-md space-y-5">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-white/15 pb-4">
-              <div className="flex items-center gap-3">
-                <span className="p-2.5 rounded-xl bg-amber-400 text-gray-950 font-black text-xs sm:text-sm flex items-center gap-1.5 shadow-sm">
+        <div className="space-y-6">
+          {/* 📍 YOU ARE HERE & INTERACTIVE COLLECTION STATION */}
+          <div className="bg-gradient-to-br from-[#0d2818] via-[#0b3d1c] to-[#04471c] rounded-2xl p-6 text-white shadow-lg space-y-6 border border-emerald-700/50">
+            {/* Station Header */}
+            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 border-b border-white/20 pb-4">
+              <div className="flex items-start gap-3">
+                <span className="px-3 py-1 rounded-lg bg-amber-400 text-gray-950 font-black text-xs flex items-center gap-1.5 shadow-md shrink-0 mt-0.5">
                   <span>📍</span>
                   <span>YOU ARE HERE</span>
                 </span>
                 <div>
                   <div className="text-[11px] font-mono uppercase tracking-wider text-emerald-300 font-bold">
-                    Phase 1: Framing · Gate G1 Candidate
+                    Phase 1: Framing · Gate G1 Candidate Station
                   </div>
-                  <h3 className="text-lg font-black text-white">
+                  <h3 className="text-xl font-black text-white mt-0.5">
                     Front Door Intake & 4-Question Playbook Assessment
                   </h3>
+                  <p className="text-xs text-white/70 mt-0.5 max-w-2xl">
+                    Actively collect and verify the 5 mandatory governance items below before the autonomous AI Charter Agent can formulate the comitology triage.
+                  </p>
                 </div>
               </div>
-              <div className="self-start sm:self-auto">
+
+              {/* Demo Quick-Fill Presets & Reset */}
+              <div className="flex flex-wrap items-center gap-2 self-start lg:self-center shrink-0">
+                <div className="flex items-center gap-1.5 bg-black/30 border border-emerald-400/30 rounded-xl p-1 text-xs">
+                  <span className="text-[11px] font-bold text-amber-300 px-2 flex items-center gap-1">
+                    <Zap className="w-3.5 h-3.5 text-amber-300" /> Quick-Fill Demo:
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => handleLoadPreset("GIDE")}
+                    className="px-2.5 py-1 rounded-lg bg-emerald-700 hover:bg-emerald-600 text-white font-bold text-[11px] transition-all shadow-sm flex items-center gap-1"
+                  >
+                    <span>GIDE</span>
+                    <span className="text-[9px] bg-black/30 px-1 rounded text-emerald-200">T1</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleLoadPreset("IBP")}
+                    className="px-2.5 py-1 rounded-lg bg-blue-700 hover:bg-blue-600 text-white font-bold text-[11px] transition-all shadow-sm flex items-center gap-1"
+                  >
+                    <span>IBP</span>
+                    <span className="text-[9px] bg-black/30 px-1 rounded text-blue-200">T2</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleLoadPreset("WONKA")}
+                    className="px-2.5 py-1 rounded-lg bg-amber-700 hover:bg-amber-600 text-white font-bold text-[11px] transition-all shadow-sm flex items-center gap-1"
+                  >
+                    <span>WONKA</span>
+                    <span className="text-[9px] bg-black/30 px-1 rounded text-amber-200">T3</span>
+                  </button>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={handleResetIntake}
+                  className="px-3 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-white/90 text-xs font-semibold flex items-center gap-1.5 transition-all border border-white/10 shadow-sm"
+                  title="Reset to 0/5 collected to demonstrate step-by-step collection"
+                >
+                  <RotateCcw className="w-3.5 h-3.5" />
+                  Reset (0/5)
+                </button>
+              </div>
+            </div>
+
+            {/* Live Progress Meter */}
+            <div className="bg-black/30 rounded-xl p-4 border border-white/10 space-y-2.5">
+              <div className="flex items-center justify-between text-xs">
+                <span className="font-bold text-emerald-200 flex items-center gap-2">
+                  <span>Intake Collection Progress:</span>
+                  <span className="font-mono text-white text-sm font-black">
+                    {collectedCount} of {totalCount} Items Collected ({collectionPercent}%)
+                  </span>
+                </span>
                 <span
-                  className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold ${
+                  className={`text-[11px] font-bold px-3 py-1 rounded-full flex items-center gap-1.5 ${
                     isStep1Valid
-                      ? "bg-emerald-400/20 text-emerald-200 border border-emerald-400/40"
-                      : "bg-amber-400/20 text-amber-200 border border-amber-400/40"
+                      ? "bg-emerald-400 text-emerald-950 shadow-sm"
+                      : "bg-amber-400/25 text-amber-200 border border-amber-400/40"
                   }`}
                 >
                   {isStep1Valid ? (
                     <>
-                      <Check className="w-3.5 h-3.5 text-emerald-400" /> All Mandatory Information Collected
+                      <Check className="w-3.5 h-3.5 text-emerald-950 stroke-[3]" />
+                      <span>Ready for Autonomous Agent Triage</span>
                     </>
                   ) : (
                     <>
-                      <Clock className="w-3.5 h-3.5 text-amber-300" /> Information Collection in Progress
+                      <Clock className="w-3.5 h-3.5 text-amber-300" />
+                      <span>{totalCount - collectedCount} Mandatory Items Required</span>
                     </>
                   )}
                 </span>
               </div>
+
+              {/* Progress Bar */}
+              <div className="w-full bg-white/10 rounded-full h-2.5 overflow-hidden p-0.5">
+                <div
+                  className={`h-full rounded-full transition-all duration-300 ${
+                    isStep1Valid ? "bg-emerald-400" : "bg-gradient-to-r from-amber-400 to-emerald-400"
+                  }`}
+                  style={{ width: `${collectionPercent}%` }}
+                />
+              </div>
+
+              {/* Quick Status Pill Bar */}
+              <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 pt-1 text-[11px]">
+                <div className={`px-2 py-1 rounded-lg border text-center font-semibold truncate ${item1Collected ? "bg-emerald-400/20 text-emerald-200 border-emerald-400/30" : "bg-white/5 text-white/50 border-white/10"}`}>
+                  1. Title {item1Collected ? "✓" : "●"}
+                </div>
+                <div className={`px-2 py-1 rounded-lg border text-center font-semibold truncate ${item2Collected ? "bg-emerald-400/20 text-emerald-200 border-emerald-400/30" : "bg-white/5 text-white/50 border-white/10"}`}>
+                  2. Description {item2Collected ? "✓" : "●"}
+                </div>
+                <div className={`px-2 py-1 rounded-lg border text-center font-semibold truncate ${item3Collected ? "bg-emerald-400/20 text-emerald-200 border-emerald-400/30" : "bg-white/5 text-white/50 border-white/10"}`}>
+                  3. Users {item3Collected ? "✓" : "●"}
+                </div>
+                <div className={`px-2 py-1 rounded-lg border text-center font-semibold truncate ${item4Collected ? "bg-emerald-400/20 text-emerald-200 border-emerald-400/30" : "bg-white/5 text-white/50 border-white/10"}`}>
+                  4. 4 Questions {item4Collected ? "✓" : "●"}
+                </div>
+                <div className={`px-2 py-1 rounded-lg border text-center font-semibold truncate ${item5Collected ? "bg-emerald-400/20 text-emerald-200 border-emerald-400/30" : "bg-white/5 text-white/50 border-white/10"}`}>
+                  5. ORAI Screening {item5Collected ? "✓" : "●"}
+                </div>
+              </div>
             </div>
 
-            {/* Checklist: What we need you to collect before continuing */}
-            <div className="space-y-3">
-              <div className="flex items-center justify-between text-xs">
+            {/* ----------------------------------------------------------------- */}
+            {/* PREREQUISITE COLLECTION WORKSPACE: 5 MANDATORY ITEMS + OPTIONAL */}
+            {/* ----------------------------------------------------------------- */}
+            <div className="space-y-4">
+              <div className="flex items-center justify-between text-xs text-white/80 border-b border-white/15 pb-2">
                 <span className="font-bold uppercase tracking-wider text-emerald-200 flex items-center gap-1.5">
                   <FileText className="w-4 h-4 text-amber-400" />
-                  We need you to collect the following information before continuing:
+                  Mandatory Prerequisites to Collect (Gate G1 Comitology Readiness):
                 </span>
-                <span className="text-[11px] text-emerald-300 font-mono font-semibold">
-                  {[
-                    Boolean(answers.initiativeTitle?.trim()),
-                    Boolean(answers.description?.trim()),
-                    Boolean(answers.targetUserGroupDescription?.trim()),
-                    true,
-                    true,
-                  ].filter(Boolean).length}{" "}
-                  / 5 required items collected
+                <span className="text-[11px] text-white/60">
+                  Fill fields below to verify and complete each item
                 </span>
               </div>
 
-              {/* Live Status Cards */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5 text-xs">
-                {/* 1. Initiative Title */}
-                <div
-                  className={`p-3 rounded-xl border transition-all ${
-                    answers.initiativeTitle?.trim()
-                      ? "bg-white/10 border-emerald-400/50 text-white"
-                      : "bg-white/5 border-white/10 text-white/70"
-                  }`}
-                >
-                  <div className="flex items-center justify-between mb-1">
-                    <span className="font-bold text-[11px] uppercase tracking-wider text-emerald-300">
-                      1. Title *
-                    </span>
-                    {answers.initiativeTitle?.trim() ? (
-                      <span className="text-emerald-400 text-[10px] font-bold">✓ Collected</span>
-                    ) : (
-                      <span className="text-rose-300 text-[10px] font-bold">● Mandatory</span>
-                    )}
+              {/* CARD 1: INITIATIVE TITLE & SCOPE */}
+              <div
+                className={`rounded-xl p-5 transition-all border ${
+                  item1Collected
+                    ? "bg-white/10 border-emerald-400/40 shadow-sm"
+                    : "bg-black/30 border-amber-400/50 shadow-md ring-1 ring-amber-400/20"
+                } space-y-3.5`}
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <div className="flex items-center gap-2 mb-1 flex-wrap">
+                      <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-white/15 text-emerald-200 border border-white/10">
+                        Business Owner / AI Catalyst
+                      </span>
+                      <span className="text-[10px] text-white/60">Front Door Identity</span>
+                    </div>
+                    <h4 className="font-bold text-white text-base">
+                      1. Initiative Title & Organizational Scope *
+                    </h4>
                   </div>
-                  <p className="text-[11px] text-white/80 truncate">
-                    {answers.initiativeTitle || "Name of initiative or AI agent"}
-                  </p>
+                  {item1Collected ? (
+                    <span className="px-3 py-1 rounded-full bg-emerald-400 text-emerald-950 font-bold text-xs flex items-center gap-1 shadow-sm shrink-0">
+                      <Check className="w-3.5 h-3.5 stroke-[3]" /> Collected & Verified
+                    </span>
+                  ) : (
+                    <span className="px-3 py-1 rounded-full bg-amber-400/20 text-amber-200 border border-amber-400/40 font-bold text-xs flex items-center gap-1 shrink-0">
+                      <AlertTriangle className="w-3.5 h-3.5" /> Action Required (Mandatory)
+                    </span>
+                  )}
                 </div>
 
-                {/* 2. Description */}
-                <div
-                  className={`p-3 rounded-xl border transition-all ${
-                    answers.description?.trim()
-                      ? "bg-white/10 border-emerald-400/50 text-white"
-                      : "bg-white/5 border-white/10 text-white/70"
-                  }`}
-                >
-                  <div className="flex items-center justify-between mb-1">
-                    <span className="font-bold text-[11px] uppercase tracking-wider text-emerald-300">
-                      2. Description *
-                    </span>
-                    {answers.description?.trim() ? (
-                      <span className="text-emerald-400 text-[10px] font-bold">✓ Collected</span>
-                    ) : (
-                      <span className="text-rose-300 text-[10px] font-bold">● Mandatory</span>
-                    )}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
+                  <div className="md:col-span-2">
+                    <label className="block text-[11px] font-bold text-emerald-200 uppercase tracking-wider mb-1">
+                      Initiative Title / Name * <span className="text-amber-300">(Mandatory)</span>
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="e.g. GIDE / BOWIE Procurement Agent, Content Localization Engine, Demand Forecast Bot"
+                      value={answers.initiativeTitle}
+                      onChange={(e) => setAnswers({ ...answers, initiativeTitle: e.target.value })}
+                      className="w-full px-3.5 py-2.5 rounded-lg border border-gray-300 bg-white text-gray-900 text-xs font-semibold focus:ring-2 focus:ring-emerald-400 focus:outline-none placeholder:text-gray-400"
+                    />
                   </div>
-                  <p className="text-[11px] text-white/80 truncate">
-                    {answers.description || "Business context & intended AI solution"}
-                  </p>
+
+                  <div>
+                    <label className="block text-[11px] font-bold text-emerald-200 uppercase tracking-wider mb-1">
+                      Business Function
+                    </label>
+                    <select
+                      value={answers.functionName}
+                      onChange={(e) => setAnswers({ ...answers, functionName: e.target.value })}
+                      className="w-full px-3.5 py-2.5 rounded-lg border border-gray-300 bg-white text-gray-900 text-xs font-semibold focus:ring-2 focus:ring-emerald-400 focus:outline-none"
+                    >
+                      <option value="Procurement">Procurement</option>
+                      <option value="M&S">Marketing & Sales (M&S)</option>
+                      <option value="Supply Chain">Supply Chain & IBP</option>
+                      <option value="Science">Science (R&D & Regulatory)</option>
+                      <option value="Manufacturing">Manufacturing & Quality (M&Q)</option>
+                      <option value="Finance">Finance & GBS</option>
+                      <option value="P&C">People & Culture (P&C / HR)</option>
+                      <option value="Cross-Functional">Cross-Functional / Enterprise</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] font-bold text-emerald-200 uppercase tracking-wider mb-1">
+                      Geographic Region
+                    </label>
+                    <select
+                      value={answers.region}
+                      onChange={(e) => setAnswers({ ...answers, region: e.target.value })}
+                      className="w-full px-3.5 py-2.5 rounded-lg border border-gray-300 bg-white text-gray-900 text-xs font-semibold focus:ring-2 focus:ring-emerald-400 focus:outline-none"
+                    >
+                      <option value="Global">Global Enterprise</option>
+                      <option value="EULA">Europe (EULA)</option>
+                      <option value="NA">North America</option>
+                      <option value="AMEA">AMEA</option>
+                      <option value="LatAm">Latin America</option>
+                    </select>
+                  </div>
+
+                  <div className="md:col-span-2">
+                    <label className="block text-[11px] font-bold text-emerald-200 uppercase tracking-wider mb-1">
+                      Accountable Business Owner (BO / PO)
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="e.g. Sarah Chen (Global Head of S2P) or Named Functional Lead"
+                      value={answers.businessOwnerName}
+                      onChange={(e) => setAnswers({ ...answers, businessOwnerName: e.target.value })}
+                      className="w-full px-3.5 py-2.5 rounded-lg border border-gray-300 bg-white text-gray-900 text-xs font-semibold focus:ring-2 focus:ring-emerald-400 focus:outline-none placeholder:text-gray-400"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* CARD 2: OPERATIONAL PROBLEM & DESCRIPTION */}
+              <div
+                className={`rounded-xl p-5 transition-all border ${
+                  item2Collected
+                    ? "bg-white/10 border-emerald-400/40 shadow-sm"
+                    : "bg-black/30 border-amber-400/50 shadow-md ring-1 ring-amber-400/20"
+                } space-y-3.5`}
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <div className="flex items-center gap-2 mb-1 flex-wrap">
+                      <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-white/15 text-emerald-200 border border-white/10">
+                        Function Domain Lead
+                      </span>
+                      <span className="text-[10px] text-white/60">Business Friction Context</span>
+                    </div>
+                    <h4 className="font-bold text-white text-base">
+                      2. Operational Problem & Intended Solution (Description) *
+                    </h4>
+                  </div>
+                  {item2Collected ? (
+                    <span className="px-3 py-1 rounded-full bg-emerald-400 text-emerald-950 font-bold text-xs flex items-center gap-1 shadow-sm shrink-0">
+                      <Check className="w-3.5 h-3.5 stroke-[3]" /> Collected & Verified
+                    </span>
+                  ) : (
+                    <span className="px-3 py-1 rounded-full bg-amber-400/20 text-amber-200 border border-amber-400/40 font-bold text-xs flex items-center gap-1 shrink-0">
+                      <AlertTriangle className="w-3.5 h-3.5" /> Action Required (Mandatory)
+                    </span>
+                  )}
                 </div>
 
-                {/* 3. Who are the users */}
-                <div
-                  className={`p-3 rounded-xl border transition-all ${
-                    answers.targetUserGroupDescription?.trim()
-                      ? "bg-white/10 border-emerald-400/50 text-white"
-                      : "bg-white/5 border-white/10 text-white/70"
-                  }`}
-                >
-                  <div className="flex items-center justify-between mb-1">
-                    <span className="font-bold text-[11px] uppercase tracking-wider text-emerald-300">
-                      3. Target Users *
+                <div>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <label className="block text-[11px] font-bold text-emerald-200 uppercase tracking-wider">
+                      Detailed Use Case Description * <span className="text-amber-300">(Mandatory)</span>
+                    </label>
+                    <span className="text-[11px] text-white/60">
+                      Current manual friction, baseline latency, and intended AI mechanism
                     </span>
-                    {answers.targetUserGroupDescription?.trim() ? (
-                      <span className="text-emerald-400 text-[10px] font-bold">✓ Collected</span>
-                    ) : (
-                      <span className="text-rose-300 text-[10px] font-bold">● Mandatory</span>
-                    )}
                   </div>
-                  <p className="text-[11px] text-white/80 truncate">
-                    {answers.targetUserGroupDescription || "Roles, user count & locations"}
-                  </p>
+                  <textarea
+                    rows={3}
+                    placeholder="e.g. Shifts Opella procurement from manual S2P steps to agentic execution. BOWIE agent automatically evaluates supplier quotes against commercial contracts, checks internal compliance rules, and creates SAP Purchase Orders within 48 hours."
+                    value={answers.description || ""}
+                    onChange={(e) => setAnswers({ ...answers, description: e.target.value })}
+                    className="w-full px-3.5 py-2.5 rounded-lg border border-gray-300 bg-white text-gray-900 text-xs font-normal leading-relaxed focus:ring-2 focus:ring-emerald-400 focus:outline-none placeholder:text-gray-400"
+                  />
+                </div>
+              </div>
+
+              {/* CARD 3: TARGET USERS & REACH SCOPE */}
+              <div
+                className={`rounded-xl p-5 transition-all border ${
+                  item3Collected
+                    ? "bg-white/10 border-emerald-400/40 shadow-sm"
+                    : "bg-black/30 border-amber-400/50 shadow-md ring-1 ring-amber-400/20"
+                } space-y-3.5`}
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <div className="flex items-center gap-2 mb-1 flex-wrap">
+                      <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-white/15 text-emerald-200 border border-white/10">
+                        Business Function & Change Lead
+                      </span>
+                      <span className="text-[10px] text-white/60">User Community & Adoption</span>
+                    </div>
+                    <h4 className="font-bold text-white text-base">
+                      3. Target User Personas & Enterprise Reach (Who are the users?) *
+                    </h4>
+                  </div>
+                  {item3Collected ? (
+                    <span className="px-3 py-1 rounded-full bg-emerald-400 text-emerald-950 font-bold text-xs flex items-center gap-1 shadow-sm shrink-0">
+                      <Check className="w-3.5 h-3.5 stroke-[3]" /> Collected & Verified
+                    </span>
+                  ) : (
+                    <span className="px-3 py-1 rounded-full bg-amber-400/20 text-amber-200 border border-amber-400/40 font-bold text-xs flex items-center gap-1 shrink-0">
+                      <AlertTriangle className="w-3.5 h-3.5" /> Action Required (Mandatory)
+                    </span>
+                  )}
                 </div>
 
-                {/* 4. Playbook 4 Questions */}
-                <div className="p-3 rounded-xl border bg-white/10 border-emerald-400/50 text-white">
-                  <div className="flex items-center justify-between mb-1">
-                    <span className="font-bold text-[11px] uppercase tracking-wider text-emerald-300">
-                      4. Playbook 4 Questions *
-                    </span>
-                    <span className="text-emerald-400 text-[10px] font-bold">✓ Ready</span>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+                  <div className="sm:col-span-2">
+                    <label className="block text-[11px] font-bold text-emerald-200 uppercase tracking-wider mb-1">
+                      Who Are The Users? * <span className="text-amber-300">(Mandatory)</span>
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="e.g. 1,800 Procurement buyers, category directors, and functional spenders across EULA, NA, and AMEA regions"
+                      value={answers.targetUserGroupDescription || ""}
+                      onChange={(e) => setAnswers({ ...answers, targetUserGroupDescription: e.target.value })}
+                      className="w-full px-3.5 py-2.5 rounded-lg border border-gray-300 bg-white text-gray-900 text-xs font-semibold focus:ring-2 focus:ring-emerald-400 focus:outline-none placeholder:text-gray-400"
+                    />
                   </div>
-                  <p className="text-[11px] text-white/80">
-                    Determines Tier (T1 / T2 / T3 / Self-Serve)
-                  </p>
+
+                  <div>
+                    <label className="block text-[11px] font-bold text-emerald-200 uppercase tracking-wider mb-1">
+                      Estimated User Headcount
+                    </label>
+                    <div className="relative">
+                      <input
+                        type="number"
+                        value={answers.targetUserCount}
+                        onChange={(e) => setAnswers({ ...answers, targetUserCount: Number(e.target.value) })}
+                        className="w-full pl-8 pr-3 py-2.5 rounded-lg border border-gray-300 bg-white text-gray-900 text-xs font-semibold focus:ring-2 focus:ring-emerald-400 focus:outline-none"
+                      />
+                      <Users className="w-3.5 h-3.5 text-gray-400 absolute left-3 top-3.5" />
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* CARD 4: PLAYBOOK 4 QUESTIONS ASSESSMENT */}
+              <div
+                className={`rounded-xl p-5 transition-all border ${
+                  item4Collected
+                    ? "bg-white/10 border-emerald-400/40 shadow-sm"
+                    : "bg-black/30 border-amber-400/50 shadow-md ring-1 ring-amber-400/20"
+                } space-y-4`}
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <div className="flex items-center gap-2 mb-1 flex-wrap">
+                      <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-white/15 text-emerald-200 border border-white/10">
+                        Transformation Office Lead
+                      </span>
+                      <span className="text-[10px] text-white/60">Slide 35 Playbook Triage</span>
+                    </div>
+                    <h4 className="font-bold text-white text-base">
+                      4. Opella Playbook 4-Questions Assessment *
+                    </h4>
+                  </div>
+                  {item4Collected ? (
+                    <span className="px-3 py-1 rounded-full bg-emerald-400 text-emerald-950 font-bold text-xs flex items-center gap-1 shadow-sm shrink-0">
+                      <Check className="w-3.5 h-3.5 stroke-[3]" /> Evaluated · Routes to {decision.tier}
+                    </span>
+                  ) : (
+                    <span className="px-3 py-1 rounded-full bg-amber-400/20 text-amber-200 border border-amber-400/40 font-bold text-xs flex items-center gap-1 shrink-0">
+                      <AlertTriangle className="w-3.5 h-3.5" /> Pending Evaluation
+                    </span>
+                  )}
                 </div>
 
-                {/* 5. ORAI Screening */}
-                <div className="p-3 rounded-xl border bg-white/10 border-emerald-400/50 text-white">
-                  <div className="flex items-center justify-between mb-1">
-                    <span className="font-bold text-[11px] uppercase tracking-wider text-emerald-300">
-                      5. ORAI Risk Checks *
-                    </span>
-                    <span className="text-emerald-400 text-[10px] font-bold">✓ Ready</span>
+                {/* The 4 Question Blocks */}
+                <div className="space-y-2.5 text-xs">
+                  {/* Q1 */}
+                  <div className={`p-3 rounded-lg border transition-all ${answers.q1_bigBetOrOver1m ? "bg-emerald-950/60 border-emerald-400 text-white" : "bg-black/25 border-white/10 text-white/80"}`}>
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-emerald-600 text-white font-mono">Q1</span>
+                          <span className="font-bold text-white">AmplifAI big bet, Butterfly platform change, or &gt;€1M?</span>
+                        </div>
+                        <p className="text-[11px] text-white/70 ml-6">
+                          If YES: Routes immediately to <strong>T1 · Transform</strong> (Full Business Case, Transformation SteerCo).
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-1.5 shrink-0">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setAnswers({ ...answers, q1_bigBetOrOver1m: true });
+                            setQQuestionsConfirmed(true);
+                          }}
+                          className={`px-3 py-1 rounded-md text-xs font-bold transition-all ${answers.q1_bigBetOrOver1m ? "bg-emerald-500 text-emerald-950 shadow-sm" : "bg-white/10 text-white hover:bg-white/20"}`}
+                        >
+                          YES
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setAnswers({ ...answers, q1_bigBetOrOver1m: false });
+                            setQQuestionsConfirmed(true);
+                          }}
+                          className={`px-3 py-1 rounded-md text-xs font-bold transition-all ${!answers.q1_bigBetOrOver1m ? "bg-gray-700 text-white shadow-sm" : "bg-white/10 text-white hover:bg-white/20"}`}
+                        >
+                          NO
+                        </button>
+                      </div>
+                    </div>
                   </div>
-                  <p className="text-[11px] text-white/80">
-                    Evaluates safety, patient data & compliance
-                  </p>
+
+                  {/* Q2 */}
+                  <div className={`p-3 rounded-lg border transition-all ${answers.q2_approvedToolsUnder50k ? "bg-purple-950/60 border-purple-400 text-white" : "bg-black/25 border-white/10 text-white/80"}`}>
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-purple-600 text-white font-mono">Q2</span>
+                          <span className="font-bold text-white">Approved tools only, configured rather than built, &lt;€50k?</span>
+                        </div>
+                        <p className="text-[11px] text-white/70 ml-6">
+                          If YES: Routes to <strong>Self-Serve · Register & Go</strong> (Immediate speed, skips G2–G4).
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-1.5 shrink-0">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setAnswers({ ...answers, q2_approvedToolsUnder50k: true });
+                            setQQuestionsConfirmed(true);
+                          }}
+                          className={`px-3 py-1 rounded-md text-xs font-bold transition-all ${answers.q2_approvedToolsUnder50k ? "bg-purple-400 text-purple-950 shadow-sm" : "bg-white/10 text-white hover:bg-white/20"}`}
+                        >
+                          YES
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setAnswers({ ...answers, q2_approvedToolsUnder50k: false });
+                            setQQuestionsConfirmed(true);
+                          }}
+                          className={`px-3 py-1 rounded-md text-xs font-bold transition-all ${!answers.q2_approvedToolsUnder50k ? "bg-gray-700 text-white shadow-sm" : "bg-white/10 text-white hover:bg-white/20"}`}
+                        >
+                          NO
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Q3 */}
+                  <div className={`p-3 rounded-lg border transition-all ${answers.q3_provenPilotOrReach ? "bg-blue-950/60 border-blue-400 text-white" : "bg-black/25 border-white/10 text-white/80"}`}>
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-blue-600 text-white font-mono">Q3</span>
+                          <span className="font-bold text-white">Proven pilot, enterprise reach (500+ users), or €200k–€1m?</span>
+                        </div>
+                        <p className="text-[11px] text-white/70 ml-6">
+                          If YES: Routes to <strong>T2 · Scale</strong> (Light business case, AI Portfolio Board).
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-1.5 shrink-0">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setAnswers({ ...answers, q3_provenPilotOrReach: true });
+                            setQQuestionsConfirmed(true);
+                          }}
+                          className={`px-3 py-1 rounded-md text-xs font-bold transition-all ${answers.q3_provenPilotOrReach ? "bg-blue-400 text-blue-950 shadow-sm" : "bg-white/10 text-white hover:bg-white/20"}`}
+                        >
+                          YES
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setAnswers({ ...answers, q3_provenPilotOrReach: false });
+                            setQQuestionsConfirmed(true);
+                          }}
+                          className={`px-3 py-1 rounded-md text-xs font-bold transition-all ${!answers.q3_provenPilotOrReach ? "bg-gray-700 text-white shadow-sm" : "bg-white/10 text-white hover:bg-white/20"}`}
+                        >
+                          NO
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Q4 / Fallback */}
+                  <div className={`p-3 rounded-lg border transition-all ${!answers.q1_bigBetOrOver1m && !answers.q2_approvedToolsUnder50k && !answers.q3_provenPilotOrReach ? "bg-amber-950/60 border-amber-400 text-white" : "bg-black/25 border-white/10 text-white/80"}`}>
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-amber-600 text-white font-mono">Q4</span>
+                          <span className="font-bold text-white">Otherwise: New idea or build with a value hypothesis to test?</span>
+                        </div>
+                        <p className="text-[11px] text-white/70 ml-6">
+                          Routes to <strong>T3 · Fast Lane</strong> (1-page canvas, 10-day decision SLA, 6–8 week MVP sprint).
+                        </p>
+                      </div>
+                      <span className="text-[10px] font-bold text-amber-200 bg-amber-400/20 px-2 py-0.5 rounded border border-amber-400/30">
+                        Default Fallback
+                      </span>
+                    </div>
+                  </div>
                 </div>
 
-                {/* 6. Estimated Value (Optional) */}
-                <div
-                  className={`p-3 rounded-xl border ${
-                    answers.estimatedValueDescription
-                      ? "bg-white/10 border-emerald-400/50 text-white"
-                      : "bg-white/5 border-white/10 text-white/60"
-                  }`}
-                >
-                  <div className="flex items-center justify-between mb-1">
-                    <span className="font-bold text-[11px] uppercase tracking-wider text-white/80">
-                      6. Estimated Value
+                {/* Live Speed Lane Routing Banner */}
+                <div className="p-3 rounded-lg bg-black/40 border border-white/15 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs">
+                  <div className="flex items-center gap-2">
+                    <span className="text-white/60">Calculated Speed Lane:</span>
+                    <span className="font-bold text-white px-2 py-0.5 rounded bg-white/15 border border-white/20">
+                      {tierConfig.name} · {tierConfig.subtitle}
                     </span>
-                    <span className="text-white/60 text-[10px] font-normal">Optional</span>
                   </div>
-                  <p className="text-[11px] text-white/70 truncate">
-                    {answers.estimatedValueDescription || "ROI / Savings / Hours Freed"}
-                  </p>
+                  <div className="text-[11px] text-emerald-300">
+                    SLA: <strong>{decision.speedSummary.decisionSLA}</strong> · Forum: <strong>{tierConfig.approvalForum}</strong>
+                  </div>
+                </div>
+
+                {/* Explicit confirmation toggle */}
+                <label className="flex items-center gap-2 text-xs font-semibold text-emerald-200 cursor-pointer pt-1">
+                  <input
+                    type="checkbox"
+                    checked={qQuestionsConfirmed}
+                    onChange={(e) => setQQuestionsConfirmed(e.target.checked)}
+                    className="rounded text-emerald-600 focus:ring-emerald-400 h-4 w-4 bg-white/20 border-white/30"
+                  />
+                  <span>Confirm: The 4-Questions Assessment has been actively evaluated for this intake</span>
+                </label>
+              </div>
+
+              {/* CARD 5: ORAI RESPONSIBLE AI SCREENING */}
+              <div
+                className={`rounded-xl p-5 transition-all border ${
+                  item5Collected
+                    ? "bg-white/10 border-emerald-400/40 shadow-sm"
+                    : "bg-black/30 border-amber-400/50 shadow-md ring-1 ring-amber-400/20"
+                } space-y-4`}
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <div className="flex items-center gap-2 mb-1 flex-wrap">
+                      <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-white/15 text-emerald-200 border border-white/10">
+                        CISO & AI Governance Lead
+                      </span>
+                      <span className="text-[10px] text-white/60">EU AI Act & Compliance Screening</span>
+                    </div>
+                    <h4 className="font-bold text-white text-base">
+                      5. ORAI Responsible AI Self-Screening *
+                    </h4>
+                  </div>
+                  {item5Collected ? (
+                    <span className="px-3 py-1 rounded-full bg-emerald-400 text-emerald-950 font-bold text-xs flex items-center gap-1 shadow-sm shrink-0">
+                      <Check className="w-3.5 h-3.5 stroke-[3]" /> Certified · {decision.riskTier} Risk
+                    </span>
+                  ) : (
+                    <span className="px-3 py-1 rounded-full bg-amber-400/20 text-amber-200 border border-amber-400/40 font-bold text-xs flex items-center gap-1 shrink-0">
+                      <AlertTriangle className="w-3.5 h-3.5" /> Review Required
+                    </span>
+                  )}
+                </div>
+
+                {/* 5 Risk Flags */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+                  <label className="flex items-start gap-2.5 p-2.5 rounded-lg bg-black/25 border border-white/10 hover:bg-black/40 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={answers.risk_personalHealthData}
+                      onChange={(e) => {
+                        setAnswers({ ...answers, risk_personalHealthData: e.target.checked });
+                        setOraiConfirmed(true);
+                      }}
+                      className="mt-0.5 rounded text-emerald-600 focus:ring-emerald-400 h-4 w-4 bg-white/20 border-white/30"
+                    />
+                    <span className="text-white/90">
+                      Processes employee personal, health, patient or confidential data (EU AI Act High Risk)
+                    </span>
+                  </label>
+
+                  <label className="flex items-start gap-2.5 p-2.5 rounded-lg bg-black/25 border border-white/10 hover:bg-black/40 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={answers.risk_autonomousDecisions}
+                      onChange={(e) => {
+                        setAnswers({ ...answers, risk_autonomousDecisions: e.target.checked });
+                        setOraiConfirmed(true);
+                      }}
+                      className="mt-0.5 rounded text-emerald-600 focus:ring-emerald-400 h-4 w-4 bg-white/20 border-white/30"
+                    />
+                    <span className="text-white/90">
+                      Makes autonomous decisions impacting hiring, credit, clinical or regulatory safety
+                    </span>
+                  </label>
+
+                  <label className="flex items-start gap-2.5 p-2.5 rounded-lg bg-black/25 border border-white/10 hover:bg-black/40 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={answers.risk_coreProdWriteBack}
+                      onChange={(e) => {
+                        setAnswers({ ...answers, risk_coreProdWriteBack: e.target.checked });
+                        setOraiConfirmed(true);
+                      }}
+                      className="mt-0.5 rounded text-emerald-600 focus:ring-emerald-400 h-4 w-4 bg-white/20 border-white/30"
+                    />
+                    <span className="text-white/90">
+                      Direct automated write-back to core ERP / SAP production databases
+                    </span>
+                  </label>
+
+                  <label className="flex items-start gap-2.5 p-2.5 rounded-lg bg-black/25 border border-white/10 hover:bg-black/40 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={answers.risk_externalOutputNoReview}
+                      onChange={(e) => {
+                        setAnswers({ ...answers, risk_externalOutputNoReview: e.target.checked });
+                        setOraiConfirmed(true);
+                      }}
+                      className="mt-0.5 rounded text-emerald-600 focus:ring-emerald-400 h-4 w-4 bg-white/20 border-white/30"
+                    />
+                    <span className="text-white/90">
+                      Generates external customer-facing content without human-in-the-loop review
+                    </span>
+                  </label>
+
+                  <label className="flex items-start gap-2.5 p-2.5 rounded-lg bg-black/25 border border-white/10 hover:bg-black/40 cursor-pointer sm:col-span-2">
+                    <input
+                      type="checkbox"
+                      checked={answers.risk_unapprovedSaaSOrCustomModel}
+                      onChange={(e) => {
+                        setAnswers({ ...answers, risk_unapprovedSaaSOrCustomModel: e.target.checked });
+                        setOraiConfirmed(true);
+                      }}
+                      className="mt-0.5 rounded text-emerald-600 focus:ring-emerald-400 h-4 w-4 bg-white/20 border-white/30"
+                    />
+                    <span className="text-white/90">
+                      Uses unapproved external SaaS, custom third-party foundation models, or non-standard cloud tenants
+                    </span>
+                  </label>
+                </div>
+
+                {/* Risk Evaluation Summary */}
+                <div className="p-3 rounded-lg bg-black/40 border border-white/15 flex items-center justify-between gap-3 text-xs">
+                  <div className="flex items-center gap-2">
+                    <Shield className="w-4 h-4 text-emerald-400" />
+                    <span className="text-white/70">Calculated ORAI Risk Classification:</span>
+                    <span
+                      className={`font-bold px-2.5 py-0.5 rounded-full text-[11px] ${
+                        decision.riskTier === "High"
+                          ? "bg-rose-500/20 text-rose-200 border border-rose-400/40"
+                          : decision.riskTier === "Medium"
+                          ? "bg-amber-500/20 text-amber-200 border border-amber-400/40"
+                          : "bg-emerald-500/20 text-emerald-200 border border-emerald-400/40"
+                      }`}
+                    >
+                      {decision.riskTier} Risk Tier
+                    </span>
+                  </div>
+                  <span className="text-[11px] text-white/60 hidden sm:inline">
+                    {decision.riskReasons[0] || "Compliant with standard AI sandbox guardrails"}
+                  </span>
+                </div>
+
+                {/* Confirmation Checkbox */}
+                <label className="flex items-center gap-2 text-xs font-semibold text-emerald-200 cursor-pointer pt-1">
+                  <input
+                    type="checkbox"
+                    checked={oraiConfirmed}
+                    onChange={(e) => setOraiConfirmed(e.target.checked)}
+                    className="rounded text-emerald-600 focus:ring-emerald-400 h-4 w-4 bg-white/20 border-white/30"
+                  />
+                  <span>Confirm: I certify that this initial ORAI Responsible AI screening has been reviewed</span>
+                </label>
+              </div>
+
+              {/* CARD 6: OPTIONAL VALUE & TECHNOLOGY CONTEXT */}
+              <div className="rounded-xl p-5 bg-white/5 border border-white/10 space-y-3.5">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-white/10 text-white/70 border border-white/10">
+                      Context Enablers
+                    </span>
+                    <h4 className="font-bold text-white/90 text-sm">
+                      6. Estimated Value & Proposed Technology (Optional)
+                    </h4>
+                  </div>
+                  <span className="text-[10px] text-white/50">Recommended for Business Case</span>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+                  <div>
+                    <label className="block text-[11px] font-semibold text-white/80 mb-1">
+                      Estimated Value / ROI
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="e.g. €3.8M net run-rate EBITDA savings; 42k hours repurposed"
+                      value={answers.estimatedValueDescription || ""}
+                      onChange={(e) => setAnswers({ ...answers, estimatedValueDescription: e.target.value })}
+                      className="w-full px-3 py-2 rounded-lg border border-gray-300 bg-white text-gray-900 text-xs focus:ring-2 focus:ring-emerald-400 focus:outline-none placeholder:text-gray-400"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] font-semibold text-white/80 mb-1">
+                      Proposed Technology
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="e.g. Azure GenAI, LangChain, SAP OData APIs, Databricks"
+                      value={answers.technologyProposed || ""}
+                      onChange={(e) => setAnswers({ ...answers, technologyProposed: e.target.value })}
+                      className="w-full px-3 py-2 rounded-lg border border-gray-300 bg-white text-gray-900 text-xs focus:ring-2 focus:ring-emerald-400 focus:outline-none placeholder:text-gray-400"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] font-semibold text-white/80 mb-1">
+                      Estimated Budget Envelope (€)
+                    </label>
+                    <div className="relative">
+                      <input
+                        type="number"
+                        step="10000"
+                        value={answers.estimatedCost}
+                        onChange={(e) => setAnswers({ ...answers, estimatedCost: Number(e.target.value) })}
+                        className="w-full pl-7 pr-3 py-2 rounded-lg border border-gray-300 bg-white text-gray-900 text-xs focus:ring-2 focus:ring-emerald-400 focus:outline-none font-semibold"
+                      />
+                      <Euro className="w-3.5 h-3.5 text-gray-400 absolute left-2.5 top-2.5" />
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
 
-            {/* TEAMS WITH YOU: Profiles accompanying the user in Step 1 */}
-            <div className="pt-3 border-t border-white/15">
-              <div className="text-[11px] uppercase tracking-wider font-bold text-emerald-300 mb-2.5 flex items-center gap-1.5">
+            {/* TEAMS ACCOMPANYING YOU IN THIS INTAKE PHASE */}
+            <div className="pt-3 border-t border-white/15 space-y-2.5">
+              <div className="text-[11px] uppercase tracking-wider font-bold text-emerald-300 flex items-center gap-1.5">
                 <Users className="w-3.5 h-3.5 text-amber-400" />
-                Teams & Profiles Accompanying You in This Intake Phase:
+                Dedicated Teams & Profiles Accompanying You in This Intake Phase:
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 text-xs">
-                <div className="p-2.5 rounded-lg bg-black/20 border border-white/10 flex items-center gap-2.5">
+                <div className="p-2.5 rounded-lg bg-black/25 border border-white/10 flex items-center gap-2.5">
                   <div className="w-8 h-8 rounded-full bg-blue-500/30 text-blue-300 font-bold flex items-center justify-center shrink-0 border border-blue-400/30 text-xs">
                     Hub
                   </div>
@@ -569,7 +1285,7 @@ export const IntakeWizard: React.FC<IntakeWizardProps> = ({
                     </div>
                   </div>
                 </div>
-                <div className="p-2.5 rounded-lg bg-black/20 border border-white/10 flex items-center gap-2.5">
+                <div className="p-2.5 rounded-lg bg-black/25 border border-white/10 flex items-center gap-2.5">
                   <div className="w-8 h-8 rounded-full bg-purple-500/30 text-purple-300 font-bold flex items-center justify-center shrink-0 border border-purple-400/30 text-xs">
                     TO
                   </div>
@@ -580,7 +1296,7 @@ export const IntakeWizard: React.FC<IntakeWizardProps> = ({
                     </div>
                   </div>
                 </div>
-                <div className="p-2.5 rounded-lg bg-black/20 border border-white/10 flex items-center gap-2.5">
+                <div className="p-2.5 rounded-lg bg-black/25 border border-white/10 flex items-center gap-2.5">
                   <div className="w-8 h-8 rounded-full bg-emerald-500/30 text-emerald-300 font-bold flex items-center justify-center shrink-0 border border-emerald-400/30 text-xs">
                     Fn
                   </div>
@@ -593,411 +1309,36 @@ export const IntakeWizard: React.FC<IntakeWizardProps> = ({
                 </div>
               </div>
             </div>
-          </div>
 
-          <div className="border-b border-opella-border pb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-            <div>
-              <h2 className="text-xl font-bold text-opella-forest flex items-center gap-2">
-                <Sparkles className="w-5 h-5 text-amber-500" />
-                Use Case Intake & The 4 Questions Assessment (Slide 35)
-              </h2>
-              <p className="text-sm text-gray-600 mt-1">
-                Answer the four triage questions from the Opella playbook. An autonomous Charter Agent will evaluate your responses and route your initiative into the appropriate speed lane.
-              </p>
-            </div>
-            <button
-              type="button"
-              onClick={() => {
-                setAnswers({
-                  ...answers,
-                  initiativeTitle: "GIDE / BOWIE Procurement Agent",
-                  description:
-                    "Shifts Opella procurement from manual S2P steps to agentic execution. BOWIE agent automatically evaluates supplier quotes against commercial contracts, checks internal compliance rules, and creates SAP Purchase Orders within 48 hours.",
-                  targetUserGroupDescription:
-                    "1,800 Procurement buyers, category directors, and functional spenders across EULA, NA, and AMEA regions.",
-                  estimatedValueDescription:
-                    "€3.8M net run-rate EBITDA savings; 42,000 manual buyer hours repurposed; 75% touchless PO rate.",
-                  technologyProposed:
-                    "Azure GenAI (GPT-4o), LangChain Agent Orchestrator, SAP S/4HANA OData APIs, Databricks.",
-                  functionName: "Procurement",
-                  businessOwnerName: "Sarah Chen (Global Head of S2P)",
-                  estimatedCost: 1450000,
-                  targetUserCount: 1800,
-                  q1_bigBetOrOver1m: true,
-                  q2_approvedToolsUnder50k: false,
-                  q3_provenPilotOrReach: true,
-                  q4_newHypothesis: false,
-                });
-              }}
-              className="text-xs text-opella-forest bg-opella-forest/10 hover:bg-opella-forest/20 px-3 py-1.5 rounded-lg font-semibold transition-all flex items-center gap-1.5 whitespace-nowrap self-start sm:self-auto border border-opella-forest/20"
-            >
-              <Sparkles className="w-3.5 h-3.5 text-amber-500" /> Pre-fill GIDE Example
-            </button>
-          </div>
+            {/* GATE G1 COMITOLOGY ADVANCE BAR */}
+            <div className="pt-4 border-t border-white/20 flex flex-col sm:flex-row items-center justify-between gap-4">
+              {!isStep1Valid ? (
+                <div className="flex items-center gap-2 text-xs bg-amber-400/20 text-amber-200 border border-amber-400/40 px-3.5 py-2 rounded-xl">
+                  <AlertTriangle className="w-4 h-4 text-amber-300 shrink-0" />
+                  <span>
+                    <strong>Mandatory Intake Dossier Incomplete:</strong> Please complete all 5 required items above before running autonomous agent triage.
+                  </span>
+                </div>
+              ) : (
+                <div className="flex items-center gap-2 text-xs bg-emerald-400/20 text-emerald-200 border border-emerald-400/40 px-3.5 py-2 rounded-xl">
+                  <Check className="w-4 h-4 text-emerald-400 stroke-[3] shrink-0" />
+                  <span>
+                    <strong>All 5 Mandatory Items Collected & Verified!</strong> The intake dossier is complete and ready for Gate G1 triage.
+                  </span>
+                </div>
+              )}
 
-          {/* Basic Initiative Context */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="md:col-span-2">
-              <label className="block text-xs font-bold text-gray-800 uppercase tracking-wider mb-1">
-                Initiative Title / Name * <span className="text-rose-600 font-bold">(Mandatory)</span>
-              </label>
-              <input
-                type="text"
-                placeholder="e.g. GIDE / BOWIE Procurement Agent, Content Localization Engine, Demand Forecast Bot"
-                value={answers.initiativeTitle}
-                onChange={(e) => setAnswers({ ...answers, initiativeTitle: e.target.value })}
-                className="w-full px-4 py-2.5 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-opella-forest text-sm font-medium"
-              />
-            </div>
-
-            {/* MANDATORY: Description of the Use Case */}
-            <div className="md:col-span-2">
-              <div className="flex items-center justify-between mb-1">
-                <label className="block text-xs font-bold text-gray-800 uppercase tracking-wider">
-                  Description of the Use Case * <span className="text-rose-600 font-bold">(Mandatory)</span>
-                </label>
-                <span className="text-[11px] text-gray-500">Business context, current friction & intended AI solution</span>
-              </div>
-              <textarea
-                rows={3}
-                placeholder="e.g. Shifts Opella procurement from manual S2P steps to agentic execution. BOWIE agent automatically evaluates supplier quotes against commercial contracts, checks internal compliance rules, and creates SAP Purchase Orders within 48 hours."
-                value={answers.description || ""}
-                onChange={(e) => setAnswers({ ...answers, description: e.target.value })}
-                className={`w-full px-4 py-2.5 rounded-lg border text-sm focus:outline-none focus:ring-2 focus:ring-opella-forest ${
-                  !answers.description && answers.initiativeTitle ? "border-amber-400 bg-amber-50/20" : "border-gray-300"
-                }`}
-              />
-            </div>
-
-            {/* MANDATORY: Who are the users */}
-            <div className="md:col-span-2">
-              <div className="flex items-center justify-between mb-1">
-                <label className="block text-xs font-bold text-gray-800 uppercase tracking-wider">
-                  Who are the users? * <span className="text-rose-600 font-bold">(Mandatory)</span>
-                </label>
-                <span className="text-[11px] text-gray-500">Target roles, personas, locations, and user community</span>
-              </div>
-              <input
-                type="text"
-                placeholder="e.g. 1,800 Procurement buyers, category directors, and functional spenders across EULA, NA, and AMEA regions."
-                value={answers.targetUserGroupDescription || ""}
-                onChange={(e) => setAnswers({ ...answers, targetUserGroupDescription: e.target.value })}
-                className={`w-full px-4 py-2.5 rounded-lg border text-sm focus:outline-none focus:ring-2 focus:ring-opella-forest ${
-                  !answers.targetUserGroupDescription && answers.initiativeTitle ? "border-amber-400 bg-amber-50/20" : "border-gray-300"
-                }`}
-              />
-            </div>
-
-            {/* NOT MANDATORY: Estimated Value */}
-            <div>
-              <div className="flex items-center justify-between mb-1">
-                <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider">
-                  Estimated Value <span className="text-gray-400 font-normal">(Optional)</span>
-                </label>
-                <span className="text-[11px] text-gray-400">ROI / Savings / Hours Freed</span>
-              </div>
-              <input
-                type="text"
-                placeholder="e.g. €3.8M net run-rate EBITDA savings; 42,000 manual buyer hours repurposed; 75% touchless PO rate"
-                value={answers.estimatedValueDescription || ""}
-                onChange={(e) => setAnswers({ ...answers, estimatedValueDescription: e.target.value })}
-                className="w-full px-3.5 py-2.5 rounded-lg border border-gray-300 text-xs focus:outline-none focus:ring-2 focus:ring-opella-forest"
-              />
-            </div>
-
-            {/* NOT MANDATORY: Which technology to use */}
-            <div>
-              <div className="flex items-center justify-between mb-1">
-                <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider">
-                  Which Technology to Use <span className="text-gray-400 font-normal">(Optional)</span>
-                </label>
-                <span className="text-[11px] text-gray-400">Proposed platform or models</span>
-              </div>
-              <input
-                type="text"
-                placeholder="e.g. Azure GenAI (GPT-4o), LangChain, SAP S/4HANA OData APIs, Databricks"
-                value={answers.technologyProposed || ""}
-                onChange={(e) => setAnswers({ ...answers, technologyProposed: e.target.value })}
-                className="w-full px-3.5 py-2.5 rounded-lg border border-gray-300 text-xs focus:outline-none focus:ring-2 focus:ring-opella-forest"
-              />
-            </div>
-
-            <div>
-              <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">
-                Business Function
-              </label>
-              <select
-                value={answers.functionName}
-                onChange={(e) => setAnswers({ ...answers, functionName: e.target.value })}
-                className="w-full px-3.5 py-2.5 rounded-lg border border-gray-300 text-xs bg-white focus:outline-none focus:ring-2 focus:ring-opella-forest"
+              <button
+                type="button"
+                onClick={handleStartAgentTriage}
+                disabled={!isStep1Valid}
+                className="px-6 py-3 bg-amber-400 hover:bg-amber-300 text-gray-950 font-black text-xs sm:text-sm rounded-xl flex items-center gap-2 transition-all shadow-md hover:scale-[1.02] disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:scale-100 whitespace-nowrap self-end sm:self-auto"
               >
-                <option value="M&S">Marketing & Sales (M&S)</option>
-                <option value="Procurement">Procurement</option>
-                <option value="Supply Chain">Supply Chain & IBP</option>
-                <option value="Science">Science (R&D & Regulatory)</option>
-                <option value="Manufacturing">Manufacturing & Quality (M&Q)</option>
-                <option value="Finance">Finance & GBS</option>
-                <option value="P&C">People & Culture (P&C / HR)</option>
-                <option value="Cross-Functional">Cross-Functional / Enterprise</option>
-              </select>
+                <Bot className="w-4 h-4 text-gray-950" />
+                <span>Launch Autonomous Agent Triage (Gate G1)</span>
+                <ArrowRight className="w-4 h-4 text-gray-950" />
+              </button>
             </div>
-
-            <div>
-              <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">
-                Accountable Business Owner (BO/PO)
-              </label>
-              <input
-                type="text"
-                placeholder="e.g. Sarah Chen (Global Head of S2P)"
-                value={answers.businessOwnerName}
-                onChange={(e) => setAnswers({ ...answers, businessOwnerName: e.target.value })}
-                className="w-full px-3.5 py-2.5 rounded-lg border border-gray-300 text-xs focus:outline-none focus:ring-2 focus:ring-opella-forest"
-              />
-            </div>
-
-            <div>
-              <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">
-                Estimated Build & License Budget (€)
-              </label>
-              <div className="relative">
-                <input
-                  type="number"
-                  step="10000"
-                  value={answers.estimatedCost}
-                  onChange={(e) => setAnswers({ ...answers, estimatedCost: Number(e.target.value) })}
-                  className="w-full pl-8 pr-3 py-2.5 rounded-lg border border-gray-300 text-xs focus:outline-none focus:ring-2 focus:ring-opella-forest"
-                />
-                <Euro className="w-3.5 h-3.5 text-gray-400 absolute left-3 top-3.5" />
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">
-                Target User Count
-              </label>
-              <div className="relative">
-                <input
-                  type="number"
-                  value={answers.targetUserCount}
-                  onChange={(e) => setAnswers({ ...answers, targetUserCount: Number(e.target.value) })}
-                  className="w-full pl-8 pr-3 py-2.5 rounded-lg border border-gray-300 text-xs focus:outline-none focus:ring-2 focus:ring-opella-forest"
-                />
-                <Users className="w-3.5 h-3.5 text-gray-400 absolute left-3 top-3.5" />
-              </div>
-            </div>
-          </div>
-
-          {/* The 4 Questions Cards */}
-          <div className="space-y-3 pt-2 border-t border-opella-border">
-            <h3 className="text-xs font-bold uppercase tracking-wider text-gray-500">
-              The 4 Questions Triage Matrix
-            </h3>
-
-            {/* Q1 */}
-            <div
-              className={`p-4 rounded-xl border transition-all ${
-                answers.q1_bigBetOrOver1m
-                  ? "border-emerald-600 bg-emerald-50/70"
-                  : "border-gray-200 bg-gray-50/50 hover:border-gray-300"
-              }`}
-            >
-              <div className="flex items-start justify-between gap-4">
-                <div className="flex-1">
-                  <div className="flex items-center gap-2 mb-1">
-                    <span className="text-xs font-bold px-2 py-0.5 rounded bg-emerald-700 text-white">Q1</span>
-                    <h4 className="text-sm font-bold text-gray-900">
-                      Is it part of an AmplifAI big bet, does it change Butterfly core platforms or scope, or cost more than €1m?
-                    </h4>
-                  </div>
-                  <p className="text-xs text-gray-600 ml-7">
-                    If YES: Routes immediately to <strong>T1 · Transform</strong> (Full Business Case, Butterfly comitology, Transformation SteerCo).
-                  </p>
-                </div>
-                <div className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setAnswers({ ...answers, q1_bigBetOrOver1m: true })}
-                    className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${
-                      answers.q1_bigBetOrOver1m ? "bg-emerald-700 text-white shadow-sm" : "bg-white border text-gray-700"
-                    }`}
-                  >
-                    YES
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setAnswers({ ...answers, q1_bigBetOrOver1m: false })}
-                    className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${
-                      !answers.q1_bigBetOrOver1m ? "bg-gray-800 text-white shadow-sm" : "bg-white border text-gray-700"
-                    }`}
-                  >
-                    NO
-                  </button>
-                </div>
-              </div>
-            </div>
-
-            {/* Q2 */}
-            <div
-              className={`p-4 rounded-xl border transition-all ${
-                answers.q2_approvedToolsUnder50k
-                  ? "border-purple-600 bg-purple-50/70"
-                  : "border-gray-200 bg-gray-50/50 hover:border-gray-300"
-              }`}
-            >
-              <div className="flex items-start justify-between gap-4">
-                <div className="flex-1">
-                  <div className="flex items-center gap-2 mb-1">
-                    <span className="text-xs font-bold px-2 py-0.5 rounded bg-purple-700 text-white">Q2</span>
-                    <h4 className="text-sm font-bold text-gray-900">
-                      Does it only use approved tools and data, configured rather than built, for under €50k?
-                    </h4>
-                  </div>
-                  <p className="text-xs text-gray-600 ml-7">
-                    If YES: Routes to <strong>Self-Serve · Register & Go</strong> (Immediate speed, skips G2–G4).
-                  </p>
-                </div>
-                <div className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setAnswers({ ...answers, q2_approvedToolsUnder50k: true })}
-                    className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${
-                      answers.q2_approvedToolsUnder50k ? "bg-purple-700 text-white shadow-sm" : "bg-white border text-gray-700"
-                    }`}
-                  >
-                    YES
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setAnswers({ ...answers, q2_approvedToolsUnder50k: false })}
-                    className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${
-                      !answers.q2_approvedToolsUnder50k ? "bg-gray-800 text-white shadow-sm" : "bg-white border text-gray-700"
-                    }`}
-                  >
-                    NO
-                  </button>
-                </div>
-              </div>
-            </div>
-
-            {/* Q3 */}
-            <div
-              className={`p-4 rounded-xl border transition-all ${
-                answers.q3_provenPilotOrReach
-                  ? "border-blue-600 bg-blue-50/70"
-                  : "border-gray-200 bg-gray-50/50 hover:border-gray-300"
-              }`}
-            >
-              <div className="flex items-start justify-between gap-4">
-                <div className="flex-1">
-                  <div className="flex items-center gap-2 mb-1">
-                    <span className="text-xs font-bold px-2 py-0.5 rounded bg-blue-600 text-white">Q3</span>
-                    <h4 className="text-sm font-bold text-gray-900">
-                      Is value proven in a pilot, and does it need reach (2+ functions/regions, 500+ users), hub capacity or €200k–€1m?
-                    </h4>
-                  </div>
-                  <p className="text-xs text-gray-600 ml-7">
-                    If YES: Routes to <strong>T2 · Scale</strong> (Light business case, AI Portfolio Board, tranche unlocks).
-                  </p>
-                </div>
-                <div className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setAnswers({ ...answers, q3_provenPilotOrReach: true })}
-                    className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${
-                      answers.q3_provenPilotOrReach ? "bg-blue-600 text-white shadow-sm" : "bg-white border text-gray-700"
-                    }`}
-                  >
-                    YES
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setAnswers({ ...answers, q3_provenPilotOrReach: false })}
-                    className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${
-                      !answers.q3_provenPilotOrReach ? "bg-gray-800 text-white shadow-sm" : "bg-white border text-gray-700"
-                    }`}
-                  >
-                    NO
-                  </button>
-                </div>
-              </div>
-            </div>
-
-            {/* Q4 / Default */}
-            <div
-              className={`p-4 rounded-xl border transition-all ${
-                !answers.q1_bigBetOrOver1m &&
-                !answers.q2_approvedToolsUnder50k &&
-                !answers.q3_provenPilotOrReach
-                  ? "border-amber-600 bg-amber-50/70"
-                  : "border-gray-200 bg-gray-50/50"
-              }`}
-            >
-              <div className="flex items-start justify-between gap-4">
-                <div className="flex-1">
-                  <div className="flex items-center gap-2 mb-1">
-                    <span className="text-xs font-bold px-2 py-0.5 rounded bg-amber-600 text-white">Q4</span>
-                    <h4 className="text-sm font-bold text-gray-900">
-                      Otherwise: A new idea or build with a value hypothesis to test?
-                    </h4>
-                  </div>
-                  <p className="text-xs text-gray-600 ml-7">
-                    Routes to <strong>T3 · Fast Lane</strong> (1-page canvas, 10-day decision SLA, 6–8 week fail-fast MVP sprint).
-                  </p>
-                </div>
-                <span className="text-xs font-bold text-amber-700 bg-amber-100 px-3 py-1 rounded-full">
-                  Fast Lane Fallback
-                </span>
-              </div>
-            </div>
-          </div>
-
-          {/* ORAI Risk Checklist (Slides 35 & 69) */}
-          <div className="pt-2 border-t border-opella-border">
-            <h4 className="text-xs font-bold uppercase tracking-wider text-gray-500 mb-2 flex items-center gap-1.5">
-              <Shield className="w-4 h-4 text-rose-600" />
-              ORAI Responsible AI Screening Flags (EU AI Act)
-            </h4>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
-              <label className="flex items-start gap-2 p-2.5 rounded-lg border border-gray-200 bg-gray-50 hover:bg-gray-100 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={answers.risk_personalHealthData}
-                  onChange={(e) => setAnswers({ ...answers, risk_personalHealthData: e.target.checked })}
-                  className="mt-0.5 rounded text-opella-forest"
-                />
-                <span>Processes employee personal, health, patient or confidential data</span>
-              </label>
-
-              <label className="flex items-start gap-2 p-2.5 rounded-lg border border-gray-200 bg-gray-50 hover:bg-gray-100 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={answers.risk_autonomousDecisions}
-                  onChange={(e) => setAnswers({ ...answers, risk_autonomousDecisions: e.target.checked })}
-                  className="mt-0.5 rounded text-opella-forest"
-                />
-                <span>Makes autonomous decisions impacting hiring, credit or regulatory safety</span>
-              </label>
-            </div>
-          </div>
-
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-4 border-t border-opella-border">
-            {!isStep1Valid ? (
-              <span className="text-xs text-amber-800 bg-amber-50 px-3 py-1.5 rounded-lg border border-amber-200">
-                ⚠️ Required to continue: Please fill <strong>Title</strong>, <strong>Use Case Description</strong>, and <strong>Who are the users</strong>.
-              </span>
-            ) : (
-              <span className="text-xs text-emerald-800 bg-emerald-50 px-3 py-1.5 rounded-lg border border-emerald-200 flex items-center gap-1.5">
-                <Check className="w-3.5 h-3.5 text-emerald-600" /> Mandatory fields completed. Ready for agent triage.
-              </span>
-            )}
-            <button
-              onClick={handleStartAgentTriage}
-              disabled={!isStep1Valid}
-              className="px-7 py-3 bg-opella-forest text-white rounded-xl font-bold text-sm flex items-center gap-2 hover:bg-opella-emerald shadow-md transition-all hover:scale-[1.01] disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap self-end sm:self-auto"
-            >
-              <Bot className="w-4 h-4 text-emerald-300" />
-              Run Autonomous Agent Triage <ArrowRight className="w-4 h-4" />
-            </button>
           </div>
         </div>
       )}
