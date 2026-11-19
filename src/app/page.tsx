@@ -5,16 +5,12 @@ import { Header } from "@/components/Header";
 import { IntakeWizard } from "@/components/IntakeWizard";
 import { LifecycleView } from "@/components/LifecycleView";
 import { PortfolioView } from "@/components/PortfolioView";
-import { RolesView } from "@/components/RolesView";
-import { SettingsView } from "@/components/SettingsView";
 import { UseCase } from "@/types";
 import { fetchUseCases } from "@/lib/storage";
 import { INITIAL_USE_CASES } from "@/lib/mockData";
 
 export default function Home() {
-  const [activeTab, setActiveTab] = useState<
-    "wizard" | "lifecycle" | "portfolio" | "roles" | "settings"
-  >("wizard");
+  const [activeTab, setActiveTab] = useState<"wizard" | "lifecycle" | "portfolio">("wizard");
 
   const [useCases, setUseCases] = useState<UseCase[]>(INITIAL_USE_CASES);
   const [selectedUseCaseId, setSelectedUseCaseId] = useState<string>(
@@ -56,12 +52,6 @@ export default function Home() {
   const handleSelectUseCaseAndGoToLifecycle = (id: string) => {
     setSelectedUseCaseId(id);
     setActiveTab("lifecycle");
-  };
-
-  const handleResetData = async () => {
-    const data = await fetchUseCases();
-    setUseCases(data);
-    if (data[0]) setSelectedUseCaseId(data[0].id);
   };
 
   return (
@@ -107,12 +97,6 @@ export default function Home() {
                 onNavigateToWizard={() => setActiveTab("wizard")}
               />
             )}
-
-            {activeTab === "roles" && <RolesView />}
-
-            {activeTab === "settings" && (
-              <SettingsView onResetData={handleResetData} />
-            )}
           </>
         )}
       </main>
@@ -128,15 +112,15 @@ export default function Home() {
               Opella AmplifAI Playbook
             </span>
             <span>·</span>
-            <span>Target Operating Model & Use Case Lifecycle V1611</span>
+            <span>Transformation Office (Butterfly Spine) & Data & AI Hub</span>
           </div>
 
           <div className="flex items-center gap-4 text-gray-500 text-[11px]">
-            <span>Transformation Office (Butterfly Spine)</span>
+            <span>G1–G6 Decision Rights</span>
             <span>•</span>
-            <span>Data & AI Platform (Azure & Databricks)</span>
+            <span>Two Speeds Governance</span>
             <span>•</span>
-            <span>ORAI Responsible AI Framework</span>
+            <span>Responsible AI (ORAI)</span>
           </div>
         </div>
       </footer>

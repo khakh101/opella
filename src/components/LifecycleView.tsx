@@ -21,6 +21,9 @@ import {
   Zap,
   Cpu,
   Users,
+  FastForward,
+  Activity,
+  Workflow,
 } from "lucide-react";
 import confetti from "canvas-confetti";
 import { UseCase, GateId, GateStatus, GateDetail } from "@/types";
@@ -64,12 +67,12 @@ export const LifecycleView: React.FC<LifecycleViewProps> = ({
   const modeCfg = DELIVERY_MODES_INFO[currentCase.mode];
   const activeGate = currentCase.gates[activeGateTab] || currentCase.gates.G1;
 
-  const handleUpdateStatus = async (newStatus: GateStatus) => {
+  const handleUpdateStatus = async (newStatus: GateStatus, customFeedback?: string) => {
     const updated = await updateGateStatus(
       currentCase.id,
       activeGateTab,
       newStatus,
-      feedbackInput || undefined
+      customFeedback || feedbackInput || undefined
     );
     if (updated) {
       onUseCaseUpdated(updated);
@@ -94,38 +97,81 @@ export const LifecycleView: React.FC<LifecycleViewProps> = ({
     }
   };
 
-  const handleSimulateAgent = () => {
+  const handleSimulateStep = () => {
     setIsSimulatingAgent(true);
-    setSimulationLog("Initiating OpellaGPT Charter Agent screening...");
 
-    setTimeout(() => {
-      setSimulationLog(
-        "Agent Verification: Checking AI Registry for duplication... Clean. Validating VCP value drivers... Positive."
-      );
-    }, 700);
-
-    setTimeout(() => {
-      setSimulationLog(
-        "ORAI Risk Screening: Evaluating EU AI Act compliance boundaries... Risk score calculated. Gate G1 criteria fulfilled."
-      );
-    }, 1400);
-
-    setTimeout(async () => {
-      setIsSimulatingAgent(false);
-      setSimulationLog(null);
-      await handleUpdateStatus("PASSED");
-    }, 2200);
+    if (activeGateTab === "G1") {
+      setSimulationLog("Charter Agent screening: Checking AI Registry & validating value case...");
+      setTimeout(() => {
+        setSimulationLog("Charter Agent: ORAI risk parameters confirmed. Front-door qualification passed!");
+      }, 1000);
+      setTimeout(async () => {
+        setIsSimulatingAgent(false);
+        setSimulationLog(null);
+        await handleUpdateStatus("PASSED", "OpellaGPT Charter Agent validated need and completed registry registration.");
+      }, 2000);
+    } else if (activeGateTab === "G2") {
+      setSimulationLog("Finance & Data/AI Team: Validating financial baseline and platform architecture...");
+      setTimeout(() => {
+        setSimulationLog("ORAI Legal Team: Confirmed low/medium risk conditions. Feasibility confirmed.");
+      }, 1000);
+      setTimeout(async () => {
+        setIsSimulatingAgent(false);
+        setSimulationLog(null);
+        await handleUpdateStatus("PASSED", "Feasibility review approved: Financial baseline grounded with Finance BP.");
+      }, 2000);
+    } else if (activeGateTab === "G3") {
+      setSimulationLog("Transformation Office: Checking VCP value pool and quarterly hub capacity plan (60/25/15)...");
+      setTimeout(() => {
+        setSimulationLog("Portfolio Board: Capacity slot allocated. Priority approved!");
+      }, 1000);
+      setTimeout(async () => {
+        setIsSimulatingAgent(false);
+        setSimulationLog(null);
+        await handleUpdateStatus("PASSED", "Prioritized into active backlog with allocated delivery capacity.");
+      }, 2000);
+    } else if (activeGateTab === "G4") {
+      setSimulationLog("Design Authority: Reviewing platform fit and confirming Mode & Budget...");
+      setTimeout(() => {
+        setSimulationLog("Design Authority: Squad composed. GO BUILD approved for MVP!");
+      }, 1000);
+      setTimeout(async () => {
+        setIsSimulatingAgent(false);
+        setSimulationLog(null);
+        await handleUpdateStatus("PASSED", "GO BUILD APPROVED: Delivery squad launched into 6-8 week MVP build.");
+      }, 2000);
+    } else if (activeGateTab === "G5") {
+      setSimulationLog("Scale Committee: Evaluating pilot MVP KPIs against baseline & 5-pillar HR workforce scan...");
+      setTimeout(() => {
+        setSimulationLog("Scale Committee: Success targets met. Tranche funding unlocked for multi-market rollout!");
+      }, 1000);
+      setTimeout(async () => {
+        setIsSimulatingAgent(false);
+        setSimulationLog(null);
+        await handleUpdateStatus("PASSED", "Pre-Scale Gate passed: Adoption plan validated and tranche funding released.");
+      }, 2000);
+    } else if (activeGateTab === "G6") {
+      setSimulationLog("Value Office & Finance: Auditing realized EBITDA and live token consumption...");
+      setTimeout(() => {
+        setSimulationLog("Finance Sign-off: Realized value verified in unified ledger. Active maintenance confirmed.");
+      }, 1000);
+      setTimeout(async () => {
+        setIsSimulatingAgent(false);
+        setSimulationLog(null);
+        await handleUpdateStatus("PASSED", "Maintain & Run validated: ROI verified against baseline; monitoring active.");
+      }, 2000);
+    }
   };
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
-      {/* Top Selector & Use Case Card */}
+      {/* Top Selector & Active Initiative Card */}
       <div className="bg-white rounded-2xl p-6 shadow-sm border border-opella-border">
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-5 border-b border-opella-border">
           {/* Initiative Picker */}
           <div className="flex-1">
             <span className="text-xs uppercase font-bold tracking-wider text-gray-400 block mb-1">
-              Active Initiative Under Review
+              Active Initiative in Real-Time Lifecycle
             </span>
             <div className="flex items-center gap-3">
               <select
@@ -152,7 +198,7 @@ export const LifecycleView: React.FC<LifecycleViewProps> = ({
           {/* Quick Badges */}
           <div className="flex flex-wrap items-center gap-2 text-xs">
             <span className="px-3 py-1.5 rounded-lg bg-emerald-50 text-emerald-800 font-semibold border border-emerald-200 flex items-center gap-1.5">
-              <Zap className="w-3.5 h-3.5 text-emerald-600" />
+              <Workflow className="w-3.5 h-3.5 text-emerald-600" />
               {currentCase.mode}
             </span>
             <span
@@ -176,44 +222,44 @@ export const LifecycleView: React.FC<LifecycleViewProps> = ({
         {/* Overview Summary Bar */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 pt-4 text-xs">
           <div>
-            <span className="text-gray-400 block">Current Status</span>
+            <span className="text-gray-400 block font-medium">Current Status</span>
             <span className="font-bold text-gray-900 text-sm">{currentCase.status}</span>
           </div>
           <div>
-            <span className="text-gray-400 block">Sponsor & Governance</span>
+            <span className="text-gray-400 block font-medium">Sponsor & Governance</span>
             <span className="font-bold text-gray-900 text-sm">{currentCase.sponsor}</span>
           </div>
           <div>
-            <span className="text-gray-400 block">Envelope / Budget</span>
+            <span className="text-gray-400 block font-medium">Envelope / Budget</span>
             <span className="font-bold text-gray-900 text-sm">€{currentCase.budget.toLocaleString()}</span>
           </div>
           <div>
-            <span className="text-gray-400 block">Target Value / ROI</span>
+            <span className="text-gray-400 block font-medium">Target Value / ROI</span>
             <span className="font-bold text-emerald-700 text-sm">{currentCase.roiEstimate}</span>
           </div>
         </div>
       </div>
 
-      {/* Real-Time Chevron Stage Gates Pipeline (Slides 32 & 46) */}
+      {/* Real-Time Chevron Stage Gates Pipeline (Slides 32, 44 & 46) */}
       <div className="bg-white rounded-2xl p-6 shadow-sm border border-opella-border">
-        <div className="flex items-center justify-between mb-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4">
           <div>
             <h3 className="text-lg font-bold text-opella-forest flex items-center gap-2">
               <Layers className="w-5 h-5 text-emerald-700" />
-              Real-Time Use Case Stage Gates (G1 to G6)
+              Real-Time Governance Spine (Gates G1 to G6)
             </h3>
             <p className="text-xs text-gray-500">
-              Interactive governance spine with multi-dimensional review at every gate (Value, Complexity, Risk, Adoption).
+              Multi-dimensional review at every gate: Value (Finance), Complexity (Data & AI), Risk (ORAI), Adoption (Change/P&C).
             </p>
           </div>
           <div className="text-xs text-gray-500 flex items-center gap-3">
-            <span className="flex items-center gap-1">
+            <span className="flex items-center gap-1 font-medium">
               <span className="w-2.5 h-2.5 rounded-full bg-emerald-500" /> Passed
             </span>
-            <span className="flex items-center gap-1">
+            <span className="flex items-center gap-1 font-medium">
               <span className="w-2.5 h-2.5 rounded-full bg-amber-500" /> In Review
             </span>
-            <span className="flex items-center gap-1">
+            <span className="flex items-center gap-1 font-medium">
               <span className="w-2.5 h-2.5 rounded-full bg-gray-300" /> Pending
             </span>
           </div>
@@ -275,7 +321,7 @@ export const LifecycleView: React.FC<LifecycleViewProps> = ({
         </div>
       </div>
 
-      {/* Active Gate Inspector & Action Center */}
+      {/* Active Gate Inspector & Step Simulation Center */}
       <div className="bg-white rounded-2xl p-6 shadow-sm border border-opella-border space-y-6">
         {/* Gate Header */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-5 border-b border-opella-border">
@@ -370,52 +416,53 @@ export const LifecycleView: React.FC<LifecycleViewProps> = ({
           </div>
         </div>
 
-        {/* Simulation / Feedback Box */}
+        {/* Committee / Agent Feedback Note */}
         {activeGate.feedback && (
           <div className="p-3 bg-gray-50 rounded-lg border border-gray-200 text-xs text-gray-700">
             <strong>Committee Reviewer Feedback:</strong> {activeGate.feedback}
           </div>
         )}
 
+        {/* Live Simulation Banner */}
         {isSimulatingAgent && simulationLog && (
           <div className="p-4 bg-emerald-900 text-emerald-100 rounded-xl text-xs font-mono space-y-1 flex items-start gap-3">
             <Bot className="w-5 h-5 text-emerald-400 shrink-0 mt-0.5 animate-pulse" />
             <div>
-              <div className="font-bold text-white mb-1">Autonomous Charter Agent Processing...</div>
+              <div className="font-bold text-white mb-1">Simulating Committee & Agent Gate Review...</div>
               <div>{simulationLog}</div>
             </div>
           </div>
         )}
 
-        {/* Action Controls */}
+        {/* Action Controls & Interactive Simulation */}
         <div className="pt-4 border-t border-opella-border flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="w-full sm:w-auto flex-1 max-w-md">
             <input
               type="text"
-              placeholder="Add gate review notes or approval conditions..."
+              placeholder="Add committee review notes or approval conditions..."
               value={feedbackInput}
               onChange={(e) => setFeedbackInput(e.target.value)}
               className="w-full px-3.5 py-2 text-xs border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-opella-forest"
             />
           </div>
 
-          <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
-            {activeGate.id === "G1" && activeGate.type === "AUTOMATIC" && (
-              <button
-                type="button"
-                onClick={handleSimulateAgent}
-                disabled={isSimulatingAgent}
-                className="px-4 py-2 bg-purple-700 text-white rounded-lg text-xs font-bold hover:bg-purple-800 transition-colors flex items-center gap-1.5 shadow-sm"
-              >
-                <Bot className="w-4 h-4" />
-                Simulate Charter Agent Pass
-              </button>
-            )}
+          <div className="flex items-center gap-2 w-full sm:w-auto justify-end flex-wrap">
+            {/* Simulate Step Button */}
+            <button
+              type="button"
+              onClick={handleSimulateStep}
+              disabled={isSimulatingAgent}
+              className="px-4 py-2 bg-purple-700 text-white rounded-lg text-xs font-bold hover:bg-purple-800 transition-colors flex items-center gap-1.5 shadow-sm"
+              title="Run automated simulation of committee/agent decision"
+            >
+              <Bot className="w-4 h-4 text-purple-200" />
+              Simulate Gate Review
+            </button>
 
             <button
               type="button"
               onClick={() => handleUpdateStatus("FAILED")}
-              className="px-4 py-2 border border-rose-300 text-rose-700 hover:bg-rose-50 rounded-lg text-xs font-bold transition-colors flex items-center gap-1"
+              className="px-3.5 py-2 border border-rose-300 text-rose-700 hover:bg-rose-50 rounded-lg text-xs font-bold transition-colors flex items-center gap-1"
             >
               <X className="w-3.5 h-3.5" /> Re-scope / Block
             </button>

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Sparkles,
   ArrowRight,
@@ -13,11 +13,14 @@ import {
   Shield,
   Zap,
   Check,
+  Building,
+  Bot,
+  Send,
+  Compass,
+  Bike,
+  Workflow,
   HelpCircle,
   FileText,
-  Send,
-  Building,
-  Cpu,
 } from "lucide-react";
 import confetti from "canvas-confetti";
 import {
@@ -46,7 +49,12 @@ export const IntakeWizard: React.FC<IntakeWizardProps> = ({
   onUseCaseCreated,
   onNavigateToLifecycle,
 }) => {
-  const [step, setStep] = useState<1 | 2 | 3 | 4 | 5>(1);
+  // Exact Sequencing:
+  // Step 1: 4 Questions Assessment & Initiative Framing
+  // Step 2: Autonomous Agent Triage (T1, T2, T3 Fast Lane, Self-Serve)
+  // Step 3: Fill Out Relevant Business Case Form
+  // Step 4: Sourcing & Delivery Mode Selection (Mode 1, 2, 3)
+  const [step, setStep] = useState<1 | 2 | 3 | 4>(1);
 
   // Form State
   const [answers, setAnswers] = useState<IntakeAnswers>({
@@ -60,7 +68,7 @@ export const IntakeWizard: React.FC<IntakeWizardProps> = ({
     targetUserCount: 120,
     mappedBigBet: undefined,
 
-    // 4 Questions (Slide 35)
+    // The 4 Questions (Slide 35)
     q1_bigBetOrOver1m: false,
     q2_approvedToolsUnder50k: false,
     q3_provenPilotOrReach: false,
@@ -78,6 +86,13 @@ export const IntakeWizard: React.FC<IntakeWizardProps> = ({
     functionTechCapacity: "Medium",
     fundingSource: "Co-funded",
   });
+
+  // Selected Mode State (User chooses at Step 4)
+  const [chosenMode, setChosenMode] = useState<DeliveryMode>("Mode 2");
+
+  // Agent Triage Simulation Animation States
+  const [isAgentThinking, setIsAgentThinking] = useState(false);
+  const [agentLogIndex, setAgentLogIndex] = useState(0);
 
   // Dynamic Business Case Form States
   // T1
@@ -195,14 +210,32 @@ export const IntakeWizard: React.FC<IntakeWizardProps> = ({
   // Real-time evaluation calculation
   const decision = evaluateIntake(answers);
   const tierConfig = TIER_CONFIG[decision.tier];
-  const modeInfo = DELIVERY_MODES_INFO[decision.mode];
 
-  const handleNext = () => {
-    if (step < 5) setStep((prev) => (prev + 1) as any);
-  };
+  // Keep chosen mode in sync with suggested default
+  useEffect(() => {
+    setChosenMode(decision.mode);
+  }, [decision.mode]);
 
-  const handleBack = () => {
-    if (step > 1) setStep((prev) => (prev - 1) as any);
+  // Handle Triggering Agent Triage Transition from Step 1 to Step 2
+  const handleStartAgentTriage = () => {
+    setIsAgentThinking(true);
+    setAgentLogIndex(0);
+    setStep(2);
+
+    const timer1 = setTimeout(() => setAgentLogIndex(1), 600);
+    const timer2 = setTimeout(() => setAgentLogIndex(2), 1200);
+    const timer3 = setTimeout(() => setAgentLogIndex(3), 1800);
+    const timer4 = setTimeout(() => {
+      setIsAgentThinking(false);
+      setAgentLogIndex(4);
+    }, 2400);
+
+    return () => {
+      clearTimeout(timer1);
+      clearTimeout(timer2);
+      clearTimeout(timer3);
+      clearTimeout(timer4);
+    };
   };
 
   const handleCreateUseCase = async () => {
@@ -256,7 +289,7 @@ export const IntakeWizard: React.FC<IntakeWizardProps> = ({
           ? "ExCo Bet Sponsor"
           : `${answers.functionName} Business Unit VP`,
       tier: decision.tier,
-      mode: decision.mode,
+      mode: chosenMode,
       riskTier: decision.riskTier,
       budget: answers.estimatedCost,
       roiEstimate:
@@ -276,20 +309,20 @@ export const IntakeWizard: React.FC<IntakeWizardProps> = ({
       updatedAt: new Date().toISOString(),
     };
 
-    // Save
+    // Save to Supabase and LocalStorage
     await saveUseCase(newCase);
     onUseCaseCreated(newCase);
 
     // Trigger celebration confetti
     try {
       confetti({
-        particleCount: 80,
-        spread: 60,
+        particleCount: 90,
+        spread: 70,
         origin: { y: 0.6 },
       });
     } catch (e) {}
 
-    // Navigate to lifecycle view
+    // Navigate to lifecycle simulator
     onNavigateToLifecycle(newCase.id);
   };
 
@@ -298,17 +331,16 @@ export const IntakeWizard: React.FC<IntakeWizardProps> = ({
       {/* Wizard Progress Stepper */}
       <div className="mb-8 bg-white rounded-xl p-5 shadow-sm border border-opella-border">
         <div className="flex items-center justify-between text-xs font-semibold text-gray-500 mb-2">
-          <span>STEP {step} OF 5</span>
+          <span>STEP {step} OF 4</span>
           <span className="text-opella-forest font-bold">
-            {step === 1 && "1. Initiative Context"}
-            {step === 2 && "2. The 4 Questions Triage Router"}
-            {step === 3 && "3. ORAI Risk Self-Assessment"}
-            {step === 4 && "4. Assigned Speed & Delivery Mode"}
-            {step === 5 && `5. Fill Relevant Business Case (${decision.tier})`}
+            {step === 1 && "1. The 4 Questions Assessment & Initiative Framing"}
+            {step === 2 && "2. Autonomous Agent Triage (Tier & Speed)"}
+            {step === 3 && `3. Fill Relevant Business Case (${decision.tier})`}
+            {step === 4 && "4. Mode Selection (Do it for me / With me / Enable me)"}
           </span>
         </div>
         <div className="w-full bg-gray-100 rounded-full h-2.5 overflow-hidden flex">
-          {[1, 2, 3, 4, 5].map((s) => (
+          {[1, 2, 3, 4].map((s) => (
             <div
               key={s}
               className={`flex-1 transition-all duration-300 ${
@@ -319,45 +351,42 @@ export const IntakeWizard: React.FC<IntakeWizardProps> = ({
         </div>
       </div>
 
-      {/* ================= STEP 1: CONTEXT ================= */}
+      {/* ================= STEP 1: THE 4 QUESTIONS ASSESSMENT ================= */}
       {step === 1 && (
-        <div className="bg-white rounded-2xl p-7 shadow-sm border border-opella-border space-y-6">
+        <div className="bg-white rounded-2xl p-7 shadow-sm border border-opella-border space-y-7">
           <div className="border-b border-opella-border pb-4">
             <h2 className="text-xl font-bold text-opella-forest flex items-center gap-2">
-              <Building className="w-5 h-5 text-emerald-700" />
-              Initiative Framing & Organizational Ownership
+              <Sparkles className="w-5 h-5 text-amber-500" />
+              Use Case Intake & The 4 Questions Assessment (Slide 35)
             </h2>
             <p className="text-sm text-gray-600 mt-1">
-              Every AI initiative at Opella begins with a single intake to determine ownership, scope, and strategic alignment with the Butterfly transformation program.
+              Answer the four triage questions from the Opella playbook. An autonomous Charter Agent will evaluate your responses and route your initiative into the appropriate speed lane.
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+          {/* Basic Initiative Context */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="md:col-span-2">
-              <label className="block text-sm font-semibold text-gray-800 mb-1.5">
+              <label className="block text-xs font-bold text-gray-800 uppercase tracking-wider mb-1">
                 Initiative Title / Name *
               </label>
               <input
                 type="text"
                 placeholder="e.g. AI Content Localization Engine, S2P PO Validator, Demand Forecast Bot"
                 value={answers.initiativeTitle}
-                onChange={(e) =>
-                  setAnswers({ ...answers, initiativeTitle: e.target.value })
-                }
-                className="w-full px-4 py-2.5 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-opella-forest focus:border-transparent text-sm"
+                onChange={(e) => setAnswers({ ...answers, initiativeTitle: e.target.value })}
+                className="w-full px-4 py-2.5 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-opella-forest text-sm"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-semibold text-gray-800 mb-1.5">
+              <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">
                 Business Function
               </label>
               <select
                 value={answers.functionName}
-                onChange={(e) =>
-                  setAnswers({ ...answers, functionName: e.target.value })
-                }
-                className="w-full px-4 py-2.5 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-opella-forest text-sm bg-white"
+                onChange={(e) => setAnswers({ ...answers, functionName: e.target.value })}
+                className="w-full px-3.5 py-2.5 rounded-lg border border-gray-300 text-xs bg-white focus:outline-none focus:ring-2 focus:ring-opella-forest"
               >
                 <option value="M&S">Marketing & Sales (M&S)</option>
                 <option value="Procurement">Procurement</option>
@@ -366,170 +395,62 @@ export const IntakeWizard: React.FC<IntakeWizardProps> = ({
                 <option value="Manufacturing">Manufacturing & Quality (M&Q)</option>
                 <option value="Finance">Finance & GBS</option>
                 <option value="P&C">People & Culture (P&C / HR)</option>
-                <option value="Legal">Legal & Ethics (LEX)</option>
                 <option value="Cross-Functional">Cross-Functional / Enterprise</option>
               </select>
             </div>
 
             <div>
-              <label className="block text-sm font-semibold text-gray-800 mb-1.5">
-                Geographic Scope / Region
-              </label>
-              <select
-                value={answers.region}
-                onChange={(e) =>
-                  setAnswers({ ...answers, region: e.target.value })
-                }
-                className="w-full px-4 py-2.5 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-opella-forest text-sm bg-white"
-              >
-                <option value="Global">Global</option>
-                <option value="NA">North America (NA)</option>
-                <option value="EULA">Europe & Latin America (EULA)</option>
-                <option value="AMEA">Asia, Middle East & Africa (AMEA)</option>
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-sm font-semibold text-gray-800 mb-1.5">
+              <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">
                 Accountable Business Owner (BO/PO) *
               </label>
               <input
                 type="text"
-                placeholder="Name of Business Owner"
+                placeholder="e.g. Sarah Jenkins (Category Lead)"
                 value={answers.businessOwnerName}
-                onChange={(e) =>
-                  setAnswers({ ...answers, businessOwnerName: e.target.value })
-                }
-                className="w-full px-4 py-2.5 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-opella-forest text-sm"
-              />
-              <span className="text-[11px] text-gray-500 mt-1 block">
-                Rule: No named PO means automatic rejection at Framing.
-              </span>
-            </div>
-
-            <div>
-              <label className="block text-sm font-semibold text-gray-800 mb-1.5">
-                Local AI Catalyst (Relay)
-              </label>
-              <input
-                type="text"
-                placeholder="Name of function AI Catalyst"
-                value={answers.aiCatalystName}
-                onChange={(e) =>
-                  setAnswers({ ...answers, aiCatalystName: e.target.value })
-                }
-                className="w-full px-4 py-2.5 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-opella-forest text-sm"
+                onChange={(e) => setAnswers({ ...answers, businessOwnerName: e.target.value })}
+                className="w-full px-3.5 py-2.5 rounded-lg border border-gray-300 text-xs focus:outline-none focus:ring-2 focus:ring-opella-forest"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-semibold text-gray-800 mb-1.5">
-                Rough Estimated Spend / Build Envelope (€)
+              <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">
+                Estimated Build & License Budget (€)
               </label>
               <div className="relative">
                 <input
                   type="number"
                   step="10000"
                   value={answers.estimatedCost}
-                  onChange={(e) =>
-                    setAnswers({
-                      ...answers,
-                      estimatedCost: Number(e.target.value),
-                    })
-                  }
-                  className="w-full pl-9 pr-4 py-2.5 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-opella-forest text-sm"
+                  onChange={(e) => setAnswers({ ...answers, estimatedCost: Number(e.target.value) })}
+                  className="w-full pl-8 pr-3 py-2.5 rounded-lg border border-gray-300 text-xs focus:outline-none focus:ring-2 focus:ring-opella-forest"
                 />
-                <Euro className="w-4 h-4 text-gray-400 absolute left-3 top-3.5" />
+                <Euro className="w-3.5 h-3.5 text-gray-400 absolute left-3 top-3.5" />
               </div>
-              <span className="text-[11px] text-gray-500 mt-1 block">
-                &lt;€50k: Self-serve · €50k-€200k: Fast Lane · €200k-€1M: Scale · &gt;€1M: Big Bet
-              </span>
             </div>
 
             <div>
-              <label className="block text-sm font-semibold text-gray-800 mb-1.5">
+              <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">
                 Target User Count
               </label>
               <div className="relative">
                 <input
                   type="number"
                   value={answers.targetUserCount}
-                  onChange={(e) =>
-                    setAnswers({
-                      ...answers,
-                      targetUserCount: Number(e.target.value),
-                    })
-                  }
-                  className="w-full pl-9 pr-4 py-2.5 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-opella-forest text-sm"
+                  onChange={(e) => setAnswers({ ...answers, targetUserCount: Number(e.target.value) })}
+                  className="w-full pl-8 pr-3 py-2.5 rounded-lg border border-gray-300 text-xs focus:outline-none focus:ring-2 focus:ring-opella-forest"
                 />
-                <Users className="w-4 h-4 text-gray-400 absolute left-3 top-3.5" />
-              </div>
-              <span className="text-[11px] text-gray-500 mt-1 block">
-                500+ users indicates enterprise reach (T2 Scale).
-              </span>
-            </div>
-
-            <div className="md:col-span-2">
-              <label className="block text-sm font-semibold text-gray-800 mb-1.5">
-                Does this align with one of the 6 AmplifAI Big Bets? (Optional)
-              </label>
-              <select
-                value={answers.mappedBigBet || ""}
-                onChange={(e) =>
-                  setAnswers({
-                    ...answers,
-                    mappedBigBet: (e.target.value || undefined) as any,
-                  })
-                }
-                className="w-full px-4 py-2.5 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-opella-forest text-sm bg-white"
-              >
-                <option value="">No / Standalone functional initiative</option>
-                {BIG_BETS.map((bet) => (
-                  <option key={bet.id} value={bet.id}>
-                    {bet.name} — {bet.leadStream}
-                  </option>
-                ))}
-              </select>
-            </div>
-          </div>
-
-          <div className="flex justify-end pt-4 border-t border-opella-border">
-            <button
-              onClick={handleNext}
-              disabled={!answers.initiativeTitle}
-              className="px-6 py-2.5 bg-opella-forest text-white rounded-lg font-medium text-sm flex items-center gap-2 hover:bg-opella-emerald transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
-            >
-              Next: The 4 Questions Triage Router <ArrowRight className="w-4 h-4" />
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* ================= STEP 2: THE 4 QUESTIONS (SLIDE 35) ================= */}
-      {step === 2 && (
-        <div className="bg-white rounded-2xl p-7 shadow-sm border border-opella-border space-y-6">
-          <div className="border-b border-opella-border pb-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <h2 className="text-xl font-bold text-opella-forest flex items-center gap-2">
-                  <Sparkles className="w-5 h-5 text-amber-500" />
-                  The 4 Questions Triage Router (Slide 35)
-                </h2>
-                <p className="text-sm text-gray-600 mt-1">
-                  Answer the four cascading questions from the Opella playbook to determine your initiative’s designated speed lane and governance tier.
-                </p>
-              </div>
-              <div className="text-right hidden sm:block">
-                <span className="text-xs uppercase tracking-wider text-gray-400 font-bold block">Current Triage</span>
-                <span className={`inline-block px-2.5 py-1 rounded-md text-xs font-bold ${tierConfig.colorClass.badge}`}>
-                  {tierConfig.name}
-                </span>
+                <Users className="w-3.5 h-3.5 text-gray-400 absolute left-3 top-3.5" />
               </div>
             </div>
           </div>
 
-          <div className="space-y-4">
-            {/* Question 1 */}
+          {/* The 4 Questions Cards */}
+          <div className="space-y-3 pt-2 border-t border-opella-border">
+            <h3 className="text-xs font-bold uppercase tracking-wider text-gray-500">
+              The 4 Questions Triage Matrix
+            </h3>
+
+            {/* Q1 */}
             <div
               className={`p-4 rounded-xl border transition-all ${
                 answers.q1_bigBetOrOver1m
@@ -541,9 +462,9 @@ export const IntakeWizard: React.FC<IntakeWizardProps> = ({
                 <div className="flex-1">
                   <div className="flex items-center gap-2 mb-1">
                     <span className="text-xs font-bold px-2 py-0.5 rounded bg-emerald-700 text-white">Q1</span>
-                    <h3 className="text-sm font-bold text-gray-900">
+                    <h4 className="text-sm font-bold text-gray-900">
                       Is it part of an AmplifAI big bet, does it change Butterfly core platforms or scope, or cost more than €1m?
-                    </h3>
+                    </h4>
                   </div>
                   <p className="text-xs text-gray-600 ml-7">
                     If YES: Routes immediately to <strong>T1 · Transform</strong> (Full Business Case, Butterfly comitology, Transformation SteerCo).
@@ -552,26 +473,18 @@ export const IntakeWizard: React.FC<IntakeWizardProps> = ({
                 <div className="flex items-center gap-2">
                   <button
                     type="button"
-                    onClick={() =>
-                      setAnswers({ ...answers, q1_bigBetOrOver1m: true })
-                    }
+                    onClick={() => setAnswers({ ...answers, q1_bigBetOrOver1m: true })}
                     className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${
-                      answers.q1_bigBetOrOver1m
-                        ? "bg-emerald-700 text-white shadow-sm"
-                        : "bg-white border border-gray-300 text-gray-700 hover:bg-gray-100"
+                      answers.q1_bigBetOrOver1m ? "bg-emerald-700 text-white shadow-sm" : "bg-white border text-gray-700"
                     }`}
                   >
                     YES
                   </button>
                   <button
                     type="button"
-                    onClick={() =>
-                      setAnswers({ ...answers, q1_bigBetOrOver1m: false })
-                    }
+                    onClick={() => setAnswers({ ...answers, q1_bigBetOrOver1m: false })}
                     className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${
-                      !answers.q1_bigBetOrOver1m
-                        ? "bg-gray-800 text-white shadow-sm"
-                        : "bg-white border border-gray-300 text-gray-700 hover:bg-gray-100"
+                      !answers.q1_bigBetOrOver1m ? "bg-gray-800 text-white shadow-sm" : "bg-white border text-gray-700"
                     }`}
                   >
                     NO
@@ -580,7 +493,7 @@ export const IntakeWizard: React.FC<IntakeWizardProps> = ({
               </div>
             </div>
 
-            {/* Question 2 */}
+            {/* Q2 */}
             <div
               className={`p-4 rounded-xl border transition-all ${
                 answers.q2_approvedToolsUnder50k
@@ -592,37 +505,29 @@ export const IntakeWizard: React.FC<IntakeWizardProps> = ({
                 <div className="flex-1">
                   <div className="flex items-center gap-2 mb-1">
                     <span className="text-xs font-bold px-2 py-0.5 rounded bg-purple-700 text-white">Q2</span>
-                    <h3 className="text-sm font-bold text-gray-900">
+                    <h4 className="text-sm font-bold text-gray-900">
                       Does it only use approved tools and data, configured rather than built, for under €50k?
-                    </h3>
+                    </h4>
                   </div>
                   <p className="text-xs text-gray-600 ml-7">
-                    If YES (and not T1): Routes directly to <strong>Self-Serve · Register & Go</strong> (Skips G2–G4, immediate speed, zero committee delays).
+                    If YES: Routes to <strong>Self-Serve · Register & Go</strong> (Immediate speed, skips G2–G4).
                   </p>
                 </div>
                 <div className="flex items-center gap-2">
                   <button
                     type="button"
-                    onClick={() =>
-                      setAnswers({ ...answers, q2_approvedToolsUnder50k: true })
-                    }
+                    onClick={() => setAnswers({ ...answers, q2_approvedToolsUnder50k: true })}
                     className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${
-                      answers.q2_approvedToolsUnder50k
-                        ? "bg-purple-700 text-white shadow-sm"
-                        : "bg-white border border-gray-300 text-gray-700 hover:bg-gray-100"
+                      answers.q2_approvedToolsUnder50k ? "bg-purple-700 text-white shadow-sm" : "bg-white border text-gray-700"
                     }`}
                   >
                     YES
                   </button>
                   <button
                     type="button"
-                    onClick={() =>
-                      setAnswers({ ...answers, q2_approvedToolsUnder50k: false })
-                    }
+                    onClick={() => setAnswers({ ...answers, q2_approvedToolsUnder50k: false })}
                     className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${
-                      !answers.q2_approvedToolsUnder50k
-                        ? "bg-gray-800 text-white shadow-sm"
-                        : "bg-white border border-gray-300 text-gray-700 hover:bg-gray-100"
+                      !answers.q2_approvedToolsUnder50k ? "bg-gray-800 text-white shadow-sm" : "bg-white border text-gray-700"
                     }`}
                   >
                     NO
@@ -631,7 +536,7 @@ export const IntakeWizard: React.FC<IntakeWizardProps> = ({
               </div>
             </div>
 
-            {/* Question 3 */}
+            {/* Q3 */}
             <div
               className={`p-4 rounded-xl border transition-all ${
                 answers.q3_provenPilotOrReach
@@ -643,37 +548,29 @@ export const IntakeWizard: React.FC<IntakeWizardProps> = ({
                 <div className="flex-1">
                   <div className="flex items-center gap-2 mb-1">
                     <span className="text-xs font-bold px-2 py-0.5 rounded bg-blue-600 text-white">Q3</span>
-                    <h3 className="text-sm font-bold text-gray-900">
+                    <h4 className="text-sm font-bold text-gray-900">
                       Is value proven in a pilot, and does it need reach (2+ functions/regions, 500+ users), hub capacity or €200k–€1m?
-                    </h3>
+                    </h4>
                   </div>
                   <p className="text-xs text-gray-600 ml-7">
-                    If YES: Routes to <strong>T2 · Scale</strong> (Light business case 1–2 pages, biweekly AI Portfolio Board, tranche releases).
+                    If YES: Routes to <strong>T2 · Scale</strong> (Light business case, AI Portfolio Board, tranche unlocks).
                   </p>
                 </div>
                 <div className="flex items-center gap-2">
                   <button
                     type="button"
-                    onClick={() =>
-                      setAnswers({ ...answers, q3_provenPilotOrReach: true })
-                    }
+                    onClick={() => setAnswers({ ...answers, q3_provenPilotOrReach: true })}
                     className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${
-                      answers.q3_provenPilotOrReach
-                        ? "bg-blue-600 text-white shadow-sm"
-                        : "bg-white border border-gray-300 text-gray-700 hover:bg-gray-100"
+                      answers.q3_provenPilotOrReach ? "bg-blue-600 text-white shadow-sm" : "bg-white border text-gray-700"
                     }`}
                   >
                     YES
                   </button>
                   <button
                     type="button"
-                    onClick={() =>
-                      setAnswers({ ...answers, q3_provenPilotOrReach: false })
-                    }
+                    onClick={() => setAnswers({ ...answers, q3_provenPilotOrReach: false })}
                     className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${
-                      !answers.q3_provenPilotOrReach
-                        ? "bg-gray-800 text-white shadow-sm"
-                        : "bg-white border border-gray-300 text-gray-700 hover:bg-gray-100"
+                      !answers.q3_provenPilotOrReach ? "bg-gray-800 text-white shadow-sm" : "bg-white border text-gray-700"
                     }`}
                   >
                     NO
@@ -682,7 +579,7 @@ export const IntakeWizard: React.FC<IntakeWizardProps> = ({
               </div>
             </div>
 
-            {/* Question 4 / Default */}
+            {/* Q4 / Default */}
             <div
               className={`p-4 rounded-xl border transition-all ${
                 !answers.q1_bigBetOrOver1m &&
@@ -696,12 +593,12 @@ export const IntakeWizard: React.FC<IntakeWizardProps> = ({
                 <div className="flex-1">
                   <div className="flex items-center gap-2 mb-1">
                     <span className="text-xs font-bold px-2 py-0.5 rounded bg-amber-600 text-white">Q4</span>
-                    <h3 className="text-sm font-bold text-gray-900">
+                    <h4 className="text-sm font-bold text-gray-900">
                       Otherwise: A new idea or build with a value hypothesis to test?
-                    </h3>
+                    </h4>
                   </div>
                   <p className="text-xs text-gray-600 ml-7">
-                    Routes to <strong>T3 · Fast Lane</strong> (One-page canvas, 10-day decision SLA, 6–8 week fail-fast MVP sprint, ring-fenced AmplifAI envelope).
+                    Routes to <strong>T3 · Fast Lane</strong> (1-page canvas, 10-day decision SLA, 6–8 week fail-fast MVP sprint).
                   </p>
                 </div>
                 <span className="text-xs font-bold text-amber-700 bg-amber-100 px-3 py-1 rounded-full">
@@ -711,360 +608,151 @@ export const IntakeWizard: React.FC<IntakeWizardProps> = ({
             </div>
           </div>
 
-          {/* Delivery Mode Parameters */}
-          <div className="pt-4 border-t border-opella-border">
-            <h4 className="text-xs font-bold uppercase text-gray-500 tracking-wider mb-3">
-              Delivery Capacity & Sourcing Parameters (Slides 10 & 11)
+          {/* ORAI Risk Checklist (Slides 35 & 69) */}
+          <div className="pt-2 border-t border-opella-border">
+            <h4 className="text-xs font-bold uppercase tracking-wider text-gray-500 mb-2 flex items-center gap-1.5">
+              <Shield className="w-4 h-4 text-rose-600" />
+              ORAI Responsible AI Screening Flags (EU AI Act)
             </h4>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              <div>
-                <label className="block text-xs font-semibold text-gray-700 mb-1">
-                  Technical Build Complexity
-                </label>
-                <select
-                  value={answers.techComplexity}
-                  onChange={(e) =>
-                    setAnswers({
-                      ...answers,
-                      techComplexity: e.target.value as any,
-                    })
-                  }
-                  className="w-full px-3 py-2 rounded-lg border border-gray-300 text-xs bg-white"
-                >
-                  <option value="Low">Low (Configured / Prompts / Low-code)</option>
-                  <option value="Medium">Medium (Business + Hub skills)</option>
-                  <option value="High">High (Shared Data Platform / Custom Models)</option>
-                </select>
-              </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+              <label className="flex items-start gap-2 p-2.5 rounded-lg border border-gray-200 bg-gray-50 hover:bg-gray-100 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={answers.risk_personalHealthData}
+                  onChange={(e) => setAnswers({ ...answers, risk_personalHealthData: e.target.checked })}
+                  className="mt-0.5 rounded text-opella-forest"
+                />
+                <span>Processes employee personal, health, patient or confidential data</span>
+              </label>
 
-              <div>
-                <label className="block text-xs font-semibold text-gray-700 mb-1">
-                  Function Tech Capacity
-                </label>
-                <select
-                  value={answers.functionTechCapacity}
-                  onChange={(e) =>
-                    setAnswers({
-                      ...answers,
-                      functionTechCapacity: e.target.value as any,
-                    })
-                  }
-                  className="w-full px-3 py-2 rounded-lg border border-gray-300 text-xs bg-white"
-                >
-                  <option value="None">None (Relies 100% on Hub)</option>
-                  <option value="Medium">Medium (Dedicated function team + Hub slots)</option>
-                  <option value="High">High (Certified AI Builders / External Integrator)</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-gray-700 mb-1">
-                  Funding Source
-                </label>
-                <select
-                  value={answers.fundingSource}
-                  onChange={(e) =>
-                    setAnswers({
-                      ...answers,
-                      fundingSource: e.target.value as any,
-                    })
-                  }
-                  className="w-full px-3 py-2 rounded-lg border border-gray-300 text-xs bg-white"
-                >
-                  <option value="Central Hub">Central Hub (Big Bet / Envelope)</option>
-                  <option value="Co-funded">Co-funded (Hub + Function)</option>
-                  <option value="Function Budget">Function Operational Budget</option>
-                </select>
-              </div>
+              <label className="flex items-start gap-2 p-2.5 rounded-lg border border-gray-200 bg-gray-50 hover:bg-gray-100 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={answers.risk_autonomousDecisions}
+                  onChange={(e) => setAnswers({ ...answers, risk_autonomousDecisions: e.target.checked })}
+                  className="mt-0.5 rounded text-opella-forest"
+                />
+                <span>Makes autonomous decisions impacting hiring, credit or regulatory safety</span>
+              </label>
             </div>
           </div>
 
-          <div className="flex justify-between pt-4 border-t border-opella-border">
+          <div className="flex justify-end pt-4 border-t border-opella-border">
             <button
-              onClick={handleBack}
-              className="px-5 py-2.5 border border-gray-300 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-50 flex items-center gap-1.5"
+              onClick={handleStartAgentTriage}
+              disabled={!answers.initiativeTitle}
+              className="px-7 py-3 bg-opella-forest text-white rounded-xl font-bold text-sm flex items-center gap-2 hover:bg-opella-emerald shadow-md transition-all hover:scale-[1.01] disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              <ArrowLeft className="w-4 h-4" /> Back
-            </button>
-            <button
-              onClick={handleNext}
-              className="px-6 py-2.5 bg-opella-forest text-white rounded-lg font-medium text-sm flex items-center gap-2 hover:bg-opella-emerald shadow-sm"
-            >
-              Next: ORAI Risk Self-Assessment <ArrowRight className="w-4 h-4" />
+              <Bot className="w-4 h-4 text-emerald-300" />
+              Run Autonomous Agent Triage <ArrowRight className="w-4 h-4" />
             </button>
           </div>
         </div>
       )}
 
-      {/* ================= STEP 3: ORAI RISK SCREENING ================= */}
-      {step === 3 && (
+      {/* ================= STEP 2: AUTONOMOUS AGENT TRIAGE ================= */}
+      {step === 2 && (
         <div className="bg-white rounded-2xl p-7 shadow-sm border border-opella-border space-y-6">
-          <div className="border-b border-opella-border pb-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <h2 className="text-xl font-bold text-opella-forest flex items-center gap-2">
-                  <Shield className="w-5 h-5 text-rose-600" />
-                  ORAI Risk Self-Assessment (Slides 35, 69, 70)
-                </h2>
-                <p className="text-sm text-gray-600 mt-1">
-                  In parallel with the 4 intake questions, every initiative undergoes an automated risk screening based on the EU AI Act & Opella Responsible AI framework.
-                </p>
-              </div>
-              <div className="text-right">
-                <span className="text-xs uppercase tracking-wider text-gray-400 font-bold block">Assessed Risk Tier</span>
-                <span
-                  className={`inline-block px-2.5 py-1 rounded-md text-xs font-bold ${
-                    decision.riskTier === "High"
-                      ? "bg-rose-100 text-rose-800 border border-rose-300"
-                      : decision.riskTier === "Medium"
-                      ? "bg-amber-100 text-amber-800 border border-amber-300"
-                      : "bg-emerald-100 text-emerald-800 border border-emerald-300"
-                  }`}
-                >
-                  {decision.riskTier} Risk
-                </span>
-              </div>
-            </div>
-          </div>
-
-          <div className="space-y-3">
-            {[
-              {
-                id: "risk_personalHealthData",
-                title: "1. Personal, Health, Patient, or Highly Confidential Data",
-                desc: "Does the solution process employee personal data, health/patient records, clinical trial secrets, or GDPR-sensitive data?",
-                isHighRisk: true,
-              },
-              {
-                id: "risk_autonomousDecisions",
-                title: "2. Autonomous or High-Stakes Decisions (EU AI Act)",
-                desc: "Does the AI act autonomously in determining hiring, employee performance, credit, patient safety, or statutory financial reports?",
-                isHighRisk: true,
-              },
-              {
-                id: "risk_coreProdWriteBack",
-                title: "3. Direct Production System Write-Backs",
-                desc: "Does the agent execute direct write or update transactions into core ERP (SAP), CRM, or clinical database backends without manual gatekeeper?",
-                isHighRisk: false,
-              },
-              {
-                id: "risk_externalOutputNoReview",
-                title: "4. External Customer / Healthcare Professional Communications",
-                desc: "Are AI generated outputs sent directly to consumers, patients, HCPs, or regulatory authorities without human-in-the-loop validation?",
-                isHighRisk: false,
-              },
-              {
-                id: "risk_unapprovedSaaSOrCustomModel",
-                title: "5. Unapproved SaaS or External 3rd Party Model",
-                desc: "Does the use case plan to connect to an external SaaS vendor or run foundation models outside Opella's Azure/Databricks tenant?",
-                isHighRisk: false,
-              },
-            ].map((q) => {
-              const checked = (answers as any)[q.id];
-              return (
-                <div
-                  key={q.id}
-                  onClick={() =>
-                    setAnswers({ ...answers, [q.id]: !checked })
-                  }
-                  className={`p-4 rounded-xl border cursor-pointer transition-all flex items-start gap-3.5 ${
-                    checked
-                      ? q.isHighRisk
-                        ? "border-rose-400 bg-rose-50/70"
-                        : "border-amber-400 bg-amber-50/70"
-                      : "border-gray-200 bg-gray-50/40 hover:bg-gray-100"
-                  }`}
-                >
-                  <input
-                    type="checkbox"
-                    checked={checked}
-                    onChange={() => {}} // handled by div
-                    className="mt-1 h-4 w-4 rounded text-opella-forest focus:ring-opella-forest"
-                  />
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm font-semibold text-gray-900">
-                        {q.title}
-                      </span>
-                      {q.isHighRisk && (
-                        <span className="text-[10px] bg-rose-200 text-rose-800 font-bold px-1.5 py-0.5 rounded">
-                          High Risk Flag
-                        </span>
-                      )}
-                    </div>
-                    <p className="text-xs text-gray-600 mt-0.5">{q.desc}</p>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-
-          {/* Risk Guidance Box */}
-          <div
-            className={`p-4 rounded-xl border text-xs ${
-              decision.riskTier === "High"
-                ? "bg-rose-50 border-rose-300 text-rose-900"
-                : decision.riskTier === "Medium"
-                ? "bg-amber-50 border-amber-300 text-amber-900"
-                : "bg-emerald-50 border-emerald-300 text-emerald-900"
-            }`}
-          >
-            <div className="flex items-center gap-2 font-bold mb-1">
-              <AlertTriangle className="w-4 h-4" />
-              ORAI Governance Routing Notice
-            </div>
-            {decision.riskTier === "High" && (
-              <p>
-                <strong>High Risk Detected:</strong> Full in-depth review by LEX (Legal), CISO, and Data & AI is mandatory before any data access or build. <em>Notice: High-risk flags automatically route out of Fast Lane into T1 Transform governance.</em>
+          <div className="border-b border-opella-border pb-4 flex items-center justify-between">
+            <div>
+              <h2 className="text-xl font-bold text-opella-forest flex items-center gap-2">
+                <Bot className="w-6 h-6 text-emerald-700 animate-pulse" />
+                OpellaGPT Charter Agent Automated Triage
+              </h2>
+              <p className="text-sm text-gray-600 mt-1">
+                The AI Charter Agent is analyzing your intake against Butterfly governance rules, the 4 questions, and EU AI Act constraints.
               </p>
-            )}
-            {decision.riskTier === "Medium" && (
-              <p>
-                <strong>Medium Risk:</strong> Requires a 5-day light review by the AI Governance lead and Design Authority prior to production deployment.
-              </p>
-            )}
-            {decision.riskTier === "Low" && (
-              <p>
-                <strong>Low Risk:</strong> Standard platform guardrails apply (auto-expiry, license cap, registry logging). No bespoke legal committee needed.
-              </p>
-            )}
-          </div>
-
-          <div className="flex justify-between pt-4 border-t border-opella-border">
-            <button
-              onClick={handleBack}
-              className="px-5 py-2.5 border border-gray-300 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-50 flex items-center gap-1.5"
-            >
-              <ArrowLeft className="w-4 h-4" /> Back
-            </button>
-            <button
-              onClick={handleNext}
-              className="px-6 py-2.5 bg-opella-forest text-white rounded-lg font-medium text-sm flex items-center gap-2 hover:bg-opella-emerald shadow-sm"
-            >
-              View Speed & Mode Results <ArrowRight className="w-4 h-4" />
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* ================= STEP 4: SPEED & DELIVERY MODE EVALUATION RESULT ================= */}
-      {step === 4 && (
-        <div className="bg-white rounded-2xl p-7 shadow-sm border border-opella-border space-y-6">
-          <div className="border-b border-opella-border pb-4">
-            <h2 className="text-xl font-bold text-opella-forest flex items-center gap-2">
-              <Zap className="w-5 h-5 text-emerald-600" />
-              Assigned Speed & Delivery Mode Recommendation
-            </h2>
-            <p className="text-sm text-gray-600 mt-1">
-              Based on the 4 intake questions, risk screening, and organizational parameters, the Opella Operating Model has assigned the following governance track:
-            </p>
-          </div>
-
-          {/* Cards for Assigned Tier & Speed */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-            {/* Tier & Speed Card */}
-            <div className={`p-5 rounded-2xl border-2 ${tierConfig.colorClass.border} ${tierConfig.colorClass.bg} space-y-3`}>
-              <div className="flex items-center justify-between">
-                <span className="text-xs uppercase font-bold tracking-wider text-gray-500">
-                  Assigned Speed Lane
-                </span>
-                <span className={`text-xs font-bold px-2.5 py-1 rounded-md ${tierConfig.colorClass.badge}`}>
-                  {tierConfig.name}
-                </span>
-              </div>
-              <h3 className="text-lg font-bold text-gray-900">
-                {tierConfig.subtitle}
-              </h3>
-              <div className="space-y-2 text-xs text-gray-700 pt-1">
-                <div className="flex items-start gap-2">
-                  <Clock className="w-4 h-4 text-gray-500 mt-0.5 shrink-0" />
-                  <div>
-                    <strong>Speed & Cadence:</strong> {decision.speedSummary.cadence}
-                  </div>
-                </div>
-                <div className="flex items-start gap-2">
-                  <Send className="w-4 h-4 text-gray-500 mt-0.5 shrink-0" />
-                  <div>
-                    <strong>Decision SLA:</strong> {decision.speedSummary.decisionSLA}
-                  </div>
-                </div>
-                <div className="flex items-start gap-2">
-                  <Building className="w-4 h-4 text-gray-500 mt-0.5 shrink-0" />
-                  <div>
-                    <strong>Approval Forum:</strong> {tierConfig.approvalForum}
-                  </div>
-                </div>
-                <div className="flex items-start gap-2">
-                  <Euro className="w-4 h-4 text-gray-500 mt-0.5 shrink-0" />
-                  <div>
-                    <strong>Funding Mechanism:</strong> {tierConfig.fundingMechanism}
-                  </div>
-                </div>
-                <div className="flex items-start gap-2">
-                  <Users className="w-4 h-4 text-gray-500 mt-0.5 shrink-0" />
-                  <div>
-                    <strong>Sponsor Level:</strong> {tierConfig.sponsorLevel}
-                  </div>
-                </div>
-              </div>
             </div>
+            <span className="text-xs bg-emerald-100 text-emerald-800 font-bold px-3 py-1 rounded-full">
+              Automated Gate G1
+            </span>
+          </div>
 
-            {/* Delivery Mode Card */}
-            <div className="p-5 rounded-2xl border-2 border-emerald-600 bg-emerald-50/50 space-y-3">
-              <div className="flex items-center justify-between">
-                <span className="text-xs uppercase font-bold tracking-wider text-gray-500">
-                  Delivery Mode (Slide 10)
-                </span>
-                <span className="text-xs font-bold px-2.5 py-1 rounded-md bg-emerald-800 text-white">
-                  {modeInfo.title}
-                </span>
-              </div>
+          {/* Simulated Agent Execution Log */}
+          <div className="p-4 rounded-xl bg-gray-950 text-emerald-400 font-mono text-xs space-y-2 border border-gray-800">
+            <div className="flex items-center gap-2 text-white font-bold pb-1 border-b border-gray-800">
+              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
+              Opella Charter Agent Triage Engine
+            </div>
+            {agentLogIndex >= 0 && (
               <div className="flex items-center gap-2">
-                <h3 className="text-lg font-bold text-emerald-950">
-                  {modeInfo.motto}
-                </h3>
+                <Check className="w-3.5 h-3.5 text-emerald-400" />
+                <span>[1/4] Scanning Opella AI Registry for duplicate solutions... Clean.</span>
               </div>
-              <p className="text-xs text-gray-700 leading-relaxed">
-                {modeInfo.description}
-              </p>
-              <div className="text-xs bg-white/80 p-3 rounded-lg border border-emerald-200 text-emerald-900 space-y-1">
-                <div><strong>Fit:</strong> {modeInfo.bestFor}</div>
-                <div><strong>Split:</strong> {modeInfo.ownershipSplit}</div>
+            )}
+            {agentLogIndex >= 1 && (
+              <div className="flex items-center gap-2">
+                <Check className="w-3.5 h-3.5 text-emerald-400" />
+                <span>[2/4] Parsing budget (€{answers.estimatedCost.toLocaleString()}) and scope against Big Bet boundaries...</span>
               </div>
-            </div>
+            )}
+            {agentLogIndex >= 2 && (
+              <div className="flex items-center gap-2">
+                <Check className="w-3.5 h-3.5 text-emerald-400" />
+                <span>[3/4] Evaluating ORAI risk parameters... Result: {decision.riskTier} Risk Tier.</span>
+              </div>
+            )}
+            {agentLogIndex >= 3 && (
+              <div className="flex items-center gap-2 text-white font-semibold pt-1">
+                <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+                <span>[4/4] Triage decision formulated: Assigned to <strong>{tierConfig.name}</strong>.</span>
+              </div>
+            )}
           </div>
 
-          {/* Rationale explanation list */}
-          <div className="bg-gray-50 rounded-xl p-4 border border-gray-200">
-            <h4 className="text-xs font-bold uppercase tracking-wider text-gray-500 mb-2">
-              Routing Logic Breakdown
-            </h4>
-            <ul className="space-y-1.5 text-xs text-gray-700">
+          {/* Result Card */}
+          <div className={`p-6 rounded-2xl border-2 ${tierConfig.colorClass.border} ${tierConfig.colorClass.bg} space-y-4`}>
+            <div className="flex items-center justify-between">
+              <span className="text-xs uppercase font-bold tracking-wider text-gray-500">
+                Assigned Speed Lane & Governance Tier
+              </span>
+              <span className={`text-xs font-bold px-3 py-1 rounded-md ${tierConfig.colorClass.badge}`}>
+                {tierConfig.name}
+              </span>
+            </div>
+
+            <div>
+              <h3 className="text-xl font-black text-gray-900">{tierConfig.subtitle}</h3>
+              <p className="text-xs text-gray-700 mt-1">{tierConfig.threshold}</p>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2 text-xs">
+              <div className="bg-white/80 p-3 rounded-xl border border-gray-200">
+                <span className="text-gray-500 block font-semibold">Speed & Cadence</span>
+                <span className="font-bold text-gray-900">{decision.speedSummary.cadence}</span>
+              </div>
+              <div className="bg-white/80 p-3 rounded-xl border border-gray-200">
+                <span className="text-gray-500 block font-semibold">Decision SLA</span>
+                <span className="font-bold text-emerald-800">{decision.speedSummary.decisionSLA}</span>
+              </div>
+              <div className="bg-white/80 p-3 rounded-xl border border-gray-200">
+                <span className="text-gray-500 block font-semibold">Approval Forum</span>
+                <span className="font-bold text-gray-900">{tierConfig.approvalForum}</span>
+              </div>
+            </div>
+
+            {/* Rationale */}
+            <div className="bg-white/90 p-3.5 rounded-xl border border-gray-200 text-xs text-gray-800 space-y-1">
+              <div className="font-bold text-gray-900">Triage Decision Rationale:</div>
               {decision.reasoning.map((r, i) => (
-                <li key={i} className="flex items-start gap-2">
-                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0 mt-0.5" />
+                <div key={i} className="flex items-start gap-1.5 text-gray-700">
+                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 mt-0.5 shrink-0" />
                   <span>{r}</span>
-                </li>
+                </div>
               ))}
-              {decision.riskReasons.map((r, i) => (
-                <li key={i} className="flex items-start gap-2">
-                  <Shield className="w-3.5 h-3.5 text-amber-600 shrink-0 mt-0.5" />
-                  <span>{r}</span>
-                </li>
-              ))}
-            </ul>
+            </div>
           </div>
 
           <div className="flex justify-between pt-4 border-t border-opella-border">
             <button
-              onClick={handleBack}
+              onClick={() => setStep(1)}
               className="px-5 py-2.5 border border-gray-300 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-50 flex items-center gap-1.5"
             >
-              <ArrowLeft className="w-4 h-4" /> Back
+              <ArrowLeft className="w-4 h-4" /> Back to Questions
             </button>
             <button
-              onClick={handleNext}
-              className="px-6 py-2.5 bg-opella-forest text-white rounded-lg font-medium text-sm flex items-center gap-2 hover:bg-opella-emerald shadow-sm"
+              onClick={() => setStep(3)}
+              className="px-6 py-2.5 bg-opella-forest text-white rounded-lg font-bold text-sm flex items-center gap-2 hover:bg-opella-emerald shadow-sm"
             >
               Fill Relevant Business Case ({decision.tier}) <ArrowRight className="w-4 h-4" />
             </button>
@@ -1072,13 +760,13 @@ export const IntakeWizard: React.FC<IntakeWizardProps> = ({
         </div>
       )}
 
-      {/* ================= STEP 5: DYNAMIC BUSINESS CASE FORM ================= */}
-      {step === 5 && (
+      {/* ================= STEP 3: FILL RELEVANT BUSINESS CASE ================= */}
+      {step === 3 && (
         <div className="bg-white rounded-2xl p-7 shadow-sm border border-opella-border space-y-6">
           <div className="border-b border-opella-border pb-4 flex items-center justify-between">
             <div>
               <div className="flex items-center gap-2">
-                <span className={`text-xs font-bold px-2 py-0.5 rounded ${tierConfig.colorClass.badge}`}>
+                <span className={`text-xs font-bold px-2.5 py-0.5 rounded ${tierConfig.colorClass.badge}`}>
                   {decision.tier}
                 </span>
                 <h2 className="text-xl font-bold text-opella-forest">
@@ -1089,16 +777,13 @@ export const IntakeWizard: React.FC<IntakeWizardProps> = ({
                 </h2>
               </div>
               <p className="text-sm text-gray-600 mt-1">
-                {decision.tier === "T1" && "Detailed financial breakdown, multi-year recurring benefits, staffing, and SteerCo sign-offs."}
-                {decision.tier === "T2" && "Directional value, rough token sizing, existing data fit, and named owner triage."}
-                {decision.tier === "T3" && "Agile 1-page canvas: 3 KPIs, baseline, 6–8 week MVP sprint scope, and fail-fast kill date."}
-                {decision.tier === "Self-Serve" && "Light registry entry: approved tool check, <€50k cost cap, and platform guardrails confirmation."}
+                Complete the specific business case required for your {decision.tier} tier before selecting the delivery mode.
               </p>
             </div>
             <FileText className="w-8 h-8 text-gray-300 hidden sm:block" />
           </div>
 
-          {/* DYNAMIC FORM RENDER */}
+          {/* DYNAMIC FORMS BASED ON TIER */}
 
           {/* 1. T1 FULL BUSINESS CASE */}
           {decision.tier === "T1" && (
@@ -1165,24 +850,9 @@ export const IntakeWizard: React.FC<IntakeWizardProps> = ({
                       className="w-full px-3 py-2 border rounded-lg text-xs"
                     />
                   </div>
-                  <div className="sm:col-span-2">
-                    <label className="block text-xs font-semibold text-gray-700 mb-1">FY25–30 Cumulative Summary & Target P&L Line</label>
-                    <input
-                      type="text"
-                      value={t1BC.recurringItems.fy25_30BenefitsSummary}
-                      onChange={(e) =>
-                        setT1BC({
-                          ...t1BC,
-                          recurringItems: { ...t1BC.recurringItems, fy25_30BenefitsSummary: e.target.value },
-                        })
-                      }
-                      className="w-full px-3 py-2 border rounded-lg text-xs"
-                    />
-                  </div>
                 </div>
               </div>
 
-              {/* SI Non-Staff */}
               <div className="bg-gray-50 p-4 rounded-xl border border-gray-200">
                 <h4 className="font-bold text-gray-900 mb-3 flex items-center gap-2">
                   <span className="w-5 h-5 rounded-full bg-gray-800 text-white text-xs flex items-center justify-center">2</span>
@@ -1217,24 +887,9 @@ export const IntakeWizard: React.FC<IntakeWizardProps> = ({
                       className="w-full px-3 py-2 border rounded-lg text-xs"
                     />
                   </div>
-                  <div className="sm:col-span-2">
-                    <label className="block text-xs font-semibold text-gray-700 mb-1">Linked Butterfly Initiative IDs (Avoid double counting)</label>
-                    <input
-                      type="text"
-                      value={t1BC.siNonStaff.linkedInitiativeIds}
-                      onChange={(e) =>
-                        setT1BC({
-                          ...t1BC,
-                          siNonStaff: { ...t1BC.siNonStaff, linkedInitiativeIds: e.target.value },
-                        })
-                      }
-                      className="w-full px-3 py-2 border rounded-lg text-xs"
-                    />
-                  </div>
                 </div>
               </div>
 
-              {/* Project Plan & Sign-Offs */}
               <div className="bg-gray-50 p-4 rounded-xl border border-gray-200">
                 <h4 className="font-bold text-gray-900 mb-3 flex items-center gap-2">
                   <span className="w-5 h-5 rounded-full bg-gray-800 text-white text-xs flex items-center justify-center">3</span>
@@ -1276,35 +931,6 @@ export const IntakeWizard: React.FC<IntakeWizardProps> = ({
                       }
                       className="w-full px-3 py-2 border rounded-lg text-xs"
                     />
-                  </div>
-                  <div className="sm:col-span-2 pt-2">
-                    <span className="block text-xs font-semibold text-gray-700 mb-2">Required Sign-Offs:</span>
-                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
-                      {[
-                        { key: "financeSignOff", label: "Finance BP" },
-                        { key: "digitalSignOff", label: "Data & AI Hub" },
-                        { key: "streamLeadSignOff", label: "Stream Lead" },
-                        { key: "controlTowerSignOff", label: "Control Tower" },
-                      ].map((item) => (
-                        <label key={item.key} className="flex items-center gap-2 p-2 bg-white rounded border border-gray-200">
-                          <input
-                            type="checkbox"
-                            checked={(t1BC.dashboardSignOffs as any)[item.key]}
-                            onChange={(e) =>
-                              setT1BC({
-                                ...t1BC,
-                                dashboardSignOffs: {
-                                  ...t1BC.dashboardSignOffs,
-                                  [item.key]: e.target.checked,
-                                },
-                              })
-                            }
-                            className="rounded text-opella-forest"
-                          />
-                          <span>{item.label}</span>
-                        </label>
-                      ))}
-                    </div>
                   </div>
                 </div>
               </div>
@@ -1349,46 +975,6 @@ export const IntakeWizard: React.FC<IntakeWizardProps> = ({
                     className="w-full px-3.5 py-2 border rounded-lg text-xs"
                   />
                 </div>
-                <div>
-                  <label className="block text-xs font-semibold text-gray-700 mb-1.5">
-                    4. Estimated AI Builder / Eng Days
-                  </label>
-                  <input
-                    type="number"
-                    value={t2BC.estimatedBuilderDays}
-                    onChange={(e) => setT2BC({ ...t2BC, estimatedBuilderDays: Number(e.target.value) })}
-                    className="w-full px-3.5 py-2 border rounded-lg text-xs"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-gray-700 mb-1.5">
-                    5. Existing Data & Platform Fit
-                  </label>
-                  <select
-                    value={t2BC.existingDataFit.platformType}
-                    onChange={(e) =>
-                      setT2BC({
-                        ...t2BC,
-                        existingDataFit: {
-                          ...t2BC.existingDataFit,
-                          platformType: e.target.value as any,
-                        },
-                      })
-                    }
-                    className="w-full px-3.5 py-2 border rounded-lg text-xs bg-white"
-                  >
-                    <option value="Existing Hub Platform">Existing Hub Platform (Databricks / Azure)</option>
-                    <option value="Low-Code/No-Code">Governed Low-Code / PowerPlatform</option>
-                    <option value="SaaS Integration">Enterprise Approved SaaS Integration</option>
-                  </select>
-                </div>
-              </div>
-
-              <div className="p-3 bg-blue-50 rounded-xl border border-blue-200 text-xs text-blue-900 flex items-center justify-between">
-                <div>
-                  <strong>AI Portfolio Board Single-Step Triage:</strong> T2 dossiers are reviewed biweekly by CDO + CFO.
-                </div>
-                <span className="font-semibold">{t2BC.governance.targetUserCount} Target Users</span>
               </div>
             </div>
           )}
@@ -1450,43 +1036,6 @@ export const IntakeWizard: React.FC<IntakeWizardProps> = ({
                   </div>
                 </div>
               </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-semibold text-gray-700 mb-1">
-                    Fail-Fast Kill or Scale Date (End of Sprint)
-                  </label>
-                  <input
-                    type="text"
-                    value={t3Canvas.killOrScaleDate}
-                    onChange={(e) => setT3Canvas({ ...t3Canvas, killOrScaleDate: e.target.value })}
-                    className="w-full px-3 py-2 border rounded-lg text-xs"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-gray-700 mb-1">
-                    Assigned AI Builder / Catalyst
-                  </label>
-                  <input
-                    type="text"
-                    value={t3Canvas.assignedBuilderOrCatalyst}
-                    onChange={(e) => setT3Canvas({ ...t3Canvas, assignedBuilderOrCatalyst: e.target.value })}
-                    className="w-full px-3 py-2 border rounded-lg text-xs"
-                  />
-                </div>
-              </div>
-
-              <div className="p-3 bg-gray-50 rounded-xl border border-gray-200">
-                <label className="flex items-center gap-2 cursor-pointer text-xs font-medium text-gray-800">
-                  <input
-                    type="checkbox"
-                    checked={t3Canvas.registryReuseCheckCompleted}
-                    onChange={(e) => setT3Canvas({ ...t3Canvas, registryReuseCheckCompleted: e.target.checked })}
-                    className="rounded text-opella-forest"
-                  />
-                  <span>Registry Reuse Check Completed: Checked against existing solutions to avoid duplicate work.</span>
-                </label>
-              </div>
             </div>
           )}
 
@@ -1494,16 +1043,11 @@ export const IntakeWizard: React.FC<IntakeWizardProps> = ({
           {decision.tier === "Self-Serve" && (
             <div className="space-y-5 text-sm">
               <div className="bg-purple-50/60 p-4 rounded-xl border border-purple-200">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-xs font-bold uppercase tracking-wider text-purple-900">
-                    Self-Service AI Registry Line (Slide 40)
-                  </span>
-                  <span className="text-xs bg-purple-200 text-purple-900 font-bold px-2 py-0.5 rounded">
-                    Skips G2–G4 (Direct Access)
-                  </span>
-                </div>
+                <span className="text-xs font-bold uppercase tracking-wider text-purple-900 block mb-1">
+                  Self-Service AI Registry Line (Slide 40)
+                </span>
                 <p className="text-xs text-purple-800">
-                  You are registering an individual/team productivity tool using approved software. No committee approval is needed; automated audit and token monitors protect platform integrity.
+                  Individual productivity assistant using approved software with automated guardrails.
                 </p>
               </div>
 
@@ -1525,7 +1069,6 @@ export const IntakeWizard: React.FC<IntakeWizardProps> = ({
                     <option value="Copilot Studio">Microsoft Copilot Studio</option>
                     <option value="Opella GPT">Opella GPT Enterprise Tenant</option>
                     <option value="Power Automate">Power Automate AI Builder</option>
-                    <option value="Approved SaaS AI">Approved SaaS Native AI Feature</option>
                   </select>
                 </div>
                 <div>
@@ -1545,56 +1088,176 @@ export const IntakeWizard: React.FC<IntakeWizardProps> = ({
                   />
                 </div>
               </div>
-
-              <div>
-                <span className="block text-xs font-bold text-gray-800 mb-2">
-                  Self-Serve Guardrail Checklist (Must accept all to proceed):
-                </span>
-                <div className="space-y-2 text-xs">
-                  {[
-                    { key: "noPersonalOrHealthData", label: "No personal, health, or patient data without OR.AI clearance" },
-                    { key: "noProdSystemConnection", label: "No connection or write-back to production databases / systems" },
-                    { key: "noExternalSharingWithoutReview", label: "No external sharing of raw outputs without human validation" },
-                    { key: "autoExpiryAndCostCapsAccepted", label: "Auto-expiry and annual cost cap (<€50k) accepted" },
-                    { key: "listedInRegistry", label: "Listed publicly in the Opella AI Registry for visibility" },
-                  ].map((g) => (
-                    <label key={g.key} className="flex items-center gap-2 p-2.5 bg-gray-50 rounded-lg border border-gray-200 cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={(selfServeRegistry.guardrailsConfirmed as any)[g.key]}
-                        onChange={(e) =>
-                          setSelfServeRegistry({
-                            ...selfServeRegistry,
-                            guardrailsConfirmed: {
-                              ...selfServeRegistry.guardrailsConfirmed,
-                              [g.key]: e.target.checked,
-                            },
-                          })
-                        }
-                        className="rounded text-opella-forest"
-                      />
-                      <span className="text-gray-700">{g.label}</span>
-                    </label>
-                  ))}
-                </div>
-              </div>
             </div>
           )}
 
-          {/* Bottom Actions */}
-          <div className="flex items-center justify-between pt-5 border-t border-opella-border">
+          <div className="flex justify-between pt-4 border-t border-opella-border">
             <button
-              onClick={handleBack}
+              onClick={() => setStep(2)}
               className="px-5 py-2.5 border border-gray-300 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-50 flex items-center gap-1.5"
             >
-              <ArrowLeft className="w-4 h-4" /> Back to Speed & Mode
+              <ArrowLeft className="w-4 h-4" /> Back to Triage
+            </button>
+            <button
+              onClick={() => setStep(4)}
+              className="px-6 py-2.5 bg-opella-forest text-white rounded-lg font-bold text-sm flex items-center gap-2 hover:bg-opella-emerald shadow-sm"
+            >
+              Proceed to Mode Selection <ArrowRight className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* ================= STEP 4: MODE SELECTION (G4 DECISION) ================= */}
+      {step === 4 && (
+        <div className="bg-white rounded-2xl p-7 shadow-sm border border-opella-border space-y-6">
+          <div className="border-b border-opella-border pb-4 flex items-center justify-between">
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-bold px-2.5 py-0.5 rounded bg-emerald-700 text-white">
+                  Gate G4 Decision
+                </span>
+                <h2 className="text-xl font-bold text-opella-forest">
+                  Sourcing & Delivery Mode Selection (Slides 10 & 46)
+                </h2>
+              </div>
+              <p className="text-sm text-gray-600 mt-1">
+                Now that your business case is established, select who builds and runs the solution: Hub-led, Shared Squad, or Function-led.
+              </p>
+            </div>
+            <Workflow className="w-8 h-8 text-gray-300 hidden sm:block" />
+          </div>
+
+          {/* Sourcing Metaphor Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+            {/* Mode 1 */}
+            <div
+              onClick={() => setChosenMode("Mode 1")}
+              className={`p-5 rounded-2xl border-2 cursor-pointer transition-all flex flex-col justify-between ${
+                chosenMode === "Mode 1"
+                  ? "border-emerald-600 bg-emerald-50/70 shadow-md ring-2 ring-emerald-600/20"
+                  : "border-gray-200 bg-white hover:border-gray-300 hover:bg-gray-50"
+              }`}
+            >
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-xs font-bold px-2 py-0.5 rounded bg-emerald-100 text-emerald-900">
+                    Mode 1
+                  </span>
+                  {decision.mode === "Mode 1" && (
+                    <span className="text-[10px] bg-emerald-700 text-white font-bold px-2 py-0.5 rounded-full">
+                      Recommended
+                    </span>
+                  )}
+                </div>
+                <h3 className="font-bold text-base text-gray-900">Do it for me</h3>
+                <div className="text-xs font-bold text-emerald-800 italic mt-0.5 mb-2">
+                  “We ride for you”
+                </div>
+                <p className="text-xs text-gray-600 leading-relaxed">
+                  The hub leads delivery and run; the function defines the need, validates the outcome and owns the value.
+                </p>
+              </div>
+
+              <div className="mt-4 pt-3 border-t border-gray-100 text-[11px] text-gray-500">
+                <strong>Best fit:</strong> Complex, cross-functional builds on the shared platform where the function has no tech capacity.
+              </div>
+            </div>
+
+            {/* Mode 2 */}
+            <div
+              onClick={() => setChosenMode("Mode 2")}
+              className={`p-5 rounded-2xl border-2 cursor-pointer transition-all flex flex-col justify-between ${
+                chosenMode === "Mode 2"
+                  ? "border-emerald-600 bg-emerald-50/70 shadow-md ring-2 ring-emerald-600/20"
+                  : "border-gray-200 bg-white hover:border-gray-300 hover:bg-gray-50"
+              }`}
+            >
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-xs font-bold px-2 py-0.5 rounded bg-blue-100 text-blue-900">
+                    Mode 2
+                  </span>
+                  {decision.mode === "Mode 2" && (
+                    <span className="text-[10px] bg-blue-700 text-white font-bold px-2 py-0.5 rounded-full">
+                      Recommended
+                    </span>
+                  )}
+                </div>
+                <h3 className="font-bold text-base text-gray-900">Do it with me</h3>
+                <div className="text-xs font-bold text-blue-800 italic mt-0.5 mb-2">
+                  “We ride together”
+                </div>
+                <p className="text-xs text-gray-600 leading-relaxed">
+                  The function leads, the hub builds with it with dedicated hub capacity and shared squads.
+                </p>
+              </div>
+
+              <div className="mt-4 pt-3 border-t border-gray-100 text-[11px] text-gray-500">
+                <strong>Best fit:</strong> Medium complexity: requires deep business process knowledge and hub specialized engineering together.
+              </div>
+            </div>
+
+            {/* Mode 3 */}
+            <div
+              onClick={() => setChosenMode(decision.tier === "Self-Serve" ? "Self-Service AI" : "Mode 3")}
+              className={`p-5 rounded-2xl border-2 cursor-pointer transition-all flex flex-col justify-between ${
+                chosenMode === "Mode 3" || chosenMode === "Self-Service AI"
+                  ? "border-emerald-600 bg-emerald-50/70 shadow-md ring-2 ring-emerald-600/20"
+                  : "border-gray-200 bg-white hover:border-gray-300 hover:bg-gray-50"
+              }`}
+            >
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-xs font-bold px-2 py-0.5 rounded bg-purple-100 text-purple-900">
+                    Mode 3
+                  </span>
+                  {(decision.mode === "Mode 3" || decision.mode === "Self-Service AI") && (
+                    <span className="text-[10px] bg-purple-700 text-white font-bold px-2 py-0.5 rounded-full">
+                      Recommended
+                    </span>
+                  )}
+                </div>
+                <h3 className="font-bold text-base text-gray-900">
+                  {decision.tier === "Self-Serve" ? "Self-Service AI" : "Enable me"}
+                </h3>
+                <div className="text-xs font-bold text-purple-800 italic mt-0.5 mb-2">
+                  “We give you the right bike & map”
+                </div>
+                <p className="text-xs text-gray-600 leading-relaxed">
+                  The function frames and builds a solution it sources (external SaaS or AI Builders), the hub provides guidance & guardrails.
+                </p>
+              </div>
+
+              <div className="mt-4 pt-3 border-t border-gray-100 text-[11px] text-gray-500">
+                <strong>Best fit:</strong> External SaaS (e.g. LEO in Procurement, Wonka) or MVPs developed autonomously by certified AI builders.
+              </div>
+            </div>
+          </div>
+
+          {/* Sourcing Summary Box */}
+          <div className="bg-gray-50 p-4 rounded-xl border border-gray-200 text-xs text-gray-700 space-y-1">
+            <div>
+              <strong>Operating Model Rule (Slide 10 & 76):</strong> A use case gets one tier and one delivery mode. The mode answers <em>“Who delivers?”</em> without changing the governance tier.
+            </div>
+            <div className="text-gray-500">
+              *The delivery mode is confirmed at Gate G4 and reassessed before scaling at Gate G5.
+            </div>
+          </div>
+
+          <div className="flex justify-between pt-4 border-t border-opella-border">
+            <button
+              onClick={() => setStep(3)}
+              className="px-5 py-2.5 border border-gray-300 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-50 flex items-center gap-1.5"
+            >
+              <ArrowLeft className="w-4 h-4" /> Back to Business Case
             </button>
             <button
               onClick={handleCreateUseCase}
               className="px-7 py-3 bg-opella-forest text-white rounded-xl font-bold text-sm flex items-center gap-2 hover:bg-opella-emerald shadow-md transition-all hover:scale-[1.01]"
             >
               <Send className="w-4 h-4" />
-              Register & Launch into Lifecycle (Gate G1)
+              Launch into Real-Time Lifecycle Simulator
             </button>
           </div>
         </div>
