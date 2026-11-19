@@ -140,7 +140,8 @@ CREATE POLICY "Allow public update access"
               In your Vercel project dashboard (or local <code className="bg-gray-100 px-1 py-0.5 rounded">.env.local</code>), add:
               <pre className="bg-gray-900 text-emerald-400 p-3 rounded-lg mt-2 font-mono text-[11px] overflow-x-auto">
 {`NEXT_PUBLIC_SUPABASE_URL=https://your-project-id.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...`}
+NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+# OR: NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=sb_publishable_...`}
               </pre>
             </li>
           </ol>
