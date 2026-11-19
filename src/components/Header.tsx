@@ -1,13 +1,13 @@
 "use client";
 
 import React from "react";
-import { Sparkles, Layers, PlayCircle, Database } from "lucide-react";
+import { Sparkles, Layers, PlayCircle, Database, History } from "lucide-react";
 import { UseCase } from "@/types";
 import { isSupabaseConfigured } from "@/lib/supabaseClient";
 
 interface HeaderProps {
-  activeTab: "wizard" | "lifecycle" | "portfolio";
-  setActiveTab: (tab: "wizard" | "lifecycle" | "portfolio") => void;
+  activeTab: "wizard" | "lifecycle" | "portfolio" | "history";
+  setActiveTab: (tab: "wizard" | "lifecycle" | "portfolio" | "history") => void;
   useCases: UseCase[];
 }
 
@@ -105,6 +105,18 @@ export const Header: React.FC<HeaderProps> = ({ activeTab, setActiveTab, useCase
           >
             <Layers className="w-4 h-4 text-blue-300" />
             3. Portfolio & AI Registry
+          </button>
+
+          <button
+            onClick={() => setActiveTab("history")}
+            className={`px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2 transition-all whitespace-nowrap ${
+              activeTab === "history"
+                ? "bg-white text-opella-forest shadow-sm font-bold"
+                : "text-white/80 hover:text-white hover:bg-white/10"
+            }`}
+          >
+            <History className="w-4 h-4 text-purple-300" />
+            4. Gate Audit & History (GIDE)
           </button>
         </div>
       </div>

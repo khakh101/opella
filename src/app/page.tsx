@@ -5,12 +5,13 @@ import { Header } from "@/components/Header";
 import { IntakeWizard } from "@/components/IntakeWizard";
 import { LifecycleView } from "@/components/LifecycleView";
 import { PortfolioView } from "@/components/PortfolioView";
+import { HistoryView } from "@/components/HistoryView";
 import { UseCase } from "@/types";
 import { fetchUseCases } from "@/lib/storage";
 import { INITIAL_USE_CASES } from "@/lib/mockData";
 
 export default function Home() {
-  const [activeTab, setActiveTab] = useState<"wizard" | "lifecycle" | "portfolio">("wizard");
+  const [activeTab, setActiveTab] = useState<"wizard" | "lifecycle" | "portfolio" | "history">("wizard");
 
   const [useCases, setUseCases] = useState<UseCase[]>(INITIAL_USE_CASES);
   const [selectedUseCaseId, setSelectedUseCaseId] = useState<string>(
@@ -95,6 +96,14 @@ export default function Home() {
                 useCases={useCases}
                 onSelectUseCase={handleSelectUseCaseAndGoToLifecycle}
                 onNavigateToWizard={() => setActiveTab("wizard")}
+              />
+            )}
+
+            {activeTab === "history" && (
+              <HistoryView
+                useCases={useCases}
+                selectedUseCaseId={selectedUseCaseId}
+                onSelectUseCase={setSelectedUseCaseId}
               />
             )}
           </>

@@ -8,6 +8,25 @@ export type GateId = "G1" | "G2" | "G3" | "G4" | "G5" | "G6";
 
 export type GateStatus = "PENDING" | "PASSED" | "FAILED" | "SKIPPED" | "IN_REVIEW";
 
+export interface GateSubmissionData {
+  summary: string;
+  submittedBy: string;
+  submittedAt: string;
+  keyInputsFilled: Record<string, string>;
+  metricsOrCosts?: string;
+  artifactsAttached?: string[];
+}
+
+export interface GateDecisionRecord {
+  verdict: "APPROVED" | "CONDITIONALLY_APPROVED" | "RE_SCOPE" | "STOP" | "IN_REVIEW" | "APPROVED (GO BUILD)";
+  decisionTitle: string;
+  decidedBy: string;
+  decidedAt: string;
+  forum: string;
+  subsequentAction: string;
+  conditionsOrFeedback: string[];
+}
+
 export interface GateDetail {
   id: GateId;
   name: string;
@@ -26,6 +45,8 @@ export interface GateDetail {
     risk: string;
     adoption: string;
   };
+  submissionData?: GateSubmissionData;
+  decisionRecord?: GateDecisionRecord;
 }
 
 export type BigBetId =
@@ -45,7 +66,7 @@ export interface BigBetInfo {
 }
 
 export interface IntakeAnswers {
-  // 4 Intake Questions
+  // 4 Intake Questions (Slide 35)
   q1_bigBetOrOver1m: boolean;
   q2_approvedToolsUnder50k: boolean;
   q3_provenPilotOrReach: boolean;
@@ -53,6 +74,11 @@ export interface IntakeAnswers {
 
   // Additional context for routing
   initiativeTitle: string;
+  description: string; // MANDATORY: Description of the use case
+  targetUserGroupDescription: string; // MANDATORY: Who are the users
+  estimatedValueDescription?: string; // NOT MANDATORY: Estimated value
+  technologyProposed?: string; // NOT MANDATORY: Which technology to use
+
   functionName: string; // M&S, Science, Finance, GBS, Procurement, etc.
   region: string; // Global, NA, EULA, AMEA
   businessOwnerName: string;

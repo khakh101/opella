@@ -59,6 +59,10 @@ export const IntakeWizard: React.FC<IntakeWizardProps> = ({
   // Form State
   const [answers, setAnswers] = useState<IntakeAnswers>({
     initiativeTitle: "",
+    description: "",
+    targetUserGroupDescription: "",
+    estimatedValueDescription: "",
+    technologyProposed: "",
     functionName: "M&S",
     region: "Global",
     businessOwnerName: "",
@@ -211,6 +215,13 @@ export const IntakeWizard: React.FC<IntakeWizardProps> = ({
   const decision = evaluateIntake(answers);
   const tierConfig = TIER_CONFIG[decision.tier];
 
+  // Mandatory Validation for Step 1
+  const isStep1Valid = Boolean(
+    answers.initiativeTitle?.trim() &&
+      answers.description?.trim() &&
+      answers.targetUserGroupDescription?.trim()
+  );
+
   // Keep chosen mode in sync with suggested default
   useEffect(() => {
     setChosenMode(decision.mode);
@@ -274,13 +285,14 @@ export const IntakeWizard: React.FC<IntakeWizardProps> = ({
       id: `UC-${Math.floor(100 + Math.random() * 900)}`,
       title: answers.initiativeTitle || "Untitled Opella AI Initiative",
       description:
-        decision.tier === "T1"
+        answers.description ||
+        (decision.tier === "T1"
           ? t1BC.recurringItems.fy25_30BenefitsSummary
           : decision.tier === "T2"
           ? t2BC.problemStatement
           : decision.tier === "T3"
           ? t3Canvas.summaryAndHypothesis
-          : selfServeRegistry.purposeSummary,
+          : selfServeRegistry.purposeSummary),
       functionName: answers.functionName,
       region: answers.region,
       owner: answers.businessOwnerName || "Named Business PO",
@@ -293,13 +305,14 @@ export const IntakeWizard: React.FC<IntakeWizardProps> = ({
       riskTier: decision.riskTier,
       budget: answers.estimatedCost,
       roiEstimate:
-        decision.tier === "T1"
+        answers.estimatedValueDescription ||
+        (decision.tier === "T1"
           ? t1BC.dashboardSignOffs.ebitdaEffect
           : decision.tier === "T2"
           ? t2BC.directionalValue
           : decision.tier === "T3"
           ? t3Canvas.kpi1
-          : `${selfServeRegistry.userCount} users assisted`,
+          : `${selfServeRegistry.userCount} users assisted`),
       currentGate,
       status,
       intakeAnswers: answers,
@@ -354,28 +367,130 @@ export const IntakeWizard: React.FC<IntakeWizardProps> = ({
       {/* ================= STEP 1: THE 4 QUESTIONS ASSESSMENT ================= */}
       {step === 1 && (
         <div className="bg-white rounded-2xl p-7 shadow-sm border border-opella-border space-y-7">
-          <div className="border-b border-opella-border pb-4">
-            <h2 className="text-xl font-bold text-opella-forest flex items-center gap-2">
-              <Sparkles className="w-5 h-5 text-amber-500" />
-              Use Case Intake & The 4 Questions Assessment (Slide 35)
-            </h2>
-            <p className="text-sm text-gray-600 mt-1">
-              Answer the four triage questions from the Opella playbook. An autonomous Charter Agent will evaluate your responses and route your initiative into the appropriate speed lane.
-            </p>
+          <div className="border-b border-opella-border pb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div>
+              <h2 className="text-xl font-bold text-opella-forest flex items-center gap-2">
+                <Sparkles className="w-5 h-5 text-amber-500" />
+                Use Case Intake & The 4 Questions Assessment (Slide 35)
+              </h2>
+              <p className="text-sm text-gray-600 mt-1">
+                Answer the four triage questions from the Opella playbook. An autonomous Charter Agent will evaluate your responses and route your initiative into the appropriate speed lane.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                setAnswers({
+                  ...answers,
+                  initiativeTitle: "GIDE / BOWIE Procurement Agent",
+                  description:
+                    "Shifts Opella procurement from manual S2P steps to agentic execution. BOWIE agent automatically evaluates supplier quotes against commercial contracts, checks internal compliance rules, and creates SAP Purchase Orders within 48 hours.",
+                  targetUserGroupDescription:
+                    "1,800 Procurement buyers, category directors, and functional spenders across EULA, NA, and AMEA regions.",
+                  estimatedValueDescription:
+                    "€3.8M net run-rate EBITDA savings; 42,000 manual buyer hours repurposed; 75% touchless PO rate.",
+                  technologyProposed:
+                    "Azure GenAI (GPT-4o), LangChain Agent Orchestrator, SAP S/4HANA OData APIs, Databricks.",
+                  functionName: "Procurement",
+                  businessOwnerName: "Sarah Chen (Global Head of S2P)",
+                  estimatedCost: 1450000,
+                  targetUserCount: 1800,
+                  q1_bigBetOrOver1m: true,
+                  q2_approvedToolsUnder50k: false,
+                  q3_provenPilotOrReach: true,
+                  q4_newHypothesis: false,
+                });
+              }}
+              className="text-xs text-opella-forest bg-opella-forest/10 hover:bg-opella-forest/20 px-3 py-1.5 rounded-lg font-semibold transition-all flex items-center gap-1.5 whitespace-nowrap self-start sm:self-auto border border-opella-forest/20"
+            >
+              <Sparkles className="w-3.5 h-3.5 text-amber-500" /> Pre-fill GIDE Example
+            </button>
           </div>
 
           {/* Basic Initiative Context */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="md:col-span-2">
               <label className="block text-xs font-bold text-gray-800 uppercase tracking-wider mb-1">
-                Initiative Title / Name *
+                Initiative Title / Name * <span className="text-rose-600 font-bold">(Mandatory)</span>
               </label>
               <input
                 type="text"
-                placeholder="e.g. AI Content Localization Engine, S2P PO Validator, Demand Forecast Bot"
+                placeholder="e.g. GIDE / BOWIE Procurement Agent, Content Localization Engine, Demand Forecast Bot"
                 value={answers.initiativeTitle}
                 onChange={(e) => setAnswers({ ...answers, initiativeTitle: e.target.value })}
-                className="w-full px-4 py-2.5 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-opella-forest text-sm"
+                className="w-full px-4 py-2.5 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-opella-forest text-sm font-medium"
+              />
+            </div>
+
+            {/* MANDATORY: Description of the Use Case */}
+            <div className="md:col-span-2">
+              <div className="flex items-center justify-between mb-1">
+                <label className="block text-xs font-bold text-gray-800 uppercase tracking-wider">
+                  Description of the Use Case * <span className="text-rose-600 font-bold">(Mandatory)</span>
+                </label>
+                <span className="text-[11px] text-gray-500">Business context, current friction & intended AI solution</span>
+              </div>
+              <textarea
+                rows={3}
+                placeholder="e.g. Shifts Opella procurement from manual S2P steps to agentic execution. BOWIE agent automatically evaluates supplier quotes against commercial contracts, checks internal compliance rules, and creates SAP Purchase Orders within 48 hours."
+                value={answers.description || ""}
+                onChange={(e) => setAnswers({ ...answers, description: e.target.value })}
+                className={`w-full px-4 py-2.5 rounded-lg border text-sm focus:outline-none focus:ring-2 focus:ring-opella-forest ${
+                  !answers.description && answers.initiativeTitle ? "border-amber-400 bg-amber-50/20" : "border-gray-300"
+                }`}
+              />
+            </div>
+
+            {/* MANDATORY: Who are the users */}
+            <div className="md:col-span-2">
+              <div className="flex items-center justify-between mb-1">
+                <label className="block text-xs font-bold text-gray-800 uppercase tracking-wider">
+                  Who are the users? * <span className="text-rose-600 font-bold">(Mandatory)</span>
+                </label>
+                <span className="text-[11px] text-gray-500">Target roles, personas, locations, and user community</span>
+              </div>
+              <input
+                type="text"
+                placeholder="e.g. 1,800 Procurement buyers, category directors, and functional spenders across EULA, NA, and AMEA regions."
+                value={answers.targetUserGroupDescription || ""}
+                onChange={(e) => setAnswers({ ...answers, targetUserGroupDescription: e.target.value })}
+                className={`w-full px-4 py-2.5 rounded-lg border text-sm focus:outline-none focus:ring-2 focus:ring-opella-forest ${
+                  !answers.targetUserGroupDescription && answers.initiativeTitle ? "border-amber-400 bg-amber-50/20" : "border-gray-300"
+                }`}
+              />
+            </div>
+
+            {/* NOT MANDATORY: Estimated Value */}
+            <div>
+              <div className="flex items-center justify-between mb-1">
+                <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider">
+                  Estimated Value <span className="text-gray-400 font-normal">(Optional)</span>
+                </label>
+                <span className="text-[11px] text-gray-400">ROI / Savings / Hours Freed</span>
+              </div>
+              <input
+                type="text"
+                placeholder="e.g. €3.8M net run-rate EBITDA savings; 42,000 manual buyer hours repurposed; 75% touchless PO rate"
+                value={answers.estimatedValueDescription || ""}
+                onChange={(e) => setAnswers({ ...answers, estimatedValueDescription: e.target.value })}
+                className="w-full px-3.5 py-2.5 rounded-lg border border-gray-300 text-xs focus:outline-none focus:ring-2 focus:ring-opella-forest"
+              />
+            </div>
+
+            {/* NOT MANDATORY: Which technology to use */}
+            <div>
+              <div className="flex items-center justify-between mb-1">
+                <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider">
+                  Which Technology to Use <span className="text-gray-400 font-normal">(Optional)</span>
+                </label>
+                <span className="text-[11px] text-gray-400">Proposed platform or models</span>
+              </div>
+              <input
+                type="text"
+                placeholder="e.g. Azure GenAI (GPT-4o), LangChain, SAP S/4HANA OData APIs, Databricks"
+                value={answers.technologyProposed || ""}
+                onChange={(e) => setAnswers({ ...answers, technologyProposed: e.target.value })}
+                className="w-full px-3.5 py-2.5 rounded-lg border border-gray-300 text-xs focus:outline-none focus:ring-2 focus:ring-opella-forest"
               />
             </div>
 
@@ -401,11 +516,11 @@ export const IntakeWizard: React.FC<IntakeWizardProps> = ({
 
             <div>
               <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">
-                Accountable Business Owner (BO/PO) *
+                Accountable Business Owner (BO/PO)
               </label>
               <input
                 type="text"
-                placeholder="e.g. Sarah Jenkins (Category Lead)"
+                placeholder="e.g. Sarah Chen (Global Head of S2P)"
                 value={answers.businessOwnerName}
                 onChange={(e) => setAnswers({ ...answers, businessOwnerName: e.target.value })}
                 className="w-full px-3.5 py-2.5 rounded-lg border border-gray-300 text-xs focus:outline-none focus:ring-2 focus:ring-opella-forest"
@@ -637,11 +752,20 @@ export const IntakeWizard: React.FC<IntakeWizardProps> = ({
             </div>
           </div>
 
-          <div className="flex justify-end pt-4 border-t border-opella-border">
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-4 border-t border-opella-border">
+            {!isStep1Valid ? (
+              <span className="text-xs text-amber-800 bg-amber-50 px-3 py-1.5 rounded-lg border border-amber-200">
+                ⚠️ Required to continue: Please fill <strong>Title</strong>, <strong>Use Case Description</strong>, and <strong>Who are the users</strong>.
+              </span>
+            ) : (
+              <span className="text-xs text-emerald-800 bg-emerald-50 px-3 py-1.5 rounded-lg border border-emerald-200 flex items-center gap-1.5">
+                <Check className="w-3.5 h-3.5 text-emerald-600" /> Mandatory fields completed. Ready for agent triage.
+              </span>
+            )}
             <button
               onClick={handleStartAgentTriage}
-              disabled={!answers.initiativeTitle}
-              className="px-7 py-3 bg-opella-forest text-white rounded-xl font-bold text-sm flex items-center gap-2 hover:bg-opella-emerald shadow-md transition-all hover:scale-[1.01] disabled:opacity-50 disabled:cursor-not-allowed"
+              disabled={!isStep1Valid}
+              className="px-7 py-3 bg-opella-forest text-white rounded-xl font-bold text-sm flex items-center gap-2 hover:bg-opella-emerald shadow-md transition-all hover:scale-[1.01] disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap self-end sm:self-auto"
             >
               <Bot className="w-4 h-4 text-emerald-300" />
               Run Autonomous Agent Triage <ArrowRight className="w-4 h-4" />

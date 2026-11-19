@@ -290,6 +290,8 @@ export const INITIAL_GATES: Record<GateId, GateDetail> = {
   },
 };
 
+export const GATES_CONFIG = INITIAL_GATES;
+
 export const OPELLA_ROLES = [
   // 7 URGENT TO CREATE
   {
