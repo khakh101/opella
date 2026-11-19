@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { Header } from "@/components/Header";
+import { MiroBoardView } from "@/components/MiroBoardView";
 import { IntakeWizard } from "@/components/IntakeWizard";
 import { LifecycleView } from "@/components/LifecycleView";
 import { PortfolioView } from "@/components/PortfolioView";
@@ -12,7 +13,9 @@ import { fetchUseCases, deleteUseCase } from "@/lib/storage";
 import { INITIAL_USE_CASES } from "@/lib/mockData";
 
 export default function Home() {
-  const [activeTab, setActiveTab] = useState<"wizard" | "lifecycle" | "portfolio" | "history" | "map">("wizard");
+  const [activeTab, setActiveTab] = useState<
+    "board" | "wizard" | "lifecycle" | "portfolio" | "history" | "map"
+  >("board");
 
   const [useCases, setUseCases] = useState<UseCase[]>(INITIAL_USE_CASES);
   const [selectedUseCaseId, setSelectedUseCaseId] = useState<string>(
@@ -87,6 +90,13 @@ export default function Home() {
           </div>
         ) : (
           <>
+            {activeTab === "board" && (
+              <MiroBoardView
+                onNavigateToWizard={() => setActiveTab("wizard")}
+                onNavigateToLifecycle={() => setActiveTab("lifecycle")}
+              />
+            )}
+
             {activeTab === "wizard" && (
               <IntakeWizard
                 onUseCaseCreated={handleUseCaseCreated}

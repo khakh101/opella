@@ -1,13 +1,13 @@
 "use client";
 
 import React from "react";
-import { Sparkles, Layers, PlayCircle, Database, History, Network } from "lucide-react";
+import { Sparkles, Layers, PlayCircle, Database, History, Network, LayoutGrid } from "lucide-react";
 import { UseCase } from "@/types";
 import { isSupabaseConfigured } from "@/lib/supabaseClient";
 
 interface HeaderProps {
-  activeTab: "wizard" | "lifecycle" | "portfolio" | "history" | "map";
-  setActiveTab: (tab: "wizard" | "lifecycle" | "portfolio" | "history" | "map") => void;
+  activeTab: "board" | "wizard" | "lifecycle" | "portfolio" | "history" | "map";
+  setActiveTab: (tab: "board" | "wizard" | "lifecycle" | "portfolio" | "history" | "map") => void;
   useCases: UseCase[];
 }
 
@@ -72,6 +72,18 @@ export const Header: React.FC<HeaderProps> = ({ activeTab, setActiveTab, useCase
         {/* Navigation Tabs */}
         <div className="flex items-center space-x-2 mt-4 pt-2 border-t border-white/10 overflow-x-auto">
           <button
+            onClick={() => setActiveTab("board")}
+            className={`px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2 transition-all whitespace-nowrap ${
+              activeTab === "board"
+                ? "bg-white text-opella-forest shadow-sm font-bold"
+                : "text-white/80 hover:text-white hover:bg-white/10"
+            }`}
+          >
+            <LayoutGrid className="w-4 h-4 text-amber-300" />
+            1. Miro Lifecycle Board (Framing & Gates)
+          </button>
+
+          <button
             onClick={() => setActiveTab("wizard")}
             className={`px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2 transition-all whitespace-nowrap ${
               activeTab === "wizard"
@@ -80,7 +92,7 @@ export const Header: React.FC<HeaderProps> = ({ activeTab, setActiveTab, useCase
             }`}
           >
             <Sparkles className="w-4 h-4 text-amber-400" />
-            1. Intake & Agent Triage
+            2. Intake & Agent Triage
           </button>
 
           <button
@@ -92,7 +104,7 @@ export const Header: React.FC<HeaderProps> = ({ activeTab, setActiveTab, useCase
             }`}
           >
             <PlayCircle className="w-4 h-4 text-emerald-300" />
-            2. Real-Time Lifecycle Simulator (Gates G1–G6)
+            3. Real-Time Lifecycle Simulator (Gates G1–G6)
           </button>
 
           <button
@@ -104,7 +116,7 @@ export const Header: React.FC<HeaderProps> = ({ activeTab, setActiveTab, useCase
             }`}
           >
             <Layers className="w-4 h-4 text-blue-300" />
-            3. Portfolio & AI Registry
+            4. Portfolio & AI Registry
           </button>
 
           <button
@@ -116,7 +128,7 @@ export const Header: React.FC<HeaderProps> = ({ activeTab, setActiveTab, useCase
             }`}
           >
             <History className="w-4 h-4 text-purple-300" />
-            4. Gate Audit & History (GIDE)
+            5. Gate Audit & History (GIDE)
           </button>
 
           <button
@@ -128,7 +140,7 @@ export const Header: React.FC<HeaderProps> = ({ activeTab, setActiveTab, useCase
             }`}
           >
             <Network className="w-4 h-4 text-amber-300" />
-            5. Operating Model Map (Tiers · Gates · Modes)
+            6. Operating Model Map (Tiers · Gates · Modes)
           </button>
         </div>
       </div>
