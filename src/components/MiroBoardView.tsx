@@ -6,7 +6,8 @@ import { EXAMPLES, MODES, PATHS, PATH_ORDER, PathId, STEPS, StepId, exampleById 
 import { cx } from "@/components/miro/MiroPrimitives";
 import { MiroOverview } from "@/components/miro/MiroOverview";
 import { FramingCanvas, FRAMING_SIZE } from "@/components/miro/FramingCanvas";
-import { RunCanvas, ScaleCanvas } from "@/components/miro/StepCanvases";
+import { ScaleCanvas } from "@/components/miro/StepCanvases";
+import { RunCanvas } from "@/components/miro/RunCanvas";
 import { PreScaleCanvas } from "@/components/miro/PreScaleCanvas";
 import { BuildCanvas } from "@/components/miro/BuildCanvas";
 import { DetailPanel } from "@/components/miro/DetailPanel";
@@ -237,8 +238,8 @@ export const MiroBoardView: React.FC<MiroBoardViewProps> = () => {
                 {framingFocus && (
                   <div className="mb-4 flex items-center justify-between gap-4 rounded-xl border-2 border-sky-300 bg-sky-50 px-4 py-2 text-sm text-sky-950">
                     <span>
-                      <span className="font-black">T2 assessment.</span> A T3 or self-service use case, from any build mode, goes through all
-                      the T2 gates here (G2 to G4), then builds as T2.
+                      <span className="font-black">T2 assessment.</span> A T3 or self-service use case, or a larger feature coming from Run,
+                      goes through all the T2 gates here (G2 to G4), then is built as T2.
                     </span>
                     <button onClick={() => setFramingFocus(null)} className="shrink-0 rounded-md border border-sky-300 bg-white px-2 py-1 text-xs font-bold">
                       Back to the selected example
@@ -258,7 +259,9 @@ export const MiroBoardView: React.FC<MiroBoardViewProps> = () => {
               <PreScaleCanvas example={example} onOpenDetail={setDetailId} onBackToFramingT2={() => openStep("framing", "T2")} />
             )}
             {view === "scale" && <ScaleCanvas example={example} onOpenDetail={setDetailId} />}
-            {view === "run" && <RunCanvas example={example} onOpenDetail={setDetailId} />}
+            {view === "run" && (
+              <RunCanvas example={example} onOpenDetail={setDetailId} onBackToFramingT2={() => openStep("framing", "T2")} />
+            )}
 
             {/* Previous / next step */}
             {step && (

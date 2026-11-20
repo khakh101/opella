@@ -6,6 +6,8 @@
 // slides 34, 35, 37, 39, 40, 41, 45, 46, 47, 49, 51, 52.
 // =====================================================================
 
+import { G6_BY_MODE } from "./miroRun";
+
 export type PathId = "T1" | "T2" | "T3" | "SS";
 
 export type StepId = "framing" | "build" | "prescale" | "scale" | "run";
@@ -238,9 +240,9 @@ export const STEPS: StepDef[] = [
     name: "Run",
     oneLiner: "Track value and keep it worth running",
     bullets: [
-      "Realised value and ROI vs baseline",
-      "Usage, model tuning, upgrades",
-      "Stop triggers if value is not there",
+      "Step 1: the app runs and everything goes well",
+      "Step 2: a problem arises (broken pipeline or new feature), assessed and reviewed at G6",
+      "Step 3: ensure a good adoption",
     ],
     gates: [{ id: "G6", label: "Maintain validation", type: "human" }],
     zone: "discipline",
@@ -851,6 +853,26 @@ export const DETAILS: Record<string, DetailItem> = {
     exampleKey: "g5",
     source: "Slides 40, 46, 51, 52, briefing of 20/11",
   },
+  rollout: {
+    id: "rollout",
+    kind: "activity",
+    badge: "SCALE",
+    title: "Roll-out assessment",
+    subtitle: "What is checked before extending to another geography or a new market",
+    intro: "Each roll-out is assessed on its own: a use case that works in one market does not carry over by itself.",
+    sections: [
+      { label: "Value", items: ["Size of the prize in the target market, against its own baseline", "EBITDA and cost, with the Finance baseline signed"] },
+      { label: "Data and platform", items: ["Master data in the target market (customer, product)", "Regional data foundation in place, with a named data product lead"] },
+      { label: "Process and systems", items: ["Does the market run the process the same way? Same systems and integrations?"] },
+      { label: "Regulation and risk", items: ["Local regulation and data privacy rules", "Responsible AI risk level in that market"] },
+      { label: "People and ownership", items: ["A local sponsor and owner named, with time to run it"] },
+      { label: "Adoption", items: ["Local adoption plan: training adapted to the geography and language, change support"] },
+      { label: "Run cost", items: ["Support model and run cost in the new market"] },
+      { label: "Decides", items: ["Go, wait for a prerequisite, or stop, for each geography or market"] },
+    ],
+    note: "To validate: this list is a proposal. It is built from the TPM roll-out lessons in the exec deck (Mexico live since June but unused for 5 to 6 months with no change management; Australia stalled with no sales leader for about 3 months), the adoption framework and the Bedrock data prerequisites. Neither the SOW nor the PDF defines a roll-out assessment. Also to confirm: does new market mean a new country, or a new segment or channel?",
+    source: "Exec deck V2710 (TPM roll-out), operating model deck (adoption framework), briefing of 20/11",
+  },
   g6: {
     id: "g6",
     kind: "gate",
@@ -858,23 +880,35 @@ export const DETAILS: Record<string, DetailItem> = {
     title: "Maintain validation",
     subtitle: "Is it still worth running?",
     gateType: "human",
+    intro: "Step 2 of the Run: a problem arises. The gate reviews the assessment and decides whether to solve the problem or remove the use case. It appears after each assessment, at the same portfolio board.",
     sections: [
       {
         label: "Reviewed",
         items: [
+          "Assessment 2.1: is it a broken pipeline? Quick fix, or value × complexity if many resources are required",
+          "Assessment 2.2: is it a new feature? Quick feature, or back to T2 framing",
           "Value: realised value vs baseline",
           "Complexity: run cost, support, model drift",
-          "Risk: post-live monitoring",
           "Adoption: usage vs target by role",
         ],
       },
-      { label: "Decides", items: ["Continue, scale, re-scope or stop"] },
+      { label: "Decides", items: ["Solve it (fix it or deliver the feature), or remove the use case", "A larger feature goes back to T2 framing"] },
+      {
+        label: "What changes by mode",
+        items: [
+          `Enable me: ${G6_BY_MODE["enable-me"]}`,
+          `Do it with me: ${G6_BY_MODE["with-me"]}`,
+          `Do it for me: ${G6_BY_MODE["for-me"]}`,
+          `Self-service: ${G6_BY_MODE["self-service"]}`,
+        ],
+      },
     ],
+    note: "To confirm: (1) the forum. The briefing of 20/11 says portfolio board; the operating model PDF names the quarterly review Use Case monitoring (Big bet review for big bets) and the previous version of this panel said Scale committee. (2) Does a quick fix or a quick feature also wait for the portfolio board? (3) The briefing says Gate 5 for step 2 of the Run; read here as G6.",
     meta: [
       { label: "Owner", value: "Product owner (run owner)" },
-      { label: "Forum", value: "Scale committee; Finance sign-off at +6 / +12 months" },
+      { label: "Forum", value: "Portfolio board; Finance sign-off at +6 / +12 months" },
       { label: "Cadence", value: "Quarterly" },
-      { label: "If no-go", value: "Terminate or pivot" },
+      { label: "If no-go", value: "Remove the use case" },
       { label: "Escalation", value: "Sponsor, then TO SteerCo" },
     ],
     exampleKey: "g6",
