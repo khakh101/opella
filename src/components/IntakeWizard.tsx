@@ -265,7 +265,7 @@ export const IntakeWizard: React.FC<IntakeWizardProps> = ({
   const isStep1Valid = collectedCount === totalCount;
 
   // Presets & Reset Handlers for live demo collection
-  const handleLoadPreset = (preset: "GIDE" | "IBP" | "WONKA") => {
+  const handleLoadPreset = (preset: "GIDE" | "IBP" | "WONKA" | "COPILOT") => {
     if (preset === "GIDE") {
       setAnswers({
         ...answers,
@@ -284,9 +284,10 @@ export const IntakeWizard: React.FC<IntakeWizardProps> = ({
         businessOwnerEmail: "sarah.chen@opella.com",
         estimatedCost: 1450000,
         targetUserCount: 1800,
+        mappedBigBet: "BET_6",
         q1_bigBetOrOver1m: true,
         q2_approvedToolsUnder50k: false,
-        q3_provenPilotOrReach: true,
+        q3_provenPilotOrReach: false,
         q4_newHypothesis: false,
         risk_personalHealthData: false,
         risk_autonomousDecisions: false,
@@ -317,6 +318,7 @@ export const IntakeWizard: React.FC<IntakeWizardProps> = ({
         businessOwnerEmail: "marc.delon@opella.com",
         estimatedCost: 420000,
         targetUserCount: 450,
+        mappedBigBet: undefined,
         q1_bigBetOrOver1m: false,
         q2_approvedToolsUnder50k: false,
         q3_provenPilotOrReach: true,
@@ -350,10 +352,45 @@ export const IntakeWizard: React.FC<IntakeWizardProps> = ({
         businessOwnerEmail: "thomas.brun@opella.com",
         estimatedCost: 95000,
         targetUserCount: 65,
+        mappedBigBet: undefined,
         q1_bigBetOrOver1m: false,
         q2_approvedToolsUnder50k: false,
         q3_provenPilotOrReach: false,
         q4_newHypothesis: true,
+        risk_personalHealthData: false,
+        risk_autonomousDecisions: false,
+        risk_coreProdWriteBack: false,
+        risk_externalOutputNoReview: false,
+        risk_unapprovedSaaSOrCustomModel: false,
+        techComplexity: "Low",
+        functionTechCapacity: "High",
+        fundingSource: "Function Budget",
+      });
+      setQQuestionsConfirmed(true);
+      setOraiConfirmed(true);
+    } else if (preset === "COPILOT") {
+      setAnswers({
+        ...answers,
+        initiativeTitle: "Meeting Action Item Extractor (Copilot)",
+        description:
+          "Automated Copilot Studio workflow that extracts meeting action items and distributes them to team members using approved Microsoft 365 connectors.",
+        targetUserGroupDescription:
+          "25 Regional Marketing and Sales team members across EULA.",
+        estimatedValueDescription:
+          "Saves 3 hours/week per manager on meeting administration and task dispatching.",
+        technologyProposed:
+          "Microsoft Copilot Studio, Power Automate, Outlook 365, Teams.",
+        functionName: "M&S",
+        region: "EULA",
+        businessOwnerName: "Sophie Laurent (Marketing Ops Lead)",
+        businessOwnerEmail: "sophie.laurent@opella.com",
+        estimatedCost: 15000,
+        targetUserCount: 25,
+        mappedBigBet: undefined,
+        q1_bigBetOrOver1m: false,
+        q2_approvedToolsUnder50k: true,
+        q3_provenPilotOrReach: false,
+        q4_newHypothesis: false,
         risk_personalHealthData: false,
         risk_autonomousDecisions: false,
         risk_coreProdWriteBack: false,
@@ -380,6 +417,7 @@ export const IntakeWizard: React.FC<IntakeWizardProps> = ({
       businessOwnerEmail: "",
       estimatedCost: 150000,
       targetUserCount: 100,
+      mappedBigBet: undefined,
       q1_bigBetOrOver1m: false,
       q2_approvedToolsUnder50k: false,
       q3_provenPilotOrReach: false,
@@ -590,6 +628,14 @@ export const IntakeWizard: React.FC<IntakeWizardProps> = ({
                   >
                     <span>WONKA</span>
                     <span className="text-[9px] bg-black/30 px-1 rounded text-amber-200">T3</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleLoadPreset("COPILOT")}
+                    className="px-2.5 py-1 rounded-lg bg-purple-700 hover:bg-purple-600 text-white font-bold text-[11px] transition-all shadow-sm flex items-center gap-1"
+                  >
+                    <span>COPILOT</span>
+                    <span className="text-[9px] bg-black/30 px-1 rounded text-purple-200">Self-Serve</span>
                   </button>
                 </div>
 
@@ -937,7 +983,13 @@ export const IntakeWizard: React.FC<IntakeWizardProps> = ({
                         <button
                           type="button"
                           onClick={() => {
-                            setAnswers({ ...answers, q1_bigBetOrOver1m: true });
+                            setAnswers({
+                              ...answers,
+                              q1_bigBetOrOver1m: true,
+                              q2_approvedToolsUnder50k: false,
+                              q3_provenPilotOrReach: false,
+                              q4_newHypothesis: false,
+                            });
                             setQQuestionsConfirmed(true);
                           }}
                           className={`px-3 py-1 rounded-md text-xs font-bold transition-all ${answers.q1_bigBetOrOver1m ? "bg-emerald-500 text-emerald-950 shadow-sm" : "bg-white/10 text-white hover:bg-white/20"}`}
@@ -947,7 +999,11 @@ export const IntakeWizard: React.FC<IntakeWizardProps> = ({
                         <button
                           type="button"
                           onClick={() => {
-                            setAnswers({ ...answers, q1_bigBetOrOver1m: false });
+                            setAnswers({
+                              ...answers,
+                              q1_bigBetOrOver1m: false,
+                              mappedBigBet: undefined,
+                            });
                             setQQuestionsConfirmed(true);
                           }}
                           className={`px-3 py-1 rounded-md text-xs font-bold transition-all ${!answers.q1_bigBetOrOver1m ? "bg-gray-700 text-white shadow-sm" : "bg-white/10 text-white hover:bg-white/20"}`}
@@ -974,7 +1030,16 @@ export const IntakeWizard: React.FC<IntakeWizardProps> = ({
                         <button
                           type="button"
                           onClick={() => {
-                            setAnswers({ ...answers, q2_approvedToolsUnder50k: true });
+                            setAnswers({
+                              ...answers,
+                              q1_bigBetOrOver1m: false,
+                              q2_approvedToolsUnder50k: true,
+                              q3_provenPilotOrReach: false,
+                              q4_newHypothesis: false,
+                              mappedBigBet: undefined,
+                              estimatedCost: Math.min(answers.estimatedCost, 45000),
+                              targetUserCount: Math.min(answers.targetUserCount, 40),
+                            });
                             setQQuestionsConfirmed(true);
                           }}
                           className={`px-3 py-1 rounded-md text-xs font-bold transition-all ${answers.q2_approvedToolsUnder50k ? "bg-purple-400 text-purple-950 shadow-sm" : "bg-white/10 text-white hover:bg-white/20"}`}
@@ -984,7 +1049,10 @@ export const IntakeWizard: React.FC<IntakeWizardProps> = ({
                         <button
                           type="button"
                           onClick={() => {
-                            setAnswers({ ...answers, q2_approvedToolsUnder50k: false });
+                            setAnswers({
+                              ...answers,
+                              q2_approvedToolsUnder50k: false,
+                            });
                             setQQuestionsConfirmed(true);
                           }}
                           className={`px-3 py-1 rounded-md text-xs font-bold transition-all ${!answers.q2_approvedToolsUnder50k ? "bg-gray-700 text-white shadow-sm" : "bg-white/10 text-white hover:bg-white/20"}`}
@@ -1011,7 +1079,14 @@ export const IntakeWizard: React.FC<IntakeWizardProps> = ({
                         <button
                           type="button"
                           onClick={() => {
-                            setAnswers({ ...answers, q3_provenPilotOrReach: true });
+                            setAnswers({
+                              ...answers,
+                              q1_bigBetOrOver1m: false,
+                              q2_approvedToolsUnder50k: false,
+                              q3_provenPilotOrReach: true,
+                              q4_newHypothesis: false,
+                              mappedBigBet: undefined,
+                            });
                             setQQuestionsConfirmed(true);
                           }}
                           className={`px-3 py-1 rounded-md text-xs font-bold transition-all ${answers.q3_provenPilotOrReach ? "bg-blue-400 text-blue-950 shadow-sm" : "bg-white/10 text-white hover:bg-white/20"}`}
@@ -1021,7 +1096,10 @@ export const IntakeWizard: React.FC<IntakeWizardProps> = ({
                         <button
                           type="button"
                           onClick={() => {
-                            setAnswers({ ...answers, q3_provenPilotOrReach: false });
+                            setAnswers({
+                              ...answers,
+                              q3_provenPilotOrReach: false,
+                            });
                             setQQuestionsConfirmed(true);
                           }}
                           className={`px-3 py-1 rounded-md text-xs font-bold transition-all ${!answers.q3_provenPilotOrReach ? "bg-gray-700 text-white shadow-sm" : "bg-white/10 text-white hover:bg-white/20"}`}
@@ -1033,7 +1111,20 @@ export const IntakeWizard: React.FC<IntakeWizardProps> = ({
                   </div>
 
                   {/* Q4 / Fallback */}
-                  <div className={`p-3 rounded-lg border transition-all ${!answers.q1_bigBetOrOver1m && !answers.q2_approvedToolsUnder50k && !answers.q3_provenPilotOrReach ? "bg-amber-950/60 border-amber-400 text-white" : "bg-black/25 border-white/10 text-white/80"}`}>
+                  <div
+                    onClick={() => {
+                      setAnswers({
+                        ...answers,
+                        q1_bigBetOrOver1m: false,
+                        q2_approvedToolsUnder50k: false,
+                        q3_provenPilotOrReach: false,
+                        q4_newHypothesis: true,
+                        mappedBigBet: undefined,
+                      });
+                      setQQuestionsConfirmed(true);
+                    }}
+                    className={`p-3 rounded-lg border transition-all cursor-pointer ${!answers.q1_bigBetOrOver1m && !answers.q2_approvedToolsUnder50k && !answers.q3_provenPilotOrReach ? "bg-amber-950/60 border-amber-400 text-white ring-1 ring-amber-400/40" : "bg-black/25 border-white/10 text-white/80 hover:bg-black/40"}`}
+                  >
                     <div className="flex items-start justify-between gap-3">
                       <div className="flex-1">
                         <div className="flex items-center gap-2 mb-1">
@@ -1720,45 +1811,175 @@ export const IntakeWizard: React.FC<IntakeWizardProps> = ({
                   </span>
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
-                  <div className="p-3 rounded-lg bg-black/30 border border-white/10 space-y-1">
-                    <div className="font-bold text-white text-xs flex items-center justify-between">
-                      <span>1. Finance Baseline Sign-off</span>
-                      <span className="text-[9px] bg-emerald-400/20 text-emerald-300 px-1.5 py-0.5 rounded">Finance BP</span>
-                    </div>
-                    <p className="text-white/70 text-[11px]">
-                      Bottom-up verification of current manual cost/baseline (€/PO, €/hour, or baseline FTE hours) signed off by your Finance Business Partner.
-                    </p>
-                  </div>
+                  {decision.tier === "T1" ? (
+                    <>
+                      <div className="p-3 rounded-lg bg-black/30 border border-white/10 space-y-1">
+                        <div className="font-bold text-white text-xs flex items-center justify-between">
+                          <span>1. Finance Baseline Sign-off</span>
+                          <span className="text-[9px] bg-emerald-400/20 text-emerald-300 px-1.5 py-0.5 rounded">Finance BP</span>
+                        </div>
+                        <p className="text-white/70 text-[11px]">
+                          Bottom-up verification of current manual cost/baseline (€/PO, €/hour, or baseline FTE hours) signed off by your Finance Business Partner.
+                        </p>
+                      </div>
 
-                  <div className="p-3 rounded-lg bg-black/30 border border-white/10 space-y-1">
-                    <div className="font-bold text-white text-xs flex items-center justify-between">
-                      <span>2. Architecture Decision Record (ADR)</span>
-                      <span className="text-[9px] bg-blue-400/20 text-blue-300 px-1.5 py-0.5 rounded">Data & AI DDA</span>
-                    </div>
-                    <p className="text-white/70 text-[11px]">
-                      Solution architecture, SAP S/4HANA OData APIs, Azure GenAI private endpoints, and data integration clearance from DDA.
-                    </p>
-                  </div>
+                      <div className="p-3 rounded-lg bg-black/30 border border-white/10 space-y-1">
+                        <div className="font-bold text-white text-xs flex items-center justify-between">
+                          <span>2. Architecture Decision Record (ADR)</span>
+                          <span className="text-[9px] bg-blue-400/20 text-blue-300 px-1.5 py-0.5 rounded">Data & AI DDA</span>
+                        </div>
+                        <p className="text-white/70 text-[11px]">
+                          Solution architecture, SAP S/4HANA OData APIs, Azure GenAI private endpoints, and data integration clearance from DDA.
+                        </p>
+                      </div>
 
-                  <div className="p-3 rounded-lg bg-black/30 border border-white/10 space-y-1">
-                    <div className="font-bold text-white text-xs flex items-center justify-between">
-                      <span>3. Process Redesign Check: YES</span>
-                      <span className="text-[9px] bg-amber-400/20 text-amber-300 px-1.5 py-0.5 rounded">Transformation Office</span>
-                    </div>
-                    <p className="text-white/70 text-[11px]">
-                      Concrete mapping proving the process is fundamentally reshaped (removes manual handoffs and multi-tier approval hops, not automating bad workflows).
-                    </p>
-                  </div>
+                      <div className="p-3 rounded-lg bg-black/30 border border-white/10 space-y-1">
+                        <div className="font-bold text-white text-xs flex items-center justify-between">
+                          <span>3. Process Redesign Check: YES</span>
+                          <span className="text-[9px] bg-amber-400/20 text-amber-300 px-1.5 py-0.5 rounded">Transformation Office</span>
+                        </div>
+                        <p className="text-white/70 text-[11px]">
+                          Concrete mapping proving the process is fundamentally reshaped (removes manual handoffs and multi-tier approval hops, not automating bad workflows).
+                        </p>
+                      </div>
 
-                  <div className="p-3 rounded-lg bg-black/30 border border-white/10 space-y-1">
-                    <div className="font-bold text-white text-xs flex items-center justify-between">
-                      <span>4. Data Boundary & OR.AI Clearance</span>
-                      <span className="text-[9px] bg-purple-400/20 text-purple-300 px-1.5 py-0.5 rounded">OR.AI & CISO</span>
-                    </div>
-                    <p className="text-white/70 text-[11px]">
-                      Responsible AI screening, CISO RBAC tokenization, and strict confirmation of zero external LLM model training on enterprise data.
-                    </p>
-                  </div>
+                      <div className="p-3 rounded-lg bg-black/30 border border-white/10 space-y-1">
+                        <div className="font-bold text-white text-xs flex items-center justify-between">
+                          <span>4. Data Boundary & OR.AI Clearance</span>
+                          <span className="text-[9px] bg-purple-400/20 text-purple-300 px-1.5 py-0.5 rounded">OR.AI & CISO</span>
+                        </div>
+                        <p className="text-white/70 text-[11px]">
+                          Responsible AI screening, CISO RBAC tokenization, and strict confirmation of zero external LLM model training on enterprise data.
+                        </p>
+                      </div>
+                    </>
+                  ) : decision.tier === "T2" ? (
+                    <>
+                      <div className="p-3 rounded-lg bg-black/30 border border-white/10 space-y-1">
+                        <div className="font-bold text-white text-xs flex items-center justify-between">
+                          <span>1. Target Reach & User Scale (500+)</span>
+                          <span className="text-[9px] bg-sky-400/20 text-sky-300 px-1.5 py-0.5 rounded">Stream Lead</span>
+                        </div>
+                        <p className="text-white/70 text-[11px]">
+                          Validation that the use case spans 500+ users or cross-functional deployment across 2+ business units / regions.
+                        </p>
+                      </div>
+
+                      <div className="p-3 rounded-lg bg-black/30 border border-white/10 space-y-1">
+                        <div className="font-bold text-white text-xs flex items-center justify-between">
+                          <span>2. Light Business Case (1–2 Pages)</span>
+                          <span className="text-[9px] bg-emerald-400/20 text-emerald-300 px-1.5 py-0.5 rounded">Business PO</span>
+                        </div>
+                        <p className="text-white/70 text-[11px]">
+                          Documented problem statement, directional savings/speed metrics, and tranche release milestone unlocks.
+                        </p>
+                      </div>
+
+                      <div className="p-3 rounded-lg bg-black/30 border border-white/10 space-y-1">
+                        <div className="font-bold text-white text-xs flex items-center justify-between">
+                          <span>3. Shared Squad Capacity Agreement</span>
+                          <span className="text-[9px] bg-amber-400/20 text-amber-300 px-1.5 py-0.5 rounded">Hub & BU</span>
+                        </div>
+                        <p className="text-white/70 text-[11px]">
+                          Co-funding allocation and builder days commitment (Hub data engineer + BU business analyst).
+                        </p>
+                      </div>
+
+                      <div className="p-3 rounded-lg bg-black/30 border border-white/10 space-y-1">
+                        <div className="font-bold text-white text-xs flex items-center justify-between">
+                          <span>4. Design Authority Platform Fit</span>
+                          <span className="text-[9px] bg-purple-400/20 text-purple-300 px-1.5 py-0.5 rounded">DDA Lead</span>
+                        </div>
+                        <p className="text-white/70 text-[11px]">
+                          Confirmation that data sources reside on approved Snowflake data marts or approved Azure enterprise services.
+                        </p>
+                      </div>
+                    </>
+                  ) : decision.tier === "T3" ? (
+                    <>
+                      <div className="p-3 rounded-lg bg-black/30 border border-white/10 space-y-1">
+                        <div className="font-bold text-white text-xs flex items-center justify-between">
+                          <span>1. One-Page Canvas & Hypothesis</span>
+                          <span className="text-[9px] bg-amber-400/20 text-amber-300 px-1.5 py-0.5 rounded">Process Owner</span>
+                        </div>
+                        <p className="text-white/70 text-[11px]">
+                          Explicit hypothesis of value to test within a single functional domain and under €200k envelope.
+                        </p>
+                      </div>
+
+                      <div className="p-3 rounded-lg bg-black/30 border border-white/10 space-y-1">
+                        <div className="font-bold text-white text-xs flex items-center justify-between">
+                          <span>2. Three Success KPIs & Baseline</span>
+                          <span className="text-[9px] bg-emerald-400/20 text-emerald-300 px-1.5 py-0.5 rounded">AI Catalyst</span>
+                        </div>
+                        <p className="text-white/70 text-[11px]">
+                          Measurable targets for speed/quality, accuracy, and adoption with documented pre-sprint baselines.
+                        </p>
+                      </div>
+
+                      <div className="p-3 rounded-lg bg-black/30 border border-white/10 space-y-1">
+                        <div className="font-bold text-white text-xs flex items-center justify-between">
+                          <span>3. 6–8 Week Sprint Commitment</span>
+                          <span className="text-[9px] bg-sky-400/20 text-sky-300 px-1.5 py-0.5 rounded">Certified Builder</span>
+                        </div>
+                        <p className="text-white/70 text-[11px]">
+                          Clear backlog for rapid MVP development and testing by internal builders or SaaS provider.
+                        </p>
+                      </div>
+
+                      <div className="p-3 rounded-lg bg-black/30 border border-white/10 space-y-1">
+                        <div className="font-bold text-white text-xs flex items-center justify-between">
+                          <span>4. Hard Kill / Scale Milestone Date</span>
+                          <span className="text-[9px] bg-purple-400/20 text-purple-300 px-1.5 py-0.5 rounded">Portfolio Board</span>
+                        </div>
+                        <p className="text-white/70 text-[11px]">
+                          Scheduled formal checkpoint at end of sprint to decide graduation to T2 or fail-fast termination.
+                        </p>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <div className="p-3 rounded-lg bg-black/30 border border-white/10 space-y-1">
+                        <div className="font-bold text-white text-xs flex items-center justify-between">
+                          <span>1. Approved Tool Catalog Selection</span>
+                          <span className="text-[9px] bg-purple-400/20 text-purple-300 px-1.5 py-0.5 rounded">Automated</span>
+                        </div>
+                        <p className="text-white/70 text-[11px]">
+                          Configured using enterprise Copilot Studio, Opella GPT, or Power Automate without new software procurement.
+                        </p>
+                      </div>
+
+                      <div className="p-3 rounded-lg bg-black/30 border border-white/10 space-y-1">
+                        <div className="font-bold text-white text-xs flex items-center justify-between">
+                          <span>2. Data Boundary Attestation</span>
+                          <span className="text-[9px] bg-emerald-400/20 text-emerald-300 px-1.5 py-0.5 rounded">User Sign-off</span>
+                        </div>
+                        <p className="text-white/70 text-[11px]">
+                          Formal confirmation of zero personal/patient data and no direct write-back connections to production ERPs.
+                        </p>
+                      </div>
+
+                      <div className="p-3 rounded-lg bg-black/30 border border-white/10 space-y-1">
+                        <div className="font-bold text-white text-xs flex items-center justify-between">
+                          <span>3. Cost Cap & Token Budget (&lt;€50k)</span>
+                          <span className="text-[9px] bg-amber-400/20 text-amber-300 px-1.5 py-0.5 rounded">Function Head</span>
+                        </div>
+                        <p className="text-white/70 text-[11px]">
+                          Confirmed within existing department license budget and accepted automated token usage controls.
+                        </p>
+                      </div>
+
+                      <div className="p-3 rounded-lg bg-black/30 border border-white/10 space-y-1">
+                        <div className="font-bold text-white text-xs flex items-center justify-between">
+                          <span>4. Opella AI Registry Line</span>
+                          <span className="text-[9px] bg-sky-400/20 text-sky-300 px-1.5 py-0.5 rounded">AI Registry</span>
+                        </div>
+                        <p className="text-white/70 text-[11px]">
+                          Published entry in central AI Registry to prevent duplicative tooling and track adoption.
+                        </p>
+                      </div>
+                    </>
+                  )}
                 </div>
               </div>
             </div>

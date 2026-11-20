@@ -57,42 +57,25 @@ export function evaluateIntake(answers: IntakeAnswers): DecisionResult {
   // 2. Evaluate Tier (The 4 Questions from Slide 35)
   let tier: Tier = "T3";
 
-  if (answers.q1_bigBetOrOver1m || answers.estimatedCost > 1000000 || answers.mappedBigBet) {
+  if (answers.q1_bigBetOrOver1m) {
     tier = "T1";
     reasoning.push(
-      "Matched Q1: Part of an AmplifAI Big Bet, alters Butterfly core platforms/scope, or budget exceeds €1M."
+      "Matched Q1 (YES): Part of an AmplifAI Big Bet, alters Butterfly core platforms/scope, or budget exceeds €1M."
     );
-  } else if (
-    answers.q2_approvedToolsUnder50k &&
-    answers.estimatedCost <= 50000 &&
-    riskTier !== "High" &&
-    answers.targetUserCount < 100
-  ) {
+  } else if (answers.q2_approvedToolsUnder50k) {
     tier = "Self-Serve";
     reasoning.push(
-      "Matched Q2: Uses only approved tools and data, configured rather than built, under €50k, low/medium risk."
+      "Matched Q2 (YES): Uses only approved enterprise tools and data, configured rather than built, under €50k."
     );
-  } else if (
-    answers.q3_provenPilotOrReach ||
-    answers.estimatedCost >= 200000 ||
-    answers.targetUserCount >= 500
-  ) {
+  } else if (answers.q3_provenPilotOrReach) {
     tier = "T2";
     reasoning.push(
-      "Matched Q3: Enterprise scale with proven pilot, cross-functional reach (2+ functions / 500+ users), or €200k–€1M envelope."
+      "Matched Q3 (YES): Enterprise scale with proven pilot, cross-functional reach (500+ users), or €200k–€1M envelope."
     );
   } else {
     tier = "T3";
     reasoning.push(
-      "Matched Q4: Fast Lane exploration or MVP test within one single function and under €200k budget envelope."
-    );
-  }
-
-  // Edge-case rule from Slide 38: High risk automatically routes out of Fast Lane
-  if (tier === "T3" && riskTier === "High") {
-    tier = "T1";
-    reasoning.push(
-      "Governance Override: High ORAI risk rating automatically routes initiative out of Fast Lane into T1 Transform governance."
+      "Matched Q4 (Default Fallback): Fast Lane exploration or MVP test with a value hypothesis to test (€50k–€1M)."
     );
   }
 
@@ -104,12 +87,25 @@ export function evaluateIntake(answers: IntakeAnswers): DecisionResult {
     mode = "Mode 1";
   } else if (tier === "Self-Serve") {
     mode = "Self-Service AI";
+  } else if (tier === "T3") {
+    // T3 defaults to Mode 3 ("Enable me"), unless tech capacity is None or complex
+    if (answers.techComplexity === "High" || answers.functionTechCapacity === "None") {
+      mode = "Mode 2";
+    } else {
+      mode = "Mode 3";
+    }
+  } else if (tier === "T2") {
+    // T2 defaults to Mode 2 ("Do it with me")
+    if (answers.functionTechCapacity === "None") {
+      mode = "Mode 1";
+    } else {
+      mode = "Mode 2";
+    }
   } else if (answers.fundingSource === "Function Budget" && answers.functionTechCapacity === "High") {
     mode = "Mode 3";
   } else if (answers.functionTechCapacity === "None" || answers.techComplexity === "High") {
     mode = "Mode 1";
   } else {
-    // Balanced or co-funded
     mode = "Mode 2";
   }
 
