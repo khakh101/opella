@@ -8,13 +8,14 @@ import { LifecycleView } from "@/components/LifecycleView";
 import { PortfolioView } from "@/components/PortfolioView";
 import { HistoryView } from "@/components/HistoryView";
 import { OperatingModelMap } from "@/components/OperatingModelMap";
+import { PipelineFlowSimulator } from "@/components/PipelineFlowSimulator";
 import { UseCase } from "@/types";
 import { fetchUseCases, deleteUseCase } from "@/lib/storage";
 import { INITIAL_USE_CASES } from "@/lib/mockData";
 
 export default function Home() {
   const [activeTab, setActiveTab] = useState<
-    "board" | "wizard" | "lifecycle" | "portfolio" | "history" | "map"
+    "board" | "wizard" | "lifecycle" | "portfolio" | "history" | "map" | "flow"
   >("board");
 
   const [useCases, setUseCases] = useState<UseCase[]>(INITIAL_USE_CASES);
@@ -136,6 +137,8 @@ export default function Home() {
                 onNavigateToLifecycle={() => setActiveTab("lifecycle")}
               />
             )}
+
+            {activeTab === "flow" && <PipelineFlowSimulator />}
           </>
         )}
       </main>

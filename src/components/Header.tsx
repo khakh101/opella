@@ -1,13 +1,13 @@
 "use client";
 
 import React from "react";
-import { Sparkles, Layers, PlayCircle, Database, History, Network, LayoutGrid } from "lucide-react";
+import { Sparkles, Layers, PlayCircle, Database, History, Network, LayoutGrid, Activity } from "lucide-react";
 import { UseCase } from "@/types";
 import { isSupabaseConfigured } from "@/lib/supabaseClient";
 
 interface HeaderProps {
-  activeTab: "board" | "wizard" | "lifecycle" | "portfolio" | "history" | "map";
-  setActiveTab: (tab: "board" | "wizard" | "lifecycle" | "portfolio" | "history" | "map") => void;
+  activeTab: "board" | "wizard" | "lifecycle" | "portfolio" | "history" | "map" | "flow";
+  setActiveTab: (tab: "board" | "wizard" | "lifecycle" | "portfolio" | "history" | "map" | "flow") => void;
   useCases: UseCase[];
 }
 
@@ -141,6 +141,18 @@ export const Header: React.FC<HeaderProps> = ({ activeTab, setActiveTab, useCase
           >
             <Network className="w-4 h-4 text-amber-300" />
             6. Operating Model Map (Tiers · Gates · Modes)
+          </button>
+
+          <button
+            onClick={() => setActiveTab("flow")}
+            className={`px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2 transition-all whitespace-nowrap ${
+              activeTab === "flow"
+                ? "bg-white text-opella-forest shadow-sm font-bold"
+                : "text-white/80 hover:text-white hover:bg-white/10"
+            }`}
+          >
+            <Activity className="w-4 h-4 text-emerald-400" />
+            7. Pipeline Flow &amp; Bottlenecks
           </button>
         </div>
       </div>
