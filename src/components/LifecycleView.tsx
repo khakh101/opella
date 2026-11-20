@@ -828,6 +828,407 @@ export const LifecycleView: React.FC<LifecycleViewProps> = ({
             </div>
           </div>
 
+          {/* ======================================================== */}
+          {/* DYNAMIC USER JOURNEY GUIDANCE STATION (PER ACTIVE GATE) */}
+          {/* ======================================================== */}
+          {activeGateTab === "G1" && (
+            <div className="bg-black/35 rounded-xl p-4 border border-emerald-400/30 space-y-3.5">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-white/10 pb-2.5">
+                <div className="flex items-center gap-2">
+                  <span className="px-2 py-0.5 rounded bg-amber-400 text-gray-950 font-black text-[10px] uppercase tracking-wider">
+                    User Journey · Stage 1
+                  </span>
+                  <h5 className="font-bold text-white text-sm">
+                    Intake Triaged by Opella Charter Agent into {currentCase.tier} ({tierCfg.name})
+                  </h5>
+                </div>
+                <span className="text-[10px] font-mono text-emerald-300 font-bold bg-emerald-950/60 px-2 py-0.5 rounded border border-emerald-400/30">
+                  Automated Front-Door SLA: 5 Days
+                </span>
+              </div>
+
+              {/* What this means */}
+              <div className="space-y-1.5 text-xs text-white/90">
+                <div className="text-[11px] font-bold uppercase tracking-wider text-amber-300 flex items-center gap-1.5">
+                  <Building className="w-3.5 h-3.5 text-amber-300" />
+                  This means the following for your initiative:
+                </div>
+                {currentCase.tier === "T1" ? (
+                  <div className="space-y-1.5 leading-relaxed text-[11px]">
+                    <p>
+                      Classified as an <strong>Enterprise Big Bet / Transformative Strategic Initiative</strong> (part of an AmplifAI Big Bet, alters core Butterfly SAP/IBP platforms, or budget &gt; €1M).
+                    </p>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-2 pt-1 text-[10px]">
+                      <div className="p-2 rounded bg-black/40 border border-white/10">
+                        <span className="text-emerald-300 font-bold block mb-0.5">Delivery Mode:</span>
+                        <span>
+                          <strong>Mode 1 ("Do it for me")</strong>: Central Data & AI Hub builds & operates; Business Function frames the need & owns business value.
+                        </span>
+                      </div>
+                      <div className="p-2 rounded bg-black/40 border border-white/10">
+                        <span className="text-emerald-300 font-bold block mb-0.5">Capacity Allocation:</span>
+                        <span>
+                          Secured allocation from the <strong>60% Hub delivery capacity pool</strong> reserved for Big Bets.
+                        </span>
+                      </div>
+                      <div className="p-2 rounded bg-black/40 border border-white/10">
+                        <span className="text-emerald-300 font-bold block mb-0.5">Process Reshape:</span>
+                        <span>
+                          Mandatory end-to-end <strong>process redesign</strong> to eliminate manual approval hops before MVP build.
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                ) : currentCase.tier === "T2" ? (
+                  <div className="space-y-1.5 leading-relaxed text-[11px]">
+                    <p>
+                      Classified as <strong>T2 (Scale)</strong>: proven pilot value scaling across 500+ users or 2+ regions (€200k–€1M).
+                    </p>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-2 pt-1 text-[10px]">
+                      <div className="p-2 rounded bg-black/40 border border-white/10">
+                        <span className="text-sky-300 font-bold block mb-0.5">Delivery Mode:</span>
+                        <span>
+                          <strong>Mode 2 ("Do it with me")</strong> default with shared co-funded delivery squad.
+                        </span>
+                      </div>
+                      <div className="p-2 rounded bg-black/40 border border-white/10">
+                        <span className="text-sky-300 font-bold block mb-0.5">Capacity Pool:</span>
+                        <span>
+                          Evaluated in the <strong>60% capacity pool</strong> for enterprise scaling initiatives.
+                        </span>
+                      </div>
+                      <div className="p-2 rounded bg-black/40 border border-white/10">
+                        <span className="text-sky-300 font-bold block mb-0.5">Business Case:</span>
+                        <span>
+                          Light Business Case (1–2 pages) with tranche release funding.
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                ) : currentCase.tier === "T3" ? (
+                  <div className="space-y-1.5 leading-relaxed text-[11px]">
+                    <p>
+                      Classified as <strong>T3 (Fast Lane)</strong>: testing a rapid value hypothesis within a single function (€50k–€1M).
+                    </p>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-2 pt-1 text-[10px]">
+                      <div className="p-2 rounded bg-black/40 border border-white/10">
+                        <span className="text-amber-300 font-bold block mb-0.5">Delivery Mode:</span>
+                        <span>
+                          <strong>Mode 3 ("Enable me")</strong> default: built autonomously by certified AI builders or SaaS.
+                        </span>
+                      </div>
+                      <div className="p-2 rounded bg-black/40 border border-white/10">
+                        <span className="text-amber-300 font-bold block mb-0.5">Fast SLA:</span>
+                        <span>
+                          Strict <strong>10-day decision SLA</strong> with AI Portfolio Board.
+                        </span>
+                      </div>
+                      <div className="p-2 rounded bg-black/40 border border-white/10">
+                        <span className="text-amber-300 font-bold block mb-0.5">Sprint Target:</span>
+                        <span>
+                          Focused <strong>6–8 week MVP sprint</strong> with defined kill/scale date.
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <p className="text-[11px] leading-relaxed">
+                    Classified as <strong>Self-Service AI</strong>: personal or team productivity under €50k bypassing committee delays with automated guardrails.
+                  </p>
+                )}
+              </div>
+
+              {/* Review Meetings You Will Have */}
+              <div className="space-y-1.5 text-xs text-white/90">
+                <div className="text-[11px] font-bold uppercase tracking-wider text-emerald-300 flex items-center gap-1.5">
+                  <Users className="w-3.5 h-3.5 text-emerald-300" />
+                  Review Meetings & Comitology Forums you will have:
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-0.5 text-[10px]">
+                  {currentCase.tier === "T1" ? (
+                    <>
+                      <div className="p-2 rounded bg-black/40 border border-emerald-400/30">
+                        <div className="font-bold text-white flex justify-between">
+                          <span>Stream Portfolio Board</span>
+                          <span className="text-emerald-300 font-mono">Fortnightly</span>
+                        </div>
+                        <div className="text-white/70 mt-0.5">Validates strategic fit and assigns initial squad resources.</div>
+                      </div>
+                      <div className="p-2 rounded bg-black/40 border border-purple-400/30">
+                        <div className="font-bold text-white flex justify-between">
+                          <span>TO SteerCo (Monthly)</span>
+                          <span className="text-purple-300 font-mono">Monthly</span>
+                        </div>
+                        <div className="text-white/70 mt-0.5">Approves enterprise portfolio entry and multi-year budget envelope.</div>
+                      </div>
+                      <div className="p-2 rounded bg-black/40 border border-blue-400/30">
+                        <div className="font-bold text-white flex justify-between">
+                          <span>Digital Design Authority</span>
+                          <span className="text-blue-300 font-mono">5-Day SLA</span>
+                        </div>
+                        <div className="text-white/70 mt-0.5">Architectural clearance, SAP S/4HANA OData, and GenAI private endpoints.</div>
+                      </div>
+                    </>
+                  ) : currentCase.tier === "T2" ? (
+                    <>
+                      <div className="p-2 rounded bg-black/40 border border-sky-400/30">
+                        <div className="font-bold text-white flex justify-between">
+                          <span>AI Portfolio Board</span>
+                          <span className="text-sky-300 font-mono">Fortnightly</span>
+                        </div>
+                        <div className="text-white/70 mt-0.5">Reviews pilot metrics and multi-region scaling reach.</div>
+                      </div>
+                      <div className="p-2 rounded bg-black/40 border border-emerald-400/30">
+                        <div className="font-bold text-white flex justify-between">
+                          <span>Program Sponsors (CDO+CFO)</span>
+                          <span className="text-emerald-300 font-mono">Bi-weekly</span>
+                        </div>
+                        <div className="text-white/70 mt-0.5">Releases tranche funding and confirms builder allocations.</div>
+                      </div>
+                      <div className="p-2 rounded bg-black/40 border border-purple-400/30">
+                        <div className="font-bold text-white flex justify-between">
+                          <span>Design Authority</span>
+                          <span className="text-purple-300 font-mono">Weekly</span>
+                        </div>
+                        <div className="text-white/70 mt-0.5">Reviews platform fit and ORAI privacy controls.</div>
+                      </div>
+                    </>
+                  ) : (
+                    <div className="p-2 rounded bg-black/40 border border-amber-400/30 sm:col-span-3">
+                      <div className="font-bold text-white flex justify-between">
+                        <span>AI Portfolio Board (Only Forum Seen)</span>
+                        <span className="text-amber-300 font-mono">10-Day SLA</span>
+                      </div>
+                      <div className="text-white/70 mt-0.5">
+                        A single streamlined comitology body reviews the one-page canvas and unlocks 6–8 week sprint budget.
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {activeGateTab === "G2" && (
+            <div className="bg-black/35 rounded-xl p-4 border border-emerald-400/40 space-y-4">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-white/10 pb-2.5">
+                <div className="flex items-center gap-2">
+                  <span className="px-2 py-0.5 rounded bg-emerald-400 text-gray-950 font-black text-[10px] uppercase tracking-wider">
+                    User Journey · Stage 2
+                  </span>
+                  <h5 className="font-bold text-white text-sm">
+                    🎉 Great! You were approved at Gate G1. Here is what this means:
+                  </h5>
+                </div>
+                <span className="text-[10px] font-mono text-emerald-300 font-bold bg-emerald-950/60 px-2 py-0.5 rounded border border-emerald-400/30">
+                  Gate G1 Passed · G2 In-Flight
+                </span>
+              </div>
+
+              {/* What it means (x, y, z) */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-2.5 text-xs">
+                <div className="p-3 rounded-lg bg-black/40 border border-emerald-400/30 space-y-1">
+                  <div className="flex items-center gap-2">
+                    <span className="w-5 h-5 rounded-full bg-amber-400 text-gray-950 font-black text-xs flex items-center justify-center shrink-0">
+                      x
+                    </span>
+                    <span className="font-bold text-white text-xs">
+                      Formally Registered in Enterprise Pipeline
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-white/70 leading-relaxed">
+                    Officially registered in the Butterfly AI Registry and mapped to enterprise value pools with a permanent initiative ID.
+                  </p>
+                </div>
+
+                <div className="p-3 rounded-lg bg-black/40 border border-emerald-400/30 space-y-1">
+                  <div className="flex items-center gap-2">
+                    <span className="w-5 h-5 rounded-full bg-emerald-400 text-gray-950 font-black text-xs flex items-center justify-center shrink-0">
+                      y
+                    </span>
+                    <span className="font-bold text-white text-xs">
+                      Resource Mobilization & Co-Building Squad
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-white/70 leading-relaxed">
+                    Named delivery partners are mobilized—including dedicated AI Catalyst, Business Architect, and Lead Data Engineer.
+                  </p>
+                </div>
+
+                <div className="p-3 rounded-lg bg-black/40 border border-emerald-400/30 space-y-1">
+                  <div className="flex items-center gap-2">
+                    <span className="w-5 h-5 rounded-full bg-sky-400 text-gray-950 font-black text-xs flex items-center justify-center shrink-0">
+                      z
+                    </span>
+                    <span className="font-bold text-white text-xs">
+                      Locked Comitology Schedule
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-white/70 leading-relaxed">
+                    Gate G2 Feasibility review slot locked on the agenda of the Stream Portfolio Board and SteerCo with allocated review time.
+                  </p>
+                </div>
+              </div>
+
+              {/* Full Business Case Section Briefing (Slide 37) */}
+              <div className="space-y-2 pt-1 border-t border-white/10">
+                <div className="text-[11px] font-bold uppercase tracking-wider text-amber-300 flex items-center justify-between">
+                  <span className="flex items-center gap-1.5">
+                    <FileText className="w-3.5 h-3.5 text-amber-300" />
+                    Because you are in {currentCase.tier} ({tierCfg.name}), you will need to collect all the following information for your business case:
+                  </span>
+                  <span className="text-[10px] text-white/60 font-mono">
+                    {currentCase.tier === "T1" ? "6 Mandatory Sections · Slide 37" : "Slide 38–40 Format"}
+                  </span>
+                </div>
+
+                {currentCase.tier === "T1" ? (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 pt-1 text-[11px]">
+                    <div className="p-2.5 rounded-lg bg-black/40 border border-white/10 space-y-1">
+                      <div className="font-bold text-emerald-300 flex items-center gap-1.5">
+                        <span className="w-4 h-4 rounded-full bg-emerald-800 text-white text-[10px] flex items-center justify-center">1</span>
+                        Recurring Items (FY25–30)
+                      </div>
+                      <p className="text-white/70 text-[10px] leading-snug">
+                        Bottom-up benefits, run costs, FTE hours repurposed, target P&L lines (COGS vs Commercial OpEx).
+                      </p>
+                    </div>
+
+                    <div className="p-2.5 rounded-lg bg-black/40 border border-white/10 space-y-1">
+                      <div className="font-bold text-emerald-300 flex items-center gap-1.5">
+                        <span className="w-4 h-4 rounded-full bg-emerald-800 text-white text-[10px] flex items-center justify-center">2</span>
+                        SI Non-Staff Enablers
+                      </div>
+                      <p className="text-white/70 text-[10px] leading-snug">
+                        System, Infrastructure, Cyber, Data enablers with linked IDs (no double counting).
+                      </p>
+                    </div>
+
+                    <div className="p-2.5 rounded-lg bg-black/40 border border-white/10 space-y-1">
+                      <div className="font-bold text-emerald-300 flex items-center gap-1.5">
+                        <span className="w-4 h-4 rounded-full bg-emerald-800 text-white text-[10px] flex items-center justify-center">3</span>
+                        Resource People Costs
+                      </div>
+                      <p className="text-white/70 text-[10px] leading-snug">
+                        Named internal roles, external contractor roles, dedication %, loaded costs, skill gap justification.
+                      </p>
+                    </div>
+
+                    <div className="p-2.5 rounded-lg bg-black/40 border border-white/10 space-y-1">
+                      <div className="font-bold text-emerald-300 flex items-center gap-1.5">
+                        <span className="w-4 h-4 rounded-full bg-emerald-800 text-white text-[10px] flex items-center justify-center">4</span>
+                        BI Non-Staff (Vendors/SaaS)
+                      </div>
+                      <p className="text-white/70 text-[10px] leading-snug">
+                        Supplier spend estimate, scope, RFP status (no purchase order before approval).
+                      </p>
+                    </div>
+
+                    <div className="p-2.5 rounded-lg bg-black/40 border border-white/10 space-y-1">
+                      <div className="font-bold text-emerald-300 flex items-center gap-1.5">
+                        <span className="w-4 h-4 rounded-full bg-emerald-800 text-white text-[10px] flex items-center justify-center">5</span>
+                        Project Plan, Risks & KPIs
+                      </div>
+                      <p className="text-white/70 text-[10px] leading-snug">
+                        Critical path milestones, stage gates cadence every 4–6 weeks, operational risks, value KPIs.
+                      </p>
+                    </div>
+
+                    <div className="p-2.5 rounded-lg bg-black/40 border border-white/10 space-y-1">
+                      <div className="font-bold text-emerald-300 flex items-center gap-1.5">
+                        <span className="w-4 h-4 rounded-full bg-emerald-800 text-white text-[10px] flex items-center justify-center">6</span>
+                        Executive Dashboard & Sign-Offs
+                      </div>
+                      <p className="text-white/70 text-[10px] leading-snug">
+                        EBITDA net effect, payback months, 4-way sign-offs: Stream Lead, Finance BP, Digital Lead, Control Tower.
+                      </p>
+                    </div>
+                  </div>
+                ) : currentCase.tier === "T2" ? (
+                  <div className="p-2.5 rounded-lg bg-black/40 border border-white/10 text-[11px] text-white/80 leading-relaxed">
+                    <strong>Light Business Case (1–2 Pages):</strong> Problem statement, directional value (hours saved/speed increase), build mode, builder day sizing, token consumption, and existing data fit.
+                  </div>
+                ) : currentCase.tier === "T3" ? (
+                  <div className="p-2.5 rounded-lg bg-black/40 border border-white/10 text-[11px] text-white/80 leading-relaxed">
+                    <strong>One-Page Canvas:</strong> Value hypothesis to test, 3 measurable KPIs + baseline, 6–8 week sprint commitment, and defined kill/scale date.
+                  </div>
+                ) : (
+                  <div className="p-2.5 rounded-lg bg-black/40 border border-white/10 text-[11px] text-white/80 leading-relaxed">
+                    <strong>AI Registry Line:</strong> Approved tool confirmation, target user group, annual token cost cap &lt;€50k, and guardrails certification.
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {activeGateTab === "G3" && (
+            <div className="bg-black/35 rounded-xl p-4 border border-emerald-400/30 space-y-2 text-xs">
+              <div className="flex items-center justify-between border-b border-white/10 pb-2">
+                <span className="font-bold text-white flex items-center gap-2">
+                  <span className="px-2 py-0.5 rounded bg-blue-500 text-white text-[10px] font-black">
+                    User Journey · Stage 3
+                  </span>
+                  Prioritisation & Capacity Allocation (VCP Scorecard)
+                </span>
+                <span className="text-[10px] text-emerald-300 font-mono">Forum: Transformation SteerCo & Portfolio Board</span>
+              </div>
+              <p className="text-[11px] text-white/80 leading-relaxed">
+                Your initiative is evaluated against enterprise value pools using the 100-point composite formula: Value (30%), Strategic Fit (20%), Reach & Reuse (20%), Feasibility (20%), and Risk (10%). Delivery capacity is locked from the 60% Hub transformation pool.
+              </p>
+            </div>
+          )}
+
+          {activeGateTab === "G4" && (
+            <div className="bg-black/35 rounded-xl p-4 border border-emerald-400/30 space-y-2 text-xs">
+              <div className="flex items-center justify-between border-b border-white/10 pb-2">
+                <span className="font-bold text-white flex items-center gap-2">
+                  <span className="px-2 py-0.5 rounded bg-emerald-500 text-white text-[10px] font-black">
+                    User Journey · Stage 4
+                  </span>
+                  Mode & Budget Validation -&gt; GO BUILD
+                </span>
+                <span className="text-[10px] text-emerald-300 font-mono">Forum: Digital Design Authority (5-Day SLA)</span>
+              </div>
+              <p className="text-[11px] text-white/80 leading-relaxed">
+                Design Authority locks delivery mode ({currentCase.mode}), approves Tranche 1 budget release for the 6–8 week MVP build, and mobilizes the cross-functional squad across Data & AI, TO, and Business Function.
+              </p>
+            </div>
+          )}
+
+          {activeGateTab === "G5" && (
+            <div className="bg-black/35 rounded-xl p-4 border border-emerald-400/30 space-y-2 text-xs">
+              <div className="flex items-center justify-between border-b border-white/10 pb-2">
+                <span className="font-bold text-white flex items-center gap-2">
+                  <span className="px-2 py-0.5 rounded bg-purple-500 text-white text-[10px] font-black">
+                    User Journey · Stage 5
+                  </span>
+                  Pre-Scale Validation (Scale Gate)
+                </span>
+                <span className="text-[10px] text-emerald-300 font-mono">Forum: Scale Committee / TO SteerCo</span>
+              </div>
+              <p className="text-[11px] text-white/80 leading-relaxed">
+                Pilot MVP results are benchmarked against the Gate G2 baseline. The 5-Pillar HR Workforce Impact Scan is completed, and Tranche 2 scaling funding is unlocked for multi-market expansion.
+              </p>
+            </div>
+          )}
+
+          {activeGateTab === "G6" && (
+            <div className="bg-black/35 rounded-xl p-4 border border-emerald-400/30 space-y-2 text-xs">
+              <div className="flex items-center justify-between border-b border-white/10 pb-2">
+                <span className="font-bold text-white flex items-center gap-2">
+                  <span className="px-2 py-0.5 rounded bg-amber-400 text-gray-950 text-[10px] font-black">
+                    User Journey · Stage 6
+                  </span>
+                  Maintain & Run Validation (Unified Value Ledger)
+                </span>
+                <span className="text-[10px] text-emerald-300 font-mono">Forum: Scale Committee & Finance Sign-Off (+6/+12 mo)</span>
+              </div>
+              <p className="text-[11px] text-white/80 leading-relaxed">
+                Finance conducts formal value audit in the Unified Value Ledger. Automated cloud and token sentinels continuously monitor compute drift and run-rate costs against verified EBITDA savings.
+              </p>
+            </div>
+          )}
+
           {/* Interactive Progress Meter */}
           <div className="bg-black/25 rounded-xl p-3.5 border border-white/10 space-y-2">
             <div className="flex items-center justify-between text-xs">

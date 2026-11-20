@@ -96,10 +96,13 @@ export function evaluateIntake(answers: IntakeAnswers): DecisionResult {
     );
   }
 
-  // 3. Determine Delivery Mode (Slides 10, 11, 46, 76)
+  // 3. Determine Delivery Mode (Slides 10, 11, 46, 76 & Tab 1 Miro)
   let mode: DeliveryMode = "Mode 2";
 
-  if (tier === "Self-Serve") {
+  if (tier === "T1") {
+    // Per Miro Tab 1: A T1 is always built by the Data & AI hub (Mode 1: "Do it for me")
+    mode = "Mode 1";
+  } else if (tier === "Self-Serve") {
     mode = "Self-Service AI";
   } else if (answers.fundingSource === "Function Budget" && answers.functionTechCapacity === "High") {
     mode = "Mode 3";
