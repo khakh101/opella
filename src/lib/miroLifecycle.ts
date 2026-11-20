@@ -6,6 +6,8 @@
 // slides 34, 35, 37, 39, 40, 41, 45, 46, 47, 49, 51, 52.
 // =====================================================================
 
+import { G6_BY_MODE } from "./miroRun";
+
 export type PathId = "T1" | "T2" | "T3" | "SS";
 
 export type StepId = "framing" | "build" | "prescale" | "scale" | "run";
@@ -238,9 +240,9 @@ export const STEPS: StepDef[] = [
     name: "Run",
     oneLiner: "Track value and keep it worth running",
     bullets: [
-      "Realised value and ROI vs baseline",
-      "Usage, model tuning, upgrades",
-      "Stop triggers if value is not there",
+      "4 steps: run, fix a pipeline, add a feature, adoption",
+      "Delivered differently by build mode",
+      "Quarterly G6 keeps it worth running",
     ],
     gates: [{ id: "G6", label: "Maintain validation", type: "human" }],
     zone: "discipline",
@@ -869,7 +871,17 @@ export const DETAILS: Record<string, DetailItem> = {
         ],
       },
       { label: "Decides", items: ["Continue, scale, re-scope or stop"] },
+      {
+        label: "What changes by mode",
+        items: [
+          `Enable me: ${G6_BY_MODE["enable-me"]}`,
+          `Do it with me: ${G6_BY_MODE["with-me"]}`,
+          `Do it for me: ${G6_BY_MODE["for-me"]}`,
+          `Self-service: ${G6_BY_MODE["self-service"]}`,
+        ],
+      },
     ],
+    note: "To confirm: the operating model PDF names the quarterly forum Use Case monitoring (Governance, Adoption, Finance) and the Big bet review for big bets, whereas this panel says Scale committee. The criteria and the decisions are the same in every mode.",
     meta: [
       { label: "Owner", value: "Product owner (run owner)" },
       { label: "Forum", value: "Scale committee; Finance sign-off at +6 / +12 months" },
