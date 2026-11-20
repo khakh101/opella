@@ -2,11 +2,12 @@
 
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { ChevronLeft, ChevronRight, Lightbulb, Maximize, RotateCcw, ZoomIn, ZoomOut } from "lucide-react";
-import { EXAMPLES, MODES, PATHS, PATH_ORDER, STEPS, StepId, exampleById } from "@/lib/miroLifecycle";
+import { EXAMPLES, MODES, PATHS, PATH_ORDER, PathId, STEPS, StepId, exampleById } from "@/lib/miroLifecycle";
 import { cx } from "@/components/miro/MiroPrimitives";
 import { MiroOverview } from "@/components/miro/MiroOverview";
 import { FramingCanvas, FRAMING_SIZE } from "@/components/miro/FramingCanvas";
-import { PreScaleCanvas, RunCanvas, ScaleCanvas } from "@/components/miro/StepCanvases";
+import { RunCanvas, ScaleCanvas } from "@/components/miro/StepCanvases";
+import { PreScaleCanvas } from "@/components/miro/PreScaleCanvas";
 import { BuildCanvas } from "@/components/miro/BuildCanvas";
 import { DetailPanel } from "@/components/miro/DetailPanel";
 
@@ -33,6 +34,8 @@ export const MiroBoardView: React.FC<MiroBoardViewProps> = () => {
   const [exampleId, setExampleId] = useState<string>(EXAMPLES[0].id);
   const [detailId, setDetailId] = useState<string | null>(null);
   const [zoom, setZoom] = useState<number>(1);
+  // Set when Framing is opened from Pre-scale: the T2 lane is the one to look at
+  const [framingFocus, setFramingFocus] = useState<PathId | null>(null);
   const canvasRef = useRef<HTMLDivElement>(null);
 
   const example = exampleById(exampleId);
@@ -57,9 +60,21 @@ export const MiroBoardView: React.FC<MiroBoardViewProps> = () => {
     return () => window.removeEventListener("resize", fit);
   }, [fit]);
 
-  const openStep = (id: View) => {
+  const openStep = (id: View, focus: PathId | null = null) => {
     setDetailId(null);
+    setFramingFocus(id === "framing" ? focus : null);
     setView(id);
+  };
+
+  // Overview: a gate opens its detail. G2 to G4 follow the tier of the selected example
+  // (self-service skips them, so it falls back to T2, the tier it goes back to).
+  const openGate = (gateId: string) => {
+    const id = gateId.toLowerCase();
+    if (["g2", "g3", "g4"].includes(id)) {
+      setDetailId(`${id}-${example.path === "SS" ? "T2" : example.path}`);
+    } else {
+      setDetailId(id);
+    }
   };
 
   return (
@@ -216,12 +231,32 @@ export const MiroBoardView: React.FC<MiroBoardViewProps> = () => {
               )}
             </div>
 
-            {view === "overview" && <MiroOverview onOpenStep={openStep} />}
+            {view === "overview" && <MiroOverview onOpenStep={openStep} onOpenGate={openGate} />}
             {view === "framing" && (
-              <FramingCanvas example={example} onOpenDetail={setDetailId} onGoToBuild={() => openStep("build")} />
+              <>
+                {framingFocus && (
+                  <div className="mb-4 flex items-center justify-between gap-4 rounded-xl border-2 border-sky-300 bg-sky-50 px-4 py-2 text-sm text-sky-950">
+                    <span>
+                      <span className="font-black">T2 assessment.</span> A T3 or self-service use case, from any build mode, goes through all
+                      the T2 gates here (G2 to G4), then builds as T2.
+                    </span>
+                    <button onClick={() => setFramingFocus(null)} className="shrink-0 rounded-md border border-sky-300 bg-white px-2 py-1 text-xs font-bold">
+                      Back to the selected example
+                    </button>
+                  </div>
+                )}
+                <FramingCanvas
+                  example={example}
+                  focusPath={framingFocus ?? undefined}
+                  onOpenDetail={setDetailId}
+                  onGoToBuild={() => openStep("build")}
+                />
+              </>
             )}
             {view === "build" && <BuildCanvas example={example} onBackToFraming={() => openStep("framing")} />}
-            {view === "prescale" && <PreScaleCanvas example={example} onOpenDetail={setDetailId} />}
+            {view === "prescale" && (
+              <PreScaleCanvas example={example} onOpenDetail={setDetailId} onBackToFramingT2={() => openStep("framing", "T2")} />
+            )}
             {view === "scale" && <ScaleCanvas example={example} onOpenDetail={setDetailId} />}
             {view === "run" && <RunCanvas example={example} onOpenDetail={setDetailId} />}
 

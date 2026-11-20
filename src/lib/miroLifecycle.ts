@@ -21,6 +21,7 @@ export type ExampleNoteKey =
   | "g4"
   | "build"
   | "g5"
+  | "t2"
   | "g6";
 
 // ---------------------------------------------------------------------
@@ -52,8 +53,8 @@ export const PATHS: Record<PathId, PathDef> = {
     routeLabel: "Q1 · yes",
     businessCaseName: "Full business case",
     forum: "Portfolio board · per stream",
-    g4Label: "Do it for me",
-    buildLabel: "Build · Do it for me",
+    g4Label: "Mode selection",
+    buildLabel: "Build · selected mode",
     color: "#0d3824",
     soft: "bg-emerald-50",
     text: "text-emerald-900",
@@ -211,9 +212,9 @@ export const STEPS: StepDef[] = [
     name: "Pre-scale",
     oneLiner: "Prove value and readiness before scaling",
     bullets: [
-      "Value: MVP results vs baseline",
-      "Tech, data and OR.AI review",
-      "Adoption plan and HR impact",
+      "T3 and self-service go back to Framing for the T2 assessment",
+      "T1 and T2: detailed business case",
+      "Complexity, value, adoption, governance",
     ],
     gates: [{ id: "G5", label: "Scale validation", type: "human" }],
     zone: "discipline",
@@ -480,15 +481,14 @@ export const DETAILS: Record<string, DetailItem> = {
     kind: "gate",
     badge: "G4",
     title: "Mode and budget · T1",
-    subtitle: "Always Do it for me",
+    subtitle: "Any mode can deliver a T1",
     gateType: "human",
     path: "T1",
-    intro: "A T1 is always built by the Data & AI hub: the function frames the need and validates.",
     sections: [
       {
         label: "Decided here",
         items: [
-          "Mode: Do it for me",
+          "Mode, by function maturity and use case complexity",
           "Make or buy",
           "Cost and resources, in the budget and strat plan",
         ],
@@ -592,14 +592,14 @@ export const DETAILS: Record<string, DetailItem> = {
     kind: "gate",
     badge: "G4",
     title: "Mode and budget · T2",
-    subtitle: "Usually Do it with me",
+    subtitle: "Any mode can deliver a T2",
     gateType: "human",
     path: "T2",
     sections: [
       {
         label: "Decided here",
         items: [
-          "Mode, by function maturity and use case complexity (usually Do it with me)",
+          "Mode, by function maturity and use case complexity",
           "Make or buy",
           "Cost, resources and the first tranche",
         ],
@@ -785,6 +785,33 @@ export const DETAILS: Record<string, DetailItem> = {
   },
 
   // ------------------------------------------------------------- Later gates
+  "bc-prescale": {
+    id: "bc-prescale",
+    kind: "doc",
+    badge: "BC",
+    title: "Detailed business case · T1 and T2",
+    subtitle: "Built on the framing business case, not redone",
+    sections: [
+      {
+        label: "Reused",
+        items: ["The previous assessment from Framing is the starting point: it is updated with the MVP results"],
+      },
+      {
+        label: "Complexity assessment",
+        items: ["Data readiness", "Infrastructure required"],
+      },
+      {
+        label: "Value assessment",
+        items: ["EBITDA", "Cost required"],
+      },
+      { label: "Adoption plan", items: ["Who adopts it, how, and when"] },
+      { label: "Governance plan", items: ["Who governs it once it is scaled"] },
+    ],
+    meta: [{ label: "Owner", value: "Product owner" }],
+    note:
+      "To confirm: the previous G5 content also listed the secondary OR.AI and ethical review and the HR impact of the change. They are not shown as separate blocks here; say if they belong inside the governance and adoption plans.",
+    source: "Briefing of 20/11, slides 40, 46, 51, 52",
+  },
   g5: {
     id: "g5",
     kind: "gate",
@@ -792,33 +819,37 @@ export const DETAILS: Record<string, DetailItem> = {
     title: "Scale validation",
     subtitle: "From MVP agility to enterprise discipline",
     gateType: "human",
+    intro: "Reviews the detailed business case of a T1 or a T2. The previous assessment is reused.",
     sections: [
       {
-        label: "Reviewed",
+        label: "Reviewed: the detailed business case",
         items: [
-          "Value: pilot KPIs vs baseline, updated business case",
-          "Complexity: actual cost, run owner named, scalability sign-off",
-          "Risk: secondary OR.AI and ethical review",
-          "Adoption: full change impact assessment, HR impact",
+          "Complexity assessment: data readiness and infrastructure required",
+          "Value assessment: EBITDA and cost required",
+          "Adoption plan",
+          "Governance plan",
         ],
       },
       {
         label: "Decides",
+        items: ["Roll-out to another market or geography, new features"],
+      },
+      {
+        label: "Not here",
         items: [
-          "Roll-out to another market or geography, new features",
-          "A T3 that proves value is promoted to T2 here",
+          "A T3 or a self-service use case goes back to Framing for the T2 assessment (G2 to G4), then builds as T2",
         ],
       },
     ],
     meta: [
       { label: "Owner", value: "Product owner" },
-      { label: "Forum", value: "Scale committee; T1: TO SteerCo; T3: AI Portfolio Board" },
+      { label: "Forum", value: "Scale committee; T1: TO SteerCo" },
       { label: "Agents", value: "Token control, performance monitoring" },
       { label: "If no-go", value: "Fix and retest, or stop" },
       { label: "Escalation", value: "Transformation SteerCo" },
     ],
     exampleKey: "g5",
-    source: "Slides 40, 46, 51, 52",
+    source: "Slides 40, 46, 51, 52, briefing of 20/11",
   },
   g6: {
     id: "g6",
@@ -881,7 +912,7 @@ export const EXAMPLES: ExampleCase[] = [
     mode: "for-me",
     cost: "€1.45m",
     value: "€3.8m run-rate EBITDA",
-    whyMode: "T1: always built by the hub",
+    whyMode: "The hub builds, Procurement frames the rules and validates",
     notes: {
       ppc: "Quotes to SAP purchase orders in 48h instead of 7–10 days · 1,800 buyers in 3 regions.",
       g1: "Q1 = yes (big bet 6, SAP P2P core, €1.45m): T1. OR.AI: medium (write-back to SAP).",
@@ -934,7 +965,7 @@ export const EXAMPLES: ExampleCase[] = [
       g3: "Score 70 / 100 · in the 25% fast-lane queue, slot next quarter.",
       g4: "Do it for me: Legal has no tech capacity and the integration is complex.",
       build: "The hub builds the MVP; lawyers validate outputs on real contracts.",
-      g5: "If value is proven, promoted to T2 to cover all regions.",
+      t2: "If value is proven, back to Framing for the T2 assessment to cover all regions, then built as T2.",
       g6: "Quarterly value pulse: review time and clauses caught.",
     },
   },
@@ -956,7 +987,7 @@ export const EXAMPLES: ExampleCase[] = [
       g3: "Score 74 / 100 · 25% fast-lane capacity.",
       g4: "Do it with me: Finance builds prompts and templates, the hub connects the reporting data.",
       build: "Shared squad: Finance builds the agent, the hub plugs the data.",
-      g5: "Promoted to T2 if adopted beyond the pilot entities.",
+      t2: "If adopted beyond the pilot entities, back to Framing for the T2 assessment, then built as T2.",
       g6: "Quarterly: hours saved and usage by controllers.",
     },
   },
@@ -978,7 +1009,7 @@ export const EXAMPLES: ExampleCase[] = [
       g3: "Score 82 / 100 · 25% fast-lane capacity.",
       g4: "Enable me: Science builds; the hub reviews and audits.",
       build: "Function builders build on the approved LLM platform, in the builder sandbox.",
-      g5: "Value proven, promoted to T2 to roll out to all regions.",
+      t2: "Value proven: back to Framing for the T2 assessment to roll out to all regions, then built as T2.",
       g6: "Quarterly value pulse in the single ledger.",
     },
   },

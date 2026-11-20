@@ -231,7 +231,7 @@ export const BuildCanvas: React.FC<BuildCanvasProps> = ({ example, onBackToFrami
       {/* Footer */}
       <div className="mt-5 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm shadow-sm">
         <div className="font-semibold text-gray-800">
-          End of the build: a validated MVP goes to Pre-scale (G5), is iterated, or is stopped.
+          End of the build: a validated MVP goes to Pre-scale, is iterated, or is stopped.
         </div>
         <OriginLegend origins={["function", "to", "dai", "external", "agent"]} />
       </div>

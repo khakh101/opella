@@ -41,53 +41,6 @@ const AgentChip: React.FC<{ name: string; does: string }> = ({ name, does }) => 
 );
 
 // ---------------------------------------------------------------------
-// III · Pre-scale
-// ---------------------------------------------------------------------
-
-export const PreScaleCanvas: React.FC<StepCanvasProps> = ({ example, onOpenDetail }) => (
-  <div className="flex items-center justify-center gap-4" style={{ width: 1400 }}>
-    <MiroFrame title="Prepare the scale gate" className="w-[640px]">
-      <div className="grid grid-cols-2 gap-4">
-        <Sticky color="green" tilt={-1} title="Value">
-          Review the value: baseline vs validated MVP results; update the business case.
-        </Sticky>
-        <Sticky color="blue" tilt={1} title="Tech and data readiness">
-          Data, architecture, scalability; run owner and actual cost.
-        </Sticky>
-        <Sticky color="violet" tilt={1} title="Secondary OR.AI review">
-          Risk and ethical review before real scale.
-        </Sticky>
-        <Sticky color="orange" tilt={-1} title="Adoption and HR">
-          Adoption plan, full change impact assessment, workforce impact.
-        </Sticky>
-      </div>
-      <div className="mt-4 grid grid-cols-2 gap-3">
-        <AgentChip name="Token control agent" does="Quota and consumption vs budget" />
-        <AgentChip name="Performance monitoring" does="ROI vs baseline, run spend, usage" />
-      </div>
-    </MiroFrame>
-
-    <FlowArrow width={56} />
-
-    <div className="flex flex-col items-center">
-      <GateDiamond id="G5" type="human" size={70} label="Scale validation" caption="Scale committee" onOpen={() => onOpenDetail("g5")} />
-    </div>
-
-    <FlowArrow width={56} label="Go" />
-
-    <div className="flex flex-col gap-4">
-      <MiroCard kicker="Next" title="IV · Scale" accent="#0d3824" style={{ width: 200 }}>
-        Roll-out to another market, geography or new features.
-      </MiroCard>
-      <Sticky color="red" tilt={-1} title="If no-go" style={{ width: 200 }}>
-        Fix and retest, or stop.
-      </Sticky>
-      <ExampleSticky example={example} noteKey="g5" width={260} />
-    </div>
-  </div>
-);
-
-// ---------------------------------------------------------------------
 // IV · Scale
 // ---------------------------------------------------------------------
 
