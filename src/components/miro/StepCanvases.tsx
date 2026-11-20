@@ -44,7 +44,7 @@ const AgentChip: React.FC<{ name: string; does: string }> = ({ name, does }) => 
 // IV · Scale: one line, the same path for all tiers
 // ---------------------------------------------------------------------
 
-export const ScaleCanvas: React.FC<StepCanvasProps> = () => (
+export const ScaleCanvas: React.FC<StepCanvasProps> = ({ onOpenDetail }) => (
   <div style={{ width: 1400 }}>
     {/* One path for every tier */}
     <div className="mb-6 flex items-center justify-center gap-3 text-xs font-bold text-gray-700">
@@ -74,20 +74,36 @@ export const ScaleCanvas: React.FC<StepCanvasProps> = () => (
 
       <FlowArrow width={40} />
 
-      <MiroFrame title="Roll out" className="w-[420px]">
-        <div className="grid grid-cols-2 gap-4">
-          <Sticky color="blue" tilt={1} title="Other geographies">
-            Extend to another geography.
-          </Sticky>
-          <Sticky color="blue" tilt={-1} title="New market">
-            Extend to a new market.
-          </Sticky>
-        </div>
-      </MiroFrame>
+      <div
+        onDoubleClick={() => onOpenDetail("rollout")}
+        title="Double-click to see what is assessed"
+        className="cursor-pointer rounded-xl ring-2 ring-sky-300 ring-offset-2 transition-shadow hover:shadow-lg"
+      >
+        <MiroFrame title="Roll out" subtitle="Assessed before each roll-out" className="w-[420px]">
+          <div className="grid grid-cols-2 gap-4">
+            <Sticky color="blue" tilt={1} title="Other geographies">
+              Extend to another geography.
+            </Sticky>
+            <Sticky color="blue" tilt={-1} title="New market">
+              Extend to a new market.
+            </Sticky>
+          </div>
+          <div className="mt-4 flex items-center justify-between text-[10px] font-semibold text-gray-400">
+            <span>Double-click to see what is assessed</span>
+            <button
+              type="button"
+              onClick={() => onOpenDetail("rollout")}
+              className="rounded-full border border-gray-300 bg-white px-2 py-0.5 font-semibold text-gray-600 shadow-sm hover:border-gray-500 hover:text-gray-900"
+            >
+              Details
+            </button>
+          </div>
+        </MiroFrame>
+      </div>
 
       <FlowArrow width={40} />
       <MiroCard kicker="Next" title="V · Run" accent="#0d3824" style={{ width: 150 }}>
-        Value tracked quarterly at G6.
+        A problem arises? Assessed and reviewed at G6.
       </MiroCard>
     </div>
   </div>

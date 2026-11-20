@@ -1,6 +1,8 @@
 // =====================================================================
 // Miro board · Run step content
-// 4 steps shared by every mode; who delivers them depends on the build mode.
+// One flow for every mode: step 1 running well, step 2 a problem arises (two
+// questions, two assessments, G6), step 3 ensure a good adoption. Who delivers
+// each part depends on the build mode.
 // Sources: operating model lifecycle PDF (degrees 1 to 4, the four meetings,
 // role sheets) and the Build step of this board. Mode differences marked
 // "to confirm" are proposals.
@@ -8,18 +10,82 @@
 
 import { BuildMode, Chip, Origin } from "./miroBuild";
 
-export interface RunStep {
-  n: 1 | 2 | 3 | 4;
+export type RunItemId = "run" | "pipeline" | "feature" | "adoption";
+
+// The four double-click items of the Run flow. `cell` points to the per-mode content below.
+export interface RunItem {
+  id: RunItemId;
+  cell: 1 | 2 | 3 | 4;
+  badge: string;
+  tab: string;
   name: string;
   oneLiner: string;
 }
 
-export const RUN_STEPS: RunStep[] = [
-  { n: 1, name: "Run & maintain", oneLiner: "Keep it running, within budget" },
-  { n: 2, name: "Fix a broken pipeline", oneLiner: "Find the failure and repair it" },
-  { n: 3, name: "Add a new feature", oneLiner: "Validate, prioritise, deliver" },
-  { n: 4, name: "Ensure the adoption", oneLiner: "Make sure people use it" },
+export const RUN_ITEMS: RunItem[] = [
+  { id: "run", cell: 1, badge: "STEP 1", tab: "Step 1", name: "Running well", oneLiner: "The app runs and everything goes well" },
+  { id: "pipeline", cell: 2, badge: "STEP 2 · ASSESSMENT 2.1", tab: "2.1", name: "Broken pipeline", oneLiner: "Quick fix, or value × complexity" },
+  { id: "feature", cell: 3, badge: "STEP 2 · ASSESSMENT 2.2", tab: "2.2", name: "New feature", oneLiner: "Quick feature, or back to T2 framing" },
+  { id: "adoption", cell: 4, badge: "STEP 3", tab: "Step 3", name: "Ensure a good adoption", oneLiner: "People keep using it" },
 ];
+
+export type RouteTone = "quick" | "deep" | "back";
+
+export interface RunRoute {
+  tone: RouteTone;
+  title: string;
+  text: string;
+  bullets?: string[];
+}
+
+export interface RunQuestion {
+  question: string;
+  routes: RunRoute[];
+  solve: string;
+  remove: string;
+}
+
+// Step 2: two questions, each followed by an assessment, then G6
+export const RUN_QUESTIONS: Record<"pipeline" | "feature", RunQuestion> = {
+  pipeline: {
+    question: "Is it a broken pipeline?",
+    routes: [
+      { tone: "quick", title: "Quick fix", text: "Little effort: the failure is found and repaired straight away." },
+      {
+        tone: "deep",
+        title: "Many resources required",
+        text: "A value × complexity assessment is made before any resource is spent.",
+        bullets: [
+          "Value: what the use case still brings (EBITDA, cost)",
+          "Complexity: data readiness and infrastructure needed to fix it",
+        ],
+      },
+    ],
+    solve: "Can be solved: fix it",
+    remove: "Cannot be solved: remove the use case",
+  },
+  feature: {
+    question: "Is it a new feature?",
+    routes: [
+      { tone: "quick", title: "Quick feature", text: "Small scope: prioritised in the backlog, then developed." },
+      { tone: "back", title: "Larger scope", text: "Too big for a quick feature: back to the T2 framing." },
+    ],
+    solve: "Can be delivered: prioritise and develop it",
+    remove: "Cannot be delivered: remove the use case",
+  },
+};
+
+// Step 3: how the adoption is ensured
+export const ADOPTION_FLOW: { title: string; text: string }[] = [
+  { title: "Plan", text: "The adoption plan comes from the business case. One Change & adoption lead per core team or big bet." },
+  { title: "Train", text: "Users are trained by profile (AI Academy tiers), before and after go-live." },
+  { title: "Lead by example", text: "Sponsors and leaders use it first; successful use cases are shared peer to peer." },
+  { title: "Measure", text: "Usage against role-based targets, and whether people act on the output, not only logins." },
+  { title: "Correct", text: "If adoption lags: retrain, adjust the use case, or raise it at G6 (stop trigger)." },
+];
+
+export const ADOPTION_SOURCE_NOTE =
+  "To validate with P&C: built from the adoption framework (operating model deck, slides 24 to 29), the Change & adoption lead role sheet and the exec deck (adoption measured on logins, not use).";
 
 export interface RunCell {
   short: string;
@@ -69,11 +135,11 @@ export const RUN_MODES: Record<BuildMode, RunMode> = {
         short: "The PO raises it, the function builds it",
         who: [C("PO", "function"), C("AI builder", "function"), C("Data & AI audit", "dai")],
         happens: [
-          "The PO raises the request; the use case request review validates the business case and prioritises it in the roadmap",
+          "The PO raises the need; assessment 2.2 decides: a quick feature is prioritised in the backlog, a larger one goes back to T2 framing",
           "The function builds the feature, or buys it",
           "Data & AI audits it before it goes live",
         ],
-        output: "A prioritised feature, delivered by the function",
+        output: "A feature delivered by the function, or back to T2 framing",
       },
       4: {
         short: "The function drives usage",
@@ -117,10 +183,10 @@ export const RUN_MODES: Record<BuildMode, RunMode> = {
         short: "The PO raises it, the squad builds it",
         who: [C("PO", "function"), C("Digital PO", "dai"), C("Data & AI engineers", "dai")],
         happens: [
-          "The PO raises the request; the use case request review validates the business case and prioritises it in the roadmap",
+          "The PO raises the need; assessment 2.2 decides: a quick feature is prioritised in the backlog, a larger one goes back to T2 framing",
           "The shared squad builds it, the hub's part in the Data & AI backlog",
         ],
-        output: "A prioritised feature, delivered by the squad",
+        output: "A feature delivered by the squad, or back to T2 framing",
       },
       4: {
         short: "The function drives usage",
@@ -163,10 +229,10 @@ export const RUN_MODES: Record<BuildMode, RunMode> = {
         short: "The business owner asks, the hub builds",
         who: [C("Business owner", "function"), C("Digital PO", "dai"), C("Data & AI engineers", "dai")],
         happens: [
-          "The business owner raises the request; the use case request review validates the business case and prioritises it in the roadmap",
+          "The business owner raises the need; assessment 2.2 decides: a quick feature is prioritised in the backlog, a larger one goes back to T2 framing",
           "The hub builds it in the Data & AI backlog; the function tests and validates",
         ],
-        output: "A prioritised feature, delivered by the hub",
+        output: "A feature delivered by the hub, or back to T2 framing",
       },
       4: {
         short: "The function adopts, the TO supports",
@@ -232,12 +298,10 @@ export const RUN_MODES: Record<BuildMode, RunMode> = {
   },
 };
 
-// G6 by mode: what changes at the quarterly validation
+// G6 by mode: who brings what to the portfolio board
 export const G6_BY_MODE: Record<BuildMode, string> = {
-  "enable-me": "The function's PO presents run cost, ROI and usage; the hub audits.",
+  "enable-me": "The function's PO presents the problem and its assessment; the hub audits.",
   "with-me": "The PO presents with the hub, which reports on the complex part and the data.",
-  "for-me": "The business owner presents value and usage; the hub reports run cost and incidents.",
-  "self-service": "The value pulse comes with the agents' reports; the hub looks only at what is flagged.",
+  "for-me": "The business owner presents the impact; the hub reports the assessment and the run cost.",
+  "self-service": "The agents' reports come with the problem; the hub looks only at what is flagged.",
 };
-
-export const G6_REVIEWED = ["Value vs baseline", "Run cost and support", "Risk, post-live", "Adoption by role"];

@@ -1,221 +1,257 @@
 "use client";
 
 import React, { useState } from "react";
-import { ChevronRight, CornerUpLeft, Lightbulb, LogOut } from "lucide-react";
-import { BUILD_MODES, BUILD_MODE_ORDER, BuildMode, SELF_SERVICE_EXITS, SELF_SERVICE_EXIT_RESULT } from "@/lib/miroBuild";
+import { CornerUpLeft, Lightbulb } from "lucide-react";
+import { BuildMode } from "@/lib/miroBuild";
 import { ExampleCase, MODES, PATHS } from "@/lib/miroLifecycle";
-import { G6_BY_MODE, G6_REVIEWED, RUN_MODES, RUN_STEPS } from "@/lib/miroRun";
-import { GateDiamond, Sticky, cx } from "./MiroPrimitives";
-import { OriginLegend, WhoChip } from "./BuildShared";
+import { RUN_QUESTIONS, RunItemId } from "@/lib/miroRun";
+import { GateDiamond, MiroCard, Sticky } from "./MiroPrimitives";
 import { RunStepPanel } from "./RunStepPanel";
 
 interface RunCanvasProps {
   example: ExampleCase;
   onOpenDetail: (id: string) => void;
-  onBackToFraming: () => void;
+  onBackToFramingT2: () => void;
 }
 
-type StepNo = 1 | 2 | 3 | 4;
+// Fixed Miro-like canvas: absolute positions + one SVG layer for connectors.
+const W = 1400;
+const H = 700;
+const T2 = PATHS.T2.color;
+const GREY = "#6b7280";
+const GREEN = "#059669";
+const RED = "#dc2626";
 
-const GRID = { gridTemplateColumns: "250px repeat(4, minmax(0, 1fr))", columnGap: 20 } as const;
+// Step 2 frame and its two rows (question, assessment, G6, outcomes)
+const FRAME = { x: 260, y: 0, w: 880, h: 520 };
+const ROW_A = 125; // centre y of row 2.1
+const ROW_B = 355; // centre y of row 2.2
+const X_Q = 284;
+const X_ASSESS = 520;
+const X_G6 = 765;
+const X_OUT = 915;
+const STEP1 = { x: 0, y: 190, w: 190, h: 150 };
+const STEP3 = { x: 1190, y: 190, w: 210, h: 150 };
 
-export const RunCanvas: React.FC<RunCanvasProps> = ({ example, onOpenDetail, onBackToFraming }) => {
-  const [step, setStep] = useState<{ mode: BuildMode; n: StepNo } | null>(null);
+const curve = (x1: number, y1: number, x2: number, y2: number) => {
+  const mx = (x1 + x2) / 2;
+  return `M ${x1} ${y1} C ${mx} ${y1}, ${mx} ${y2}, ${x2} ${y2}`;
+};
+
+const MARKERS = [
+  { id: "grey", c: GREY },
+  { id: "green", c: GREEN },
+  { id: "red", c: RED },
+];
+
+const Label: React.FC<{ x: number; y: number; children: React.ReactNode; color?: string; w?: number }> = ({ x, y, children, color = GREY, w }) => (
+  <div className="absolute text-[10px] font-bold leading-tight" style={{ left: x, top: y, width: w, color }}>
+    {children}
+  </div>
+);
+
+const QuestionCard: React.FC<{ n: string; text: string; y: number }> = ({ n, text, y }) => (
+  <div
+    className="absolute rounded-xl border-2 border-amber-300 bg-amber-50 p-3 shadow-md"
+    style={{ left: X_Q, top: y - 45, width: 180, height: 90 }}
+  >
+    <div className="text-[10px] font-black uppercase tracking-wider text-amber-800">Question {n}</div>
+    <div className="mt-0.5 text-[14px] font-black leading-tight text-gray-900">{text}</div>
+  </div>
+);
+
+const Outcome: React.FC<{ kind: "solve" | "remove"; text: string; y: number }> = ({ kind, text, y }) => (
+  <div
+    className="absolute flex items-center rounded-lg border-2 px-3 text-[12px] font-bold leading-tight shadow-sm"
+    style={{
+      left: X_OUT,
+      top: y,
+      width: 200,
+      height: 52,
+      background: kind === "solve" ? "#ecfdf5" : "#fef2f2",
+      borderColor: kind === "solve" ? "#34d399" : "#fca5a5",
+      color: kind === "solve" ? "#064e3b" : "#7f1d1d",
+    }}
+  >
+    {text}
+  </div>
+);
+
+export const RunCanvas: React.FC<RunCanvasProps> = ({ example, onOpenDetail, onBackToFramingT2 }) => {
+  const [panel, setPanel] = useState<{ item: RunItemId; mode: BuildMode } | null>(null);
+  const open = (item: RunItemId) => setPanel({ item, mode: example.mode });
   const g6Note = example.notes.g6;
 
+  const rows = [
+    { y: ROW_A, key: "pipeline" as const, n: "2.1", item: "pipeline" as RunItemId, assess: "Assessment 2.1", title: "Broken pipeline", text: "Quick fix, or a value × complexity assessment if many resources are required." },
+    { y: ROW_B, key: "feature" as const, n: "2.2", item: "feature" as RunItemId, assess: "Assessment 2.2", title: "New feature", text: "Quick feature, prioritised and developed, or back to the T2 framing." },
+  ];
+
   return (
-    <div style={{ width: 1400 }}>
+    <div style={{ width: W }}>
       {/* Intro */}
       <div className="mb-5 flex flex-wrap items-center justify-between gap-4 rounded-xl border border-gray-200 bg-white px-4 py-3 shadow-sm">
         <div className="text-sm text-gray-800">
-          <span className="font-black">Four steps in every mode.</span> The steps are the same; who delivers them depends on the build mode. Every quarter, G6 validates the run.
+          <span className="font-black">One flow, whatever the build mode.</span> The mode changes who does each part: double-click a card to compare the four modes.
         </div>
-        <span className="rounded-md border border-amber-200 bg-amber-100 px-2 py-1 text-xs font-semibold text-amber-900">
-          Double-click a step to open it
+        <span className="flex items-center gap-1 rounded-full border border-amber-300 bg-[#fff59d] px-2.5 py-1 text-[11px] font-bold text-amber-950 shadow-sm">
+          <Lightbulb className="h-3 w-3" /> Example: {example.short} · {MODES[example.mode].label}
         </span>
       </div>
 
-      {/* Step header */}
-      <div className="mb-3 grid" style={GRID}>
-        <div className="flex items-end pb-1 text-[11px] font-black uppercase tracking-wider text-gray-400">After scale</div>
-        {RUN_STEPS.map((s) => (
-          <div
-            key={s.n}
-            className="relative flex h-14 items-center gap-3 bg-[#5b7a64] pl-5 pr-8 text-white"
-            style={{ clipPath: "polygon(0 0, 92% 0, 100% 50%, 92% 100%, 0 100%, 6% 50%)" }}
-          >
-            <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-white text-sm font-black text-[#2f4a37]">{s.n}</span>
-            <div className="leading-tight">
-              <div className="text-sm font-black">{s.name}</div>
-              <div className="text-[10px] opacity-85">{s.oneLiner}</div>
-            </div>
+      <div className="relative" style={{ width: W, height: H }}>
+        {/* Step 2 frame, in a board frame like the gates of Framing */}
+        <div className="absolute rounded-xl border-2 border-gray-700 bg-white/90 shadow-md" style={{ left: FRAME.x, top: FRAME.y, width: FRAME.w, height: FRAME.h }}>
+          <div className="flex items-center justify-between rounded-t-[10px] bg-gray-700 px-3 py-1.5 text-[11px] font-black text-white">
+            <span>Step 2 · A problem arises</span>
+            <span className="text-[10px] font-semibold opacity-80">Reviewed at the portfolio board · G6</span>
           </div>
-        ))}
-      </div>
+          <div className="absolute text-[10px] font-semibold text-gray-500" style={{ left: X_Q - FRAME.x, top: 44 }}>
+            Two questions, asked in this order
+          </div>
+        </div>
 
-      {/* Lanes */}
-      <div className="space-y-5">
-        {BUILD_MODE_ORDER.map((id) => {
-          const m = BUILD_MODES[id];
-          const run = RUN_MODES[id];
-          const isExample = example.mode === id;
-          const isSelf = id === "self-service";
-          return (
-            <div
-              key={id}
-              className={cx("rounded-2xl border-2 bg-white/80 p-4 shadow-sm", isExample && "shadow-lg ring-4 ring-amber-200")}
-              style={{ borderColor: m.color }}
+        {/* Connectors */}
+        <svg className="pointer-events-none absolute inset-0" width={W} height={H}>
+          <defs>
+            {MARKERS.map((m) => (
+              <marker key={m.id} id={`run-${m.id}`} viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+                <path d="M 0 0 L 10 5 L 0 10 z" fill={m.c} />
+              </marker>
+            ))}
+          </defs>
+
+          {/* Step 1 to question 2.1 */}
+          <path d={curve(STEP1.x + STEP1.w, STEP1.y + 60, X_Q - 4, ROW_A)} stroke={GREY} strokeWidth={3} fill="none" markerEnd="url(#run-grey)" />
+          {/* Question 2.1, "no", question 2.2 */}
+          <path d={`M ${X_Q + 90} ${ROW_A + 47} L ${X_Q + 90} ${ROW_B - 49}`} stroke={GREY} strokeWidth={3} fill="none" markerEnd="url(#run-grey)" />
+
+          {rows.map((r) => (
+            <g key={r.key}>
+              {/* question to assessment to G6 */}
+              <path d={`M ${X_Q + 180} ${r.y} L ${X_ASSESS - 4} ${r.y}`} stroke={GREY} strokeWidth={3} markerEnd="url(#run-grey)" />
+              <path d={`M ${X_ASSESS + 210} ${r.y} L ${X_G6 + 6} ${r.y}`} stroke={GREY} strokeWidth={3} markerEnd="url(#run-grey)" />
+              {/* G6 to the two outcomes */}
+              <path d={curve(X_G6 + 90, r.y, X_OUT - 4, r.y - 29)} stroke={GREEN} strokeWidth={3} fill="none" markerEnd="url(#run-green)" />
+              <path d={curve(X_G6 + 90, r.y, X_OUT - 4, r.y + 33)} stroke={RED} strokeWidth={3} fill="none" markerEnd="url(#run-red)" />
+              {/* solved goes to step 3 */}
+              <path d={curve(X_OUT + 200, r.y - 29, STEP3.x - 4, r.y === ROW_A ? STEP3.y + 55 : STEP3.y + 95)} stroke={GREEN} strokeWidth={3} fill="none" markerEnd="url(#run-green)" />
+            </g>
+          ))}
+
+          {/* Back to running */}
+          <path
+            d={`M ${STEP3.x + STEP3.w / 2} ${STEP3.y + STEP3.h + 2} V 540 Q ${STEP3.x + STEP3.w / 2} 560 ${STEP3.x + STEP3.w / 2 - 20} 560 H ${STEP1.x + STEP1.w / 2 + 20} Q ${STEP1.x + STEP1.w / 2} 560 ${STEP1.x + STEP1.w / 2} 540 V ${STEP1.y + STEP1.h + 6}`}
+            stroke={GREY}
+            strokeWidth={2.5}
+            strokeDasharray="7 5"
+            fill="none"
+            markerEnd="url(#run-grey)"
+          />
+        </svg>
+
+        <Label x={STEP1.x + STEP1.w + 6} y={STEP1.y + 72} w={60}>A problem arises</Label>
+        <Label x={X_Q + 98} y={(ROW_A + ROW_B) / 2 - 4}>No</Label>
+        <Label x={X_Q + 184} y={ROW_A - 18}>Yes</Label>
+        <Label x={X_Q + 184} y={ROW_B - 18}>Yes</Label>
+        <Label x={1146} y={STEP3.y + 68} color={GREEN} w={44}>Solved</Label>
+        <div
+          className="absolute rounded-full border border-gray-300 bg-white px-3 py-1 text-[11px] font-bold text-gray-600 shadow-sm"
+          style={{ left: 480, top: 548 }}
+        >
+          Back to step 1: the app runs again
+        </div>
+
+        {/* Step 1 */}
+        <MiroCard
+          kicker="Step 1"
+          title="Running well"
+          accent="#5b7a64"
+          onOpen={() => open("run")}
+          className="absolute"
+          style={{ left: STEP1.x, top: STEP1.y, width: STEP1.w, minHeight: STEP1.h }}
+        >
+          The app is running and everything is going well.
+        </MiroCard>
+
+        {/* Step 2 rows */}
+        {rows.map((r) => (
+          <React.Fragment key={r.key}>
+            <QuestionCard n={r.n} text={RUN_QUESTIONS[r.key].question} y={r.y} />
+            <MiroCard
+              kicker={r.assess}
+              title={r.title}
+              accent="#d97706"
+              onOpen={() => open(r.item)}
+              className="absolute"
+              style={{ left: X_ASSESS, top: r.y - 60, width: 210, minHeight: 120 }}
             >
-              <div className="grid items-stretch" style={GRID}>
-                <div className="flex flex-col rounded-xl p-3 text-white" style={{ background: m.color }}>
-                  <div className="text-[10px] font-bold uppercase tracking-wider opacity-80">Mode</div>
-                  <div className="text-lg font-black leading-tight">{m.label}</div>
-                  <div className="text-xs font-semibold opacity-90">{run.rule}</div>
-                  <div className="mt-2 flex flex-1 flex-col gap-1">
-                    <div className="text-[9px] font-black uppercase tracking-wider opacity-80">Core team</div>
-                    {run.core.map((b) => (
-                      <div key={b.label} className="rounded bg-white/25 px-2 py-1 text-[11px] font-bold leading-tight ring-1 ring-white/60">
-                        {b.label}
-                      </div>
-                    ))}
-                    <div className="mt-1.5 text-[9px] font-black uppercase tracking-wider opacity-80">Support team</div>
-                    {run.support.map((b) => (
-                      <div key={b.label} className="rounded border border-dashed border-white/50 px-2 py-1 text-[10px] font-semibold leading-tight opacity-90">
-                        {b.label}
-                      </div>
-                    ))}
-                  </div>
-                </div>
+              {r.text}
+            </MiroCard>
+            <div className="absolute" style={{ left: X_G6, top: r.y - 55 }}>
+              <GateDiamond id="G6" type="human" size={46} label="Maintain validation" caption="Portfolio board" onOpen={() => onOpenDetail("g6")} />
+            </div>
+            <Outcome kind="solve" text={RUN_QUESTIONS[r.key].solve} y={r.y - 55} />
+            <Outcome kind="remove" text={RUN_QUESTIONS[r.key].remove} y={r.y + 7} />
+          </React.Fragment>
+        ))}
 
-                {RUN_STEPS.map((s) => {
-                  const cell = run.steps[s.n];
-                  return (
-                    <div key={s.n} className="relative">
-                      <div
-                        role="button"
-                        tabIndex={0}
-                        onDoubleClick={() => setStep({ mode: id, n: s.n })}
-                        onKeyDown={(e) => e.key === "Enter" && setStep({ mode: id, n: s.n })}
-                        title="Double-click for details"
-                        className="flex h-full cursor-pointer flex-col rounded-xl border border-gray-200 bg-white p-3 shadow-md transition-all hover:-translate-y-0.5 hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-gray-400"
-                      >
-                        <div className="flex items-center gap-2">
-                          <span className="flex h-5 w-5 items-center justify-center rounded-full text-[10px] font-black text-white" style={{ background: m.color }}>
-                            {s.n}
-                          </span>
-                          <span className="text-[10px] font-black uppercase tracking-wider text-gray-400">{s.name}</span>
-                        </div>
-                        <div className="mt-1.5 text-[13px] font-bold leading-snug text-gray-900">{cell.short}</div>
-                        <div className="mt-2 flex flex-wrap gap-1">
-                          {cell.who.map((c) => (
-                            <WhoChip key={c.label} chip={c} />
-                          ))}
-                        </div>
-                        <button
-                          onClick={() => setStep({ mode: id, n: s.n })}
-                          className="mt-auto self-start pt-2 text-[10px] font-semibold text-gray-400 hover:text-gray-700"
-                        >
-                          Details
-                        </button>
-                      </div>
-                      {s.n < 4 && <ChevronRight className="absolute -right-[17px] top-1/2 z-10 h-5 w-5 -translate-y-1/2 text-gray-400" />}
-                    </div>
-                  );
-                })}
+        {/* Larger feature: back to the T2 framing */}
+        <button
+          type="button"
+          onClick={onBackToFramingT2}
+          title="Click to go back to the T2 assessment in Framing"
+          className="absolute flex items-center gap-2 rounded-xl px-3 text-left text-white shadow-lg transition-transform hover:scale-[1.03] focus:outline-none focus:ring-4 focus:ring-sky-200"
+          style={{ left: X_ASSESS, top: ROW_B + 80, width: 210, height: 46, background: T2 }}
+        >
+          <CornerUpLeft className="h-5 w-5 shrink-0" />
+          <span className="text-[11px] font-black leading-tight">Larger feature: back to T2 framing</span>
+        </button>
+
+        {/* Step 3 */}
+        <MiroCard
+          kicker="Step 3"
+          title="Ensure a good adoption"
+          accent="#5b7a64"
+          onOpen={() => open("adoption")}
+          className="absolute"
+          style={{ left: STEP3.x, top: STEP3.y, width: STEP3.w, minHeight: STEP3.h }}
+        >
+          People keep using it. Double-click to see how the adoption is ensured.
+        </MiroCard>
+
+        {/* Example and reading hint */}
+        {g6Note && (
+          <div className="absolute" style={{ left: FRAME.x, top: 610, width: 440 }}>
+            <Sticky color="yellow" tilt={-1}>
+              <div className="mb-1 flex items-center gap-1 text-[10px] font-black uppercase tracking-wider">
+                <Lightbulb className="h-3 w-3" /> Example
               </div>
-
-              {isSelf && (
-                <div className="mt-3 flex flex-wrap items-center gap-3 rounded-xl border-2 border-dashed border-red-300 bg-red-50 px-4 py-3">
-                  <div className="flex items-center gap-1.5 text-xs font-black text-red-900">
-                    <LogOut className="h-4 w-4" /> The user can leave this mode at any time
-                  </div>
-                  <div className="flex flex-1 flex-wrap gap-2">
-                    {SELF_SERVICE_EXITS.map((e) => (
-                      <span key={e.title} className="rounded-full border border-red-200 bg-white px-3 py-1 text-[11px] font-semibold text-gray-800">
-                        {e.title}
-                      </span>
-                    ))}
-                  </div>
-                  <button
-                    onClick={onBackToFraming}
-                    className="inline-flex items-center gap-1.5 rounded-lg bg-red-700 px-3 py-1.5 text-xs font-bold text-white shadow-sm hover:bg-red-800"
-                  >
-                    <CornerUpLeft className="h-3.5 w-3.5" /> {SELF_SERVICE_EXIT_RESULT}
-                  </button>
-                </div>
-              )}
-            </div>
-          );
-        })}
-      </div>
-
-      {/* G6, shown like the Framing gates */}
-      <div className="mt-6 rounded-2xl border-2 border-dashed border-gray-400 bg-white/70 p-4">
-        <div className="mb-3 flex items-center gap-2 text-xs font-black text-gray-700">
-          <span className="rounded bg-gray-800 px-1.5 py-0.5 text-[10px] text-white">EVERY QUARTER</span>
-          All four steps feed the maintain validation, whatever the mode
-        </div>
-        <div className="grid items-start gap-5" style={{ gridTemplateColumns: "390px 1fr 300px" }}>
-          <div className="overflow-hidden rounded-xl border-2 border-gray-700 bg-white shadow-md">
-            <div className="flex items-center justify-between bg-gray-700 px-3 py-1 text-[11px] font-black text-white">
-              <span>Use Case monitoring · quarterly</span>
-              <span className="text-[10px] font-semibold opacity-80">Double-click the gate</span>
-            </div>
-            <div className="flex items-center gap-4 px-4 py-3">
-              <GateDiamond id="G6" type="human" size={48} label="Maintain validation" onOpen={() => onOpenDetail("g6")} />
-              <div>
-                <div className="mb-1 text-[10px] font-black uppercase tracking-wider text-gray-500">Reviewed</div>
-                <div className="flex flex-wrap gap-1">
-                  {G6_REVIEWED.map((r) => (
-                    <span key={r} className="rounded-full border border-gray-300 bg-gray-50 px-2 py-0.5 text-[10px] font-semibold text-gray-800">
-                      {r}
-                    </span>
-                  ))}
-                </div>
-                <div className="mt-2 text-[11px] font-bold text-gray-800">Decides: continue, scale, re-scope or stop</div>
+              <div className="text-[11px] font-bold">
+                {example.short} · {PATHS[example.path].label} · {MODES[example.mode].label}
               </div>
-            </div>
-          </div>
-
-          <div>
-            <div className="mb-1.5 text-[11px] font-black uppercase tracking-wider text-gray-500">At G6, what changes by mode</div>
-            <div className="grid grid-cols-2 gap-2">
-              {BUILD_MODE_ORDER.map((id) => (
-                <div key={id} className="rounded-lg border bg-white p-2 text-[11px] leading-snug text-gray-800" style={{ borderColor: BUILD_MODES[id].color }}>
-                  <div className="font-black" style={{ color: BUILD_MODES[id].color }}>
-                    {BUILD_MODES[id].label}
-                  </div>
-                  {G6_BY_MODE[id]}
-                </div>
-              ))}
-            </div>
-          </div>
-
-          <div className="space-y-3">
-            <Sticky color="red" tilt={1} title="Stop triggers">
-              Terminate or pivot if adoption lags, run cost exceeds value or tech risks fail.
+              <p className="mt-1">{g6Note}</p>
             </Sticky>
-            {g6Note && (
-              <Sticky color="yellow" tilt={-1}>
-                <div className="mb-1 flex items-center gap-1 text-[10px] font-black uppercase tracking-wider">
-                  <Lightbulb className="h-3 w-3" /> Example
-                </div>
-                <div className="text-[11px] font-bold">
-                  {example.short} · {PATHS[example.path].label} · {MODES[example.mode].label}
-                </div>
-                <p className="mt-1">{g6Note}</p>
-              </Sticky>
-            )}
           </div>
+        )}
+        <div className="absolute text-[11px] leading-snug text-gray-500" style={{ left: FRAME.x + 470, top: 618, width: 400 }}>
+          G6 appears after each assessment: it is the same gate, held at the portfolio board. Double-click it, or an assessment, for the details.
         </div>
       </div>
 
-      <div className="mt-5 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm shadow-sm">
-        <div className="font-semibold text-gray-800">A new feature goes through the use case request review, then is delivered in the mode.</div>
-        <OriginLegend origins={["function", "to", "dai", "external", "agent"]} />
-      </div>
-
-      {step && <RunStepPanel mode={step.mode} step={step.n} onClose={() => setStep(null)} onChange={(mode, n) => setStep({ mode, n })} />}
+      {panel && (
+        <RunStepPanel
+          item={panel.item}
+          mode={panel.mode}
+          onClose={() => setPanel(null)}
+          onChange={(item, mode) => setPanel({ item, mode })}
+          onBackToFraming={() => {
+            setPanel(null);
+            onBackToFramingT2();
+          }}
+          onOpenG6={() => onOpenDetail("g6")}
+        />
+      )}
     </div>
   );
 };
