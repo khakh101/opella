@@ -496,7 +496,9 @@ export const PipelineFlowSimulator: React.FC = () => {
     const t3BuildWeekly = t3WeeklyInitial * (g4PassRate / 100);
     const ssBuildWeekly = ssWeeklyTotal * (g4PassRate / 100);
     const totalPromotedToT2PerWeek =
-      (t3BuildWeekly + ssBuildWeekly) * (postMvpPromotionRate / 100);
+      t3WeeklyInitial * (assumptions.t3G4PassRate / 100) * (assumptions.t3PromoteToT2Rate / 100);
+    const totalPromotedToT1PerWeek =
+      t3WeeklyInitial * (assumptions.t3G4PassRate / 100) * (assumptions.t3PromoteToT1Rate / 100);
 
     // Calculate extra throughput from active custom meetings
     let extraT1WeeklyCapacity = 0;
@@ -512,11 +514,12 @@ export const PipelineFlowSimulator: React.FC = () => {
       }
     });
 
-    // 1. Transformation SteerCo (T1)
+    // 1. Transformation SteerCo (T1 + Promoted T3)
     const steerCoIntervalWeeks = steerCoCadenceWeeks || 4;
+    const steerCoArrivingDemand = t1WeeklyInitial + totalPromotedToT1PerWeek;
     const steerCoBaseWeeklyCap = steerCoCapacity / steerCoIntervalWeeks;
     const steerCoTotalWeeklyCap = steerCoBaseWeeklyCap + extraT1WeeklyCapacity;
-    const steerCoNetDeficit = Math.max(0, t1WeeklyInitial - steerCoTotalWeeklyCap);
+    const steerCoNetDeficit = Math.max(0, steerCoArrivingDemand - steerCoTotalWeeklyCap);
 
     const steerCoQueue = Math.round(steerCoNetDeficit * steerCoIntervalWeeks * 1.5 * 10) / 10;
     const steerCoWaitWeeks =
@@ -527,9 +530,9 @@ export const PipelineFlowSimulator: React.FC = () => {
     const steerCoIsBottleneck = steerCoCyclesDelay > 1.0;
     const steerCoIsSevere = steerCoCyclesDelay > 2.0;
 
-    // 2. AI Portfolio Board (T2 + T3)
+    // 2. AI Portfolio Board (T2 + Promoted T3)
     const portfolioBoardIntervalWeeks = portfolioBoardCadenceWeeks || 2;
-    const portfolioBoardDemandPerWeek = t2WeeklyInitial + t3WeeklyInitial;
+    const portfolioBoardDemandPerWeek = t2WeeklyInitial + totalPromotedToT2PerWeek;
     const portfolioBoardBaseWeeklyCap = portfolioBoardCapacity / portfolioBoardIntervalWeeks;
     const portfolioBoardTotalWeeklyCap = portfolioBoardBaseWeeklyCap + extraT2WeeklyCapacity;
     const portfolioBoardNetDeficit = Math.max(0, portfolioBoardDemandPerWeek - portfolioBoardTotalWeeklyCap);
@@ -664,6 +667,7 @@ export const PipelineFlowSimulator: React.FC = () => {
       netThroughputToBuildPerWeek,
       droppedAtG4PerWeek,
       totalPromotedToT2PerWeek,
+      totalPromotedToT1PerWeek,
       weightedAvgLeadDays,
       bottleneckCount,
       t1LeadDays,
@@ -746,9 +750,7 @@ export const PipelineFlowSimulator: React.FC = () => {
     tierSequence.forEach((tier, idx) => {
       const passG1 = Math.random() * 100 < assumptions.acceptanceRateG1;
       let passG4 = Math.random() * 100 < assumptions.g4PassRate;
-      let isPromoted =
-        (tier === "T3" || tier === "T4") &&
-        Math.random() * 100 < assumptions.postMvpPromotionRate;
+      let isPromoted = false;
       let t3Outcome: "MVP" | "T2" | "T1" | "KILLED" | undefined = undefined;
 
       let color = "#10b981"; // T1 Emerald
@@ -788,7 +790,7 @@ export const PipelineFlowSimulator: React.FC = () => {
       } else if (tier === "T4") {
         color = "#c084fc"; // Purple
         glowColor = "rgba(192, 132, 252, 0.8)";
-        pathKey = isPromoted ? "t4-promoted" : "t4-main";
+        pathKey = "t4-main";
       }
 
       const lateralOffset = ((idx % 3) - 1) * 4.5 + (Math.random() - 0.5) * 2;
@@ -1220,15 +1222,15 @@ export const PipelineFlowSimulator: React.FC = () => {
 
         <div className="p-4 rounded-2xl bg-white border border-gray-200 shadow-sm flex flex-col justify-between">
           <span className="text-xs font-bold text-gray-500 uppercase tracking-wider flex items-center gap-1">
-            <GitBranch className="w-3.5 h-3.5 text-indigo-600" /> Post-MVP Promotion
+            <GitBranch className="w-3.5 h-3.5 text-blue-600" /> T3 G4 Promotion
           </span>
           <div className="mt-2">
-            <div className="text-2xl font-black text-indigo-900">
-              {flowCalculations.totalPromotedToT2PerWeek.toFixed(1)}{" "}
+            <div className="text-2xl font-black text-blue-900">
+              {(flowCalculations.totalPromotedToT2PerWeek + flowCalculations.totalPromotedToT1PerWeek).toFixed(1)}{" "}
               <span className="text-xs font-medium text-gray-500">UC/wk</span>
             </div>
-            <div className="text-[11px] text-indigo-700 font-medium mt-0.5">
-              {assumptions.postMvpPromotionRate}% promoted to T2 Scale
+            <div className="text-[11px] text-blue-700 font-medium mt-0.5">
+              T2: {assumptions.t3PromoteToT2Rate}% · T1: {assumptions.t3PromoteToT1Rate}%
             </div>
           </div>
         </div>
@@ -1431,36 +1433,69 @@ export const PipelineFlowSimulator: React.FC = () => {
             </p>
           </div>
 
-          {/* 4. Post-MVP Promotion Rate */}
-          <div className="p-4 rounded-2xl bg-gray-50 border border-indigo-300 ring-1 ring-indigo-500/20 space-y-2.5">
+          {/* 4. T3 Gate G4 Decisions (1-Page Canvas Outcome) */}
+          <div className="p-4 rounded-2xl bg-amber-50/60 border border-amber-300 ring-1 ring-amber-500/20 space-y-2.5">
             <div className="flex items-center justify-between">
               <label className="text-xs font-bold text-gray-900 flex items-center gap-1.5">
-                <GitBranch className="w-3.5 h-3.5 text-indigo-600" />
-                Post-MVP Promotion Rate (G5)
+                <span className="w-2 h-2 rounded-full bg-amber-600" />
+                T3 Gate G4 Decisions (Canvas Outcome)
               </label>
-              <span className="text-xs font-black text-indigo-800 bg-indigo-100 px-2 py-0.5 rounded-md font-mono">
-                {assumptions.postMvpPromotionRate}% to T2 Scale
+              <span className="text-xs font-black text-amber-800 bg-amber-100 px-2 py-0.5 rounded-md font-mono">
+                {assumptions.t3G4PassRate}% Pass · {100 - assumptions.t3G4PassRate}% Killed
               </span>
             </div>
-            <input
-              type="range"
-              min="0"
-              max="50"
-              step="5"
-              value={assumptions.postMvpPromotionRate}
-              onChange={(e) =>
-                updateAssumption("postMvpPromotionRate", Number(e.target.value))
-              }
-              className="w-full accent-indigo-600 cursor-pointer"
-            />
-            <div className="flex justify-between text-[10px] text-gray-500 font-medium">
-              <span>0% (None)</span>
-              <span>20% (Promoted)</span>
-              <span>50% (High scaling)</span>
+
+            <div className="space-y-2 text-xs">
+              <div>
+                <div className="flex justify-between text-[11px] mb-0.5">
+                  <span className="text-gray-700 font-semibold">G4 Approval Pass Rate:</span>
+                  <span className="font-mono font-bold text-gray-900">{assumptions.t3G4PassRate}%</span>
+                </div>
+                <input
+                  type="range"
+                  min="40"
+                  max="100"
+                  step="5"
+                  value={assumptions.t3G4PassRate}
+                  onChange={(e) => updateAssumption("t3G4PassRate", Number(e.target.value))}
+                  className="w-full accent-amber-600 h-1.5 cursor-pointer"
+                />
+              </div>
+
+              <div>
+                <div className="flex justify-between text-[11px] mb-0.5">
+                  <span className="text-blue-700 font-semibold">Promote to T2 Scale (routes to G3):</span>
+                  <span className="font-mono font-bold text-blue-900">{assumptions.t3PromoteToT2Rate}%</span>
+                </div>
+                <input
+                  type="range"
+                  min="0"
+                  max="40"
+                  step="5"
+                  value={assumptions.t3PromoteToT2Rate}
+                  onChange={(e) => updateAssumption("t3PromoteToT2Rate", Number(e.target.value))}
+                  className="w-full accent-blue-600 h-1.5 cursor-pointer"
+                />
+              </div>
+
+              <div>
+                <div className="flex justify-between text-[11px] mb-0.5">
+                  <span className="text-emerald-700 font-semibold">Promote to T1 Transform (routes to G3):</span>
+                  <span className="font-mono font-bold text-emerald-900">{assumptions.t3PromoteToT1Rate}%</span>
+                </div>
+                <input
+                  type="range"
+                  min="0"
+                  max="30"
+                  step="5"
+                  value={assumptions.t3PromoteToT1Rate}
+                  onChange={(e) => updateAssumption("t3PromoteToT1Rate", Number(e.target.value))}
+                  className="w-full accent-emerald-600 h-1.5 cursor-pointer"
+                />
+              </div>
             </div>
-            <p className="text-[11px] text-gray-600 leading-snug">
-              Decided <strong>after building MVP at Gate G5</strong>: T3 and T4
-              solutions get upgraded to T2 Scale.
+            <p className="text-[10px] text-gray-500 leading-snug">
+              Decided at G4: passing T3 can branch to <strong>T2 G3 Priority</strong>, <strong>T1 G3 Priority</strong>, or <strong>Agile MVP Build</strong>. Fails are deleted immediately.
             </p>
           </div>
 
@@ -1597,71 +1632,7 @@ export const PipelineFlowSimulator: React.FC = () => {
             </p>
           </div>
 
-          {/* 7. T3 Gate G4 Decisions (1-Page Canvas Outcome) */}
-          <div className="p-4 rounded-2xl bg-amber-50/60 border border-amber-300 ring-1 ring-amber-500/20 space-y-2.5">
-            <div className="flex items-center justify-between">
-              <label className="text-xs font-bold text-gray-900 flex items-center gap-1.5">
-                <span className="w-2 h-2 rounded-full bg-amber-600" />
-                T3 Gate G4 Decisions (Canvas Outcome)
-              </label>
-              <span className="text-xs font-black text-amber-800 bg-amber-100 px-2 py-0.5 rounded-md font-mono">
-                {assumptions.t3G4PassRate}% Pass · {100 - assumptions.t3G4PassRate}% Killed
-              </span>
-            </div>
 
-            <div className="space-y-2 text-xs">
-              <div>
-                <div className="flex justify-between text-[11px] mb-0.5">
-                  <span className="text-gray-700 font-semibold">G4 Approval Pass Rate:</span>
-                  <span className="font-mono font-bold text-gray-900">{assumptions.t3G4PassRate}%</span>
-                </div>
-                <input
-                  type="range"
-                  min="40"
-                  max="100"
-                  step="5"
-                  value={assumptions.t3G4PassRate}
-                  onChange={(e) => updateAssumption("t3G4PassRate", Number(e.target.value))}
-                  className="w-full accent-amber-600 h-1.5 cursor-pointer"
-                />
-              </div>
-
-              <div>
-                <div className="flex justify-between text-[11px] mb-0.5">
-                  <span className="text-blue-700 font-semibold">Promote to T2 Scale:</span>
-                  <span className="font-mono font-bold text-blue-900">{assumptions.t3PromoteToT2Rate}%</span>
-                </div>
-                <input
-                  type="range"
-                  min="0"
-                  max="40"
-                  step="5"
-                  value={assumptions.t3PromoteToT2Rate}
-                  onChange={(e) => updateAssumption("t3PromoteToT2Rate", Number(e.target.value))}
-                  className="w-full accent-blue-600 h-1.5 cursor-pointer"
-                />
-              </div>
-
-              <div>
-                <div className="flex justify-between text-[11px] mb-0.5">
-                  <span className="text-emerald-700 font-semibold">Promote to T1 Transform:</span>
-                  <span className="font-mono font-bold text-emerald-900">{assumptions.t3PromoteToT1Rate}%</span>
-                </div>
-                <input
-                  type="range"
-                  min="0"
-                  max="30"
-                  step="5"
-                  value={assumptions.t3PromoteToT1Rate}
-                  onChange={(e) => updateAssumption("t3PromoteToT1Rate", Number(e.target.value))}
-                  className="w-full accent-emerald-600 h-1.5 cursor-pointer"
-                />
-              </div>
-            </div>
-            <p className="text-[10px] text-gray-500 leading-snug">
-              Decided at G4: passing T3 can branch to <strong>T2 Scale</strong>, <strong>T1 Transform</strong>, or <strong>Agile MVP</strong>. Fails are killed immediately.
-            </p>
-          </div>
         </div>
 
         {/* ADVANCED COLLAPSIBLE: GATE LEAD TIME OVERRIDES */}
@@ -1781,9 +1752,9 @@ export const PipelineFlowSimulator: React.FC = () => {
                     </span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-gray-600">G5 Promotion Decision:</span>
-                    <span className="font-mono font-bold text-indigo-700">
-                      {assumptions.postMvpPromotionRate}% promoted
+                    <span className="text-gray-600">T3 G4 Promotion (To G3):</span>
+                    <span className="font-mono font-bold text-blue-700">
+                      T2 ({assumptions.t3PromoteToT2Rate}%) · T1 ({assumptions.t3PromoteToT1Rate}%)
                     </span>
                   </div>
                 </div>
@@ -1909,32 +1880,23 @@ export const PipelineFlowSimulator: React.FC = () => {
                 fill="none"
                 stroke="transparent"
               />
-              {/* T3 Promoted to T2 at G4 */}
+              {/* T3 Promoted to T2 at G4 -> routes into T2 G3 Priority (580, 210), then G4 (750, 210) to MVP Build */}
               <path
                 id="t3-to-t2"
                 ref={(el) => {
                   pathRefs.current["t3-to-t2"] = el;
                 }}
-                d="M 80 290 L 220 290 C 290 350, 340 350, 400 350 L 750 350 C 790 350, 810 210, 850 210 L 900 290 L 1030 290 L 1140 290"
+                d="M 80 290 L 220 290 C 290 350, 340 350, 400 350 L 750 350 C 710 320, 630 250, 580 210 L 750 210 C 820 210, 850 290, 900 290 L 1030 290 L 1140 290"
                 fill="none"
                 stroke="transparent"
               />
-              {/* T3 Promoted to T1 at G4 */}
+              {/* T3 Promoted to T1 at G4 -> routes into T1 G3 Priority (580, 90), then G4 (750, 90) to MVP Build */}
               <path
                 id="t3-to-t1"
                 ref={(el) => {
                   pathRefs.current["t3-to-t1"] = el;
                 }}
-                d="M 80 290 L 220 290 C 290 350, 340 350, 400 350 L 750 350 C 790 350, 810 90, 850 90 L 900 290 L 1030 290 L 1140 290"
-                fill="none"
-                stroke="transparent"
-              />
-              <path
-                id="t3-promoted"
-                ref={(el) => {
-                  pathRefs.current["t3-promoted"] = el;
-                }}
-                d="M 80 290 L 220 290 C 290 350, 340 350, 400 350 L 750 350 C 820 350, 850 290, 900 290 L 1030 290 C 1060 210, 1100 210, 1140 210"
+                d="M 80 290 L 220 290 C 290 350, 340 350, 400 350 L 750 350 C 720 180, 640 90, 580 90 L 750 90 C 820 90, 850 290, 900 290 L 1030 290 L 1140 290"
                 fill="none"
                 stroke="transparent"
               />
@@ -1944,15 +1906,6 @@ export const PipelineFlowSimulator: React.FC = () => {
                   pathRefs.current["t4-main"] = el;
                 }}
                 d="M 80 290 L 220 290 C 290 470, 340 470, 400 470 L 750 470 C 820 470, 850 290, 900 290 L 1030 290 L 1140 290"
-                fill="none"
-                stroke="transparent"
-              />
-              <path
-                id="t4-promoted"
-                ref={(el) => {
-                  pathRefs.current["t4-promoted"] = el;
-                }}
-                d="M 80 290 L 220 290 C 290 470, 340 470, 400 470 L 750 470 C 820 470, 850 290, 900 290 L 1030 290 C 1060 210, 1100 210, 1140 210"
                 fill="none"
                 stroke="transparent"
               />
@@ -2036,58 +1989,41 @@ export const PipelineFlowSimulator: React.FC = () => {
               <path d="M 220 290 C 290 350, 340 350, 400 350 L 750 350" fill="none" stroke="#f59e0b" strokeWidth="8" strokeOpacity="0.2" strokeLinecap="round" />
 
               {/* T3 POST-G4 OUTCOME ROUTING CONDUITS */}
-              {/* 1. T3 to T2 Scale Promotion Curve */}
+              {/* 1. T3 to T2 Scale Promotion Curve: Routes into T2 Gate G3 (580, 210) */}
               <path
-                d="M 750 350 C 790 350, 810 210, 850 210"
+                d="M 750 350 C 710 320, 630 250, 580 210"
                 fill="none"
                 stroke="#38bdf8"
-                strokeWidth="5"
-                strokeOpacity="0.45"
+                strokeWidth="4"
+                strokeOpacity="0.55"
                 strokeDasharray="4 4"
                 strokeLinecap="round"
               />
-              {/* 2. T3 to T1 Transform Promotion Curve */}
+              {/* 2. T3 to T1 Transform Promotion Curve: Routes into T1 Gate G3 (580, 90) */}
               <path
-                d="M 750 350 C 790 350, 810 90, 850 90"
+                d="M 750 350 C 720 180, 640 90, 580 90"
                 fill="none"
                 stroke="#10b981"
-                strokeWidth="5"
-                strokeOpacity="0.4"
+                strokeWidth="4"
+                strokeOpacity="0.5"
                 strokeDasharray="4 4"
                 strokeLinecap="round"
               />
-              {/* 3. T3 Killed / Shelved at G4 Drop */}
-              <path
-                d="M 750 350 C 765 390, 780 430, 800 455"
-                fill="none"
-                stroke="#ef4444"
-                strokeWidth="3.5"
-                strokeOpacity="0.4"
-                strokeDasharray="3 3"
-                strokeLinecap="round"
-              />
-              {/* 4. T3 Proceed to MVP Build (Mode 3 Sprint) */}
+              {/* 3. T3 Proceed to MVP Build (Mode 3 Sprint) */}
               <path d="M 750 350 C 820 350, 850 290, 900 290" fill="none" stroke="#f59e0b" strokeWidth="7" strokeOpacity="0.3" />
 
               {/* T3 Post-G4 Badges */}
-              <g transform="translate(805, 170)">
+              <g transform="translate(670, 275)">
                 <rect x="-48" y="-9" width="96" height="18" rx="5" fill="#0b1329" stroke="#38bdf8" strokeWidth="1" />
                 <text x="0" y="3.5" textAnchor="middle" fill="#38bdf8" fontSize="7.5" fontWeight="900">
-                  ↑ To T2 ({assumptions.t3PromoteToT2Rate}%)
+                  ↖ To T2 G3 ({assumptions.t3PromoteToT2Rate}%)
                 </text>
               </g>
 
-              <g transform="translate(805, 80)">
+              <g transform="translate(675, 140)">
                 <rect x="-48" y="-9" width="96" height="18" rx="5" fill="#0b1329" stroke="#10b981" strokeWidth="1" />
                 <text x="0" y="3.5" textAnchor="middle" fill="#34d399" fontSize="7.5" fontWeight="900">
-                  ↑ To T1 ({assumptions.t3PromoteToT1Rate}%)
-                </text>
-              </g>
-
-              <g transform="translate(800, 465)">
-                <rect x="-56" y="-9" width="112" height="18" rx="5" fill="#0b1329" stroke="#ef4444" strokeWidth="1" />
-                <text x="0" y="3.5" textAnchor="middle" fill="#f87171" fontSize="7.5" fontWeight="900">
-                  ✕ Shelved ({100 - assumptions.t3G4PassRate}%)
+                  ↖ To T1 G3 ({assumptions.t3PromoteToT1Rate}%)
                 </text>
               </g>
 
@@ -2097,9 +2033,6 @@ export const PipelineFlowSimulator: React.FC = () => {
 
               {/* MVP Build to Gate G5 */}
               <path d="M 900 290 L 1030 290" fill="none" stroke="#10b981" strokeWidth="10" strokeOpacity="0.25" strokeLinecap="round" />
-
-              {/* Clean solid curve for promoted solutions */}
-              <path d="M 1030 290 C 1060 210, 1100 210, 1140 210" fill="none" stroke="#818cf8" strokeWidth="3" strokeOpacity="0.35" />
 
               {/* Path to RUN */}
               <path d="M 1030 290 L 1140 290" fill="none" stroke="#38bdf8" strokeWidth="10" strokeOpacity="0.25" />
@@ -2312,14 +2245,6 @@ export const PipelineFlowSimulator: React.FC = () => {
                 </text>
                 <text x="0" y="17" textAnchor="middle" fill="#818cf8" fontSize="7.5" fontWeight="bold">
                   Eval &amp; Scaling
-                </text>
-              </g>
-
-              {/* POST-MVP PROMOTION BADGE */}
-              <g transform="translate(1100, 185)">
-                <rect x="-65" y="-11" width="130" height="22" rx="6" fill="#1e1b4b" stroke="#818cf8" strokeWidth="1.5" />
-                <text x="0" y="3.5" textAnchor="middle" fill="#c7d2fe" fontSize="8.5" fontWeight="bold">
-                  ★ Promoted to T2 ({assumptions.postMvpPromotionRate}%)
                 </text>
               </g>
 
