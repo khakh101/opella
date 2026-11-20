@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useRef, useMemo } from "react";
+import React, { useState, useMemo } from "react";
 import {
   Activity,
   AlertTriangle,
@@ -9,48 +9,20 @@ import {
   RotateCcw,
   Sliders,
   TrendingUp,
-  Users,
-  Building,
   Zap,
   Info,
   Calendar,
   Layers,
-  ArrowRight,
   ShieldAlert,
   Sparkles,
-  GitPullRequest,
-  Check,
   ChevronDown,
   ChevronUp,
+  Flame,
+  Check,
 } from "lucide-react";
 
 // --- Types & Interfaces ---
 export type ScenarioId = "low" | "medium" | "high" | "custom";
-
-export interface CommitteeConfig {
-  id: string;
-  name: string;
-  shortName: string;
-  intervalWeeks: number; // e.g. 4 for monthly, 2 for fortnightly, 1 for weekly
-  intervalLabel: string;
-  capacityPerMeeting: number; // number of use cases that can be reviewed per session
-  appliesTo: string;
-}
-
-export interface GateFlowMetrics {
-  gateId: string;
-  name: string;
-  committee: string;
-  intervalWeeks: number;
-  inflowPerWeek: number;
-  inflowPerMonth: number;
-  estimatedLeadTimeWeeks: number;
-  queueBacklog: number;
-  waitingTimeWeeks: number;
-  isBottleneck: boolean;
-  isSevereBottleneck: boolean;
-  meetingCycleDelay: number;
-}
 
 export interface SimulationAssumptions {
   incomingPerWeek: number;
@@ -66,7 +38,6 @@ export interface SimulationAssumptions {
   steerCoCapacity: number; // monthly (every 4 weeks)
   portfolioBoardCapacity: number; // fortnightly (every 2 weeks)
   ddaCapacity: number; // weekly (every 1 week)
-  sponsorsCapacity: number; // bi-weekly (every 2 weeks)
 
   // Estimated Days to pass each gate (base assumptions)
   g1LeadDays: number;
@@ -95,7 +66,7 @@ const PRESET_SCENARIOS: Record<
 > = {
   low: {
     name: "Low Volume (Smooth Flow)",
-    description: "Illustrative conservative intake (3–4 UC/week). Governance forums operate well within capacity with minimal queue delays.",
+    description: "Conservative intake (~3–4 UC/week). All governance forums review initiatives within 1 meeting cycle with zero comitology delay.",
     badge: "Low · Balanced Flow",
     assumptions: {
       incomingPerWeek: 3.5,
@@ -109,7 +80,6 @@ const PRESET_SCENARIOS: Record<
       steerCoCapacity: 3,
       portfolioBoardCapacity: 6,
       ddaCapacity: 6,
-      sponsorsCapacity: 4,
       g1LeadDays: 1,
       g2T1LeadDays: 14,
       g2T2LeadDays: 10,
@@ -125,8 +95,8 @@ const PRESET_SCENARIOS: Record<
     },
   },
   medium: {
-    name: "Medium Volume (Opella FY25 Baseline)",
-    description: "Expected steady-state intake (~8–9 UC/week). Transformation SteerCo experiences mild agenda pressure, creating a slight queue bottleneck at Gate G2/G3.",
+    name: "Medium Volume (Opella Baseline)",
+    description: "Expected steady-state intake (~8–9 UC/week). Transformation SteerCo experiences agenda pressure, creating a backlog exceeding 1 monthly meeting cycle.",
     badge: "Medium · Baseline",
     assumptions: {
       incomingPerWeek: 8.5,
@@ -140,15 +110,14 @@ const PRESET_SCENARIOS: Record<
       steerCoCapacity: 3,
       portfolioBoardCapacity: 6,
       ddaCapacity: 6,
-      sponsorsCapacity: 4,
       g1LeadDays: 1,
-      g2T1LeadDays: 24,
+      g2T1LeadDays: 21,
       g2T2LeadDays: 14,
       g2T3LeadDays: 7,
       g3T1LeadDays: 28,
       g3T2LeadDays: 14,
       g3T3LeadDays: 10,
-      g4T1LeadDays: 28,
+      g4T1LeadDays: 21,
       g4T2LeadDays: 14,
       g4T3LeadDays: 7,
       mvpBuildWeeks: 10,
@@ -156,31 +125,30 @@ const PRESET_SCENARIOS: Record<
     },
   },
   high: {
-    name: "High Volume (Intense Pipeline / Stress Test)",
-    description: "Surge intake (18–22 UC/week). Monthly SteerCo is overwhelmed with >2 meeting cycles of backlog. Portfolio Board reaches full capacity. Severe bottlenecks triggered.",
+    name: "High Volume (Surge Stress Test)",
+    description: "Surge intake (16–20 UC/week). SteerCo and Portfolio Board agendas are overwhelmed; wait times stretch across 2+ consecutive meeting cycles (severe bottleneck).",
     badge: "High · Severe Bottleneck",
     assumptions: {
-      incomingPerWeek: 19.0,
+      incomingPerWeek: 18.0,
       acceptanceRateG1: 88,
       t1Split: 25,
       t2Split: 38,
       t3Split: 27,
       selfServeSplit: 10,
-      returnFromRunRate: 18,
-      activeInRunCount: 36,
+      returnFromRunRate: 15,
+      activeInRunCount: 32,
       steerCoCapacity: 3,
       portfolioBoardCapacity: 7,
       ddaCapacity: 7,
-      sponsorsCapacity: 4,
       g1LeadDays: 2,
-      g2T1LeadDays: 45,
-      g2T2LeadDays: 25,
-      g2T3LeadDays: 14,
-      g3T1LeadDays: 50,
-      g3T2LeadDays: 28,
+      g2T1LeadDays: 35,
+      g2T2LeadDays: 21,
+      g2T3LeadDays: 10,
+      g3T1LeadDays: 42,
+      g3T2LeadDays: 21,
       g3T3LeadDays: 14,
-      g4T1LeadDays: 45,
-      g4T2LeadDays: 24,
+      g4T1LeadDays: 35,
+      g4T2LeadDays: 21,
       g4T3LeadDays: 10,
       mvpBuildWeeks: 12,
       g5LeadWeeks: 6,
@@ -197,10 +165,7 @@ export const PipelineFlowSimulator: React.FC = () => {
 
   // UI accordion toggles
   const [showAdvancedSettings, setShowAdvancedSettings] = useState(false);
-  const [selectedGateDetail, setSelectedGateDetail] = useState<string | null>("G3_T1");
-
-  // Canvas animation ref for flowing particles
-  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const [activeInspectNode, setActiveInspectNode] = useState<string>("G3_T1");
 
   // Handle switching scenario preset
   const handleSelectScenario = (sc: ScenarioId) => {
@@ -236,7 +201,6 @@ export const PipelineFlowSimulator: React.FC = () => {
       steerCoCapacity,
       portfolioBoardCapacity,
       ddaCapacity,
-      sponsorsCapacity,
     } = assumptions;
 
     // Normalizing tier split
@@ -251,76 +215,77 @@ export const PipelineFlowSimulator: React.FC = () => {
     const rejectedAtG1PerWeek = incomingPerWeek * (1 - acceptanceRateG1 / 100);
 
     // Returning from Run for major modification (re-enter at G2/G3)
-    // Formula: activeInRunCount * (returnFromRunRate / 100) / 12 weeks
+    // Active run cases returning per year converted to weekly flow:
     const returningFromRunPerWeek =
       (activeInRunCount * (returnFromRunRate / 100)) / 12;
 
     // Weekly flow per tier entering Framing (G2)
     const t1WeeklyNew = acceptedAtG1PerWeek * normT1;
-    const t1WeeklyTotal = t1WeeklyNew + returningFromRunPerWeek * 0.45; // 45% of returns are T1
+    const t1WeeklyTotal = t1WeeklyNew + returningFromRunPerWeek * 0.5; // 50% of returns are T1
 
     const t2WeeklyNew = acceptedAtG1PerWeek * normT2;
-    const t2WeeklyTotal = t2WeeklyNew + returningFromRunPerWeek * 0.4; // 40% of returns are T2
+    const t2WeeklyTotal = t2WeeklyNew + returningFromRunPerWeek * 0.35; // 35% of returns are T2
 
     const t3WeeklyNew = acceptedAtG1PerWeek * normT3;
     const t3WeeklyTotal = t3WeeklyNew + returningFromRunPerWeek * 0.15; // 15% of returns are T3
 
     const ssWeeklyTotal = acceptedAtG1PerWeek * normSS; // Self-serve bypasses G2-G4
 
-    // --- Committee Review Capacities & Cadences (Weeks between meetings) ---
+    // --- Committee Review Cadences (Weeks per meeting cycle) ---
     // Rule: Monthly = 4 weeks, Fortnightly = 2 weeks, Weekly = 1 week
     const steerCoIntervalWeeks = 4; // Monthly
     const portfolioBoardIntervalWeeks = 2; // Fortnightly
     const ddaIntervalWeeks = 1; // Weekly
-    const sponsorsIntervalWeeks = 2; // Bi-weekly
 
-    // Effective throughput per week
-    const steerCoThroughputPerWeek = steerCoCapacity / steerCoIntervalWeeks;
-    const portfolioBoardThroughputPerWeek =
-      portfolioBoardCapacity / portfolioBoardIntervalWeeks;
-    const ddaThroughputPerWeek = ddaCapacity / ddaIntervalWeeks;
-    const sponsorsThroughputPerWeek = sponsorsCapacity / sponsorsIntervalWeeks;
+    // 1. Transformation SteerCo (Monthly, 4 weeks)
+    // Reviews T1 at G2 endorsement, G3 Priority & G4 Funding
+    const steerCoArrivingPerCycle = t1WeeklyTotal * steerCoIntervalWeeks;
+    const steerCoExcessPerCycle = Math.max(0, steerCoArrivingPerCycle - steerCoCapacity);
+    const steerCoQueue = Math.round(steerCoExcessPerCycle * 1.5 * 10) / 10;
+    // Waiting time: baseline interval/2 + queue wait
+    const steerCoWaitWeeks =
+      steerCoQueue > 0
+        ? Math.round((steerCoIntervalWeeks / 2 + (steerCoQueue / steerCoCapacity) * steerCoIntervalWeeks) * 10) / 10
+        : Math.round((steerCoIntervalWeeks / 2) * 10) / 10;
+    const steerCoCyclesDelay = Math.round((steerCoWaitWeeks / steerCoIntervalWeeks) * 10) / 10;
+    const steerCoIsBottleneck = steerCoCyclesDelay > 1.0;
+    const steerCoIsSevere = steerCoCyclesDelay > 2.0;
 
-    // --- Evaluate Gate G2/G3/G4 for each Tier ---
-    // 1. Transformation SteerCo (Reviews T1 at G2 Feasibility endorsement, G3 Priority & G4 Funding)
-    // Arriving weekly demand to SteerCo for T1:
-    const steerCoDemandPerWeek = t1WeeklyTotal;
-    const steerCoQueue = Math.max(0, (steerCoDemandPerWeek - steerCoThroughputPerWeek) * 8); // approximate steady-state queue
-    // Average waiting time in weeks to get on SteerCo agenda:
-    const steerCoWaitingWeeks =
-      steerCoDemandPerWeek > 0
-        ? (steerCoQueue / steerCoThroughputPerWeek + 1) * (steerCoIntervalWeeks / 2)
-        : 0;
-    const steerCoMeetingDelays = steerCoWaitingWeeks / steerCoIntervalWeeks;
-    const steerCoIsBottleneck = steerCoMeetingDelays > 1.0;
-    const steerCoIsSevere = steerCoMeetingDelays > 2.0;
-
-    // 2. AI Portfolio Board (Reviews T2 & T3 at G2, G3, G4)
+    // 2. AI Portfolio Board (Fortnightly, 2 weeks)
+    // Reviews T2 & T3 at G2, G3, G4
     const portfolioBoardDemandPerWeek = t2WeeklyTotal + t3WeeklyTotal;
-    const portfolioBoardQueue = Math.max(
+    const portfolioBoardArrivingPerCycle = portfolioBoardDemandPerWeek * portfolioBoardIntervalWeeks;
+    const portfolioBoardExcessPerCycle = Math.max(
       0,
-      (portfolioBoardDemandPerWeek - portfolioBoardThroughputPerWeek) * 6
+      portfolioBoardArrivingPerCycle - portfolioBoardCapacity
     );
-    const portfolioBoardWaitingWeeks =
-      portfolioBoardDemandPerWeek > 0
-        ? (portfolioBoardQueue / portfolioBoardThroughputPerWeek + 1) *
-          (portfolioBoardIntervalWeeks / 2)
-        : 0;
-    const portfolioBoardMeetingDelays =
-      portfolioBoardWaitingWeeks / portfolioBoardIntervalWeeks;
-    const portfolioBoardIsBottleneck = portfolioBoardMeetingDelays > 1.0;
-    const portfolioBoardIsSevere = portfolioBoardMeetingDelays > 2.0;
+    const portfolioBoardQueue = Math.round(portfolioBoardExcessPerCycle * 1.5 * 10) / 10;
+    const portfolioBoardWaitWeeks =
+      portfolioBoardQueue > 0
+        ? Math.round(
+            (portfolioBoardIntervalWeeks / 2 +
+              (portfolioBoardQueue / portfolioBoardCapacity) * portfolioBoardIntervalWeeks) *
+              10
+          ) / 10
+        : Math.round((portfolioBoardIntervalWeeks / 2) * 10) / 10;
+    const portfolioBoardCyclesDelay =
+      Math.round((portfolioBoardWaitWeeks / portfolioBoardIntervalWeeks) * 10) / 10;
+    const portfolioBoardIsBottleneck = portfolioBoardCyclesDelay > 1.0;
+    const portfolioBoardIsSevere = portfolioBoardCyclesDelay > 2.0;
 
-    // 3. Digital Design Authority (DDA - Weekly review of ADRs for T1 & T2)
-    const ddaDemandPerWeek = t1WeeklyTotal + t2WeeklyTotal * 0.7;
-    const ddaQueue = Math.max(0, (ddaDemandPerWeek - ddaThroughputPerWeek) * 4);
-    const ddaWaitingWeeks =
-      ddaDemandPerWeek > 0
-        ? (ddaQueue / ddaThroughputPerWeek + 1) * (ddaIntervalWeeks / 2)
-        : 0;
-    const ddaMeetingDelays = ddaWaitingWeeks / ddaIntervalWeeks;
-    const ddaIsBottleneck = ddaMeetingDelays > 1.0;
-    const ddaIsSevere = ddaMeetingDelays > 2.0;
+    // 3. Digital Design Authority (DDA, Weekly, 1 week)
+    // Reviews ADRs for T1 & T2
+    const ddaDemandPerWeek = t1WeeklyTotal + t2WeeklyTotal * 0.6;
+    const ddaArrivingPerCycle = ddaDemandPerWeek * ddaIntervalWeeks;
+    const ddaExcessPerCycle = Math.max(0, ddaArrivingPerCycle - ddaCapacity);
+    const ddaQueue = Math.round(ddaExcessPerCycle * 10) / 10;
+    const ddaWaitWeeks =
+      ddaQueue > 0
+        ? Math.round((ddaIntervalWeeks / 2 + (ddaQueue / ddaCapacity) * ddaIntervalWeeks) * 10) / 10
+        : 0.5;
+    const ddaCyclesDelay = Math.round((ddaWaitWeeks / ddaIntervalWeeks) * 10) / 10;
+    const ddaIsBottleneck = ddaCyclesDelay > 1.0;
+    const ddaIsSevere = ddaCyclesDelay > 2.0;
 
     // --- Total Pipeline Metrics ---
     const totalInflowPerMonth = incomingPerWeek * 4.33;
@@ -334,14 +299,14 @@ export const PipelineFlowSimulator: React.FC = () => {
       assumptions.g2T1LeadDays +
       assumptions.g3T1LeadDays +
       assumptions.g4T1LeadDays +
-      Math.round(steerCoWaitingWeeks * 7);
+      Math.round(steerCoWaitWeeks * 7);
 
     const t2LeadDays =
       assumptions.g1LeadDays +
       assumptions.g2T2LeadDays +
       assumptions.g3T2LeadDays +
       assumptions.g4T2LeadDays +
-      Math.round(portfolioBoardWaitingWeeks * 4);
+      Math.round(portfolioBoardWaitWeeks * 7);
 
     const t3LeadDays =
       assumptions.g1LeadDays +
@@ -349,7 +314,7 @@ export const PipelineFlowSimulator: React.FC = () => {
       assumptions.g3T3LeadDays +
       assumptions.g4T3LeadDays;
 
-    const ssLeadDays = 1; // Self-serve instant bypass
+    const ssLeadDays = 1; // Instant bypass
 
     const weightedAvgLeadDays = Math.round(
       t1LeadDays * normT1 +
@@ -393,187 +358,37 @@ export const PipelineFlowSimulator: React.FC = () => {
 
       // Committees analysis
       steerCo: {
-        demandPerWeek: steerCoDemandPerWeek,
-        capacityWeekly: steerCoThroughputPerWeek,
-        queue: Math.round(steerCoQueue * 10) / 10,
-        waitingWeeks: Math.round(steerCoWaitingWeeks * 10) / 10,
-        meetingDelays: Math.round(steerCoMeetingDelays * 10) / 10,
+        demandPerWeek: t1WeeklyTotal,
+        capacityPerMeeting: steerCoCapacity,
+        intervalWeeks: steerCoIntervalWeeks,
+        queue: steerCoQueue,
+        waitWeeks: steerCoWaitWeeks,
+        cyclesDelay: steerCoCyclesDelay,
         isBottleneck: steerCoIsBottleneck,
         isSevere: steerCoIsSevere,
       },
       portfolioBoard: {
         demandPerWeek: portfolioBoardDemandPerWeek,
-        capacityWeekly: portfolioBoardThroughputPerWeek,
-        queue: Math.round(portfolioBoardQueue * 10) / 10,
-        waitingWeeks: Math.round(portfolioBoardWaitingWeeks * 10) / 10,
-        meetingDelays: Math.round(portfolioBoardMeetingDelays * 10) / 10,
+        capacityPerMeeting: portfolioBoardCapacity,
+        intervalWeeks: portfolioBoardIntervalWeeks,
+        queue: portfolioBoardQueue,
+        waitWeeks: portfolioBoardWaitWeeks,
+        cyclesDelay: portfolioBoardCyclesDelay,
         isBottleneck: portfolioBoardIsBottleneck,
         isSevere: portfolioBoardIsSevere,
       },
       dda: {
         demandPerWeek: ddaDemandPerWeek,
-        capacityWeekly: ddaThroughputPerWeek,
-        queue: Math.round(ddaQueue * 10) / 10,
-        waitingWeeks: Math.round(ddaWaitingWeeks * 10) / 10,
-        meetingDelays: Math.round(ddaMeetingDelays * 10) / 10,
+        capacityPerMeeting: ddaCapacity,
+        intervalWeeks: ddaIntervalWeeks,
+        queue: ddaQueue,
+        waitWeeks: ddaWaitWeeks,
+        cyclesDelay: ddaCyclesDelay,
         isBottleneck: ddaIsBottleneck,
         isSevere: ddaIsSevere,
       },
     };
   }, [assumptions]);
-
-  // --- PARTICLE FLOW ANIMATION ON CANVAS ---
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
-
-    let animationFrameId: number;
-    let t = 0;
-
-    // Define particle streams
-    interface Particle {
-      x: number;
-      y: number;
-      progress: number;
-      speed: number;
-      tier: "T1" | "T2" | "T3" | "SS" | "RETURN";
-      size: number;
-    }
-
-    const particles: Particle[] = [];
-    const count = Math.min(80, Math.max(25, Math.round(assumptions.incomingPerWeek * 3.5)));
-
-    for (let i = 0; i < count; i++) {
-      const rand = Math.random();
-      let tier: Particle["tier"] = "T3";
-      if (rand < 0.2) tier = "T1";
-      else if (rand < 0.55) tier = "T2";
-      else if (rand < 0.85) tier = "T3";
-      else tier = "SS";
-
-      particles.push({
-        x: 0,
-        y: 0,
-        progress: Math.random(),
-        speed: 0.003 + Math.random() * 0.003,
-        tier,
-        size: 2.2 + Math.random() * 1.8,
-      });
-    }
-
-    // Add 8 return particles
-    for (let i = 0; i < 8; i++) {
-      particles.push({
-        x: 0,
-        y: 0,
-        progress: Math.random(),
-        speed: 0.0025 + Math.random() * 0.002,
-        tier: "RETURN",
-        size: 2.5,
-      });
-    }
-
-    const render = () => {
-      t += 1;
-      const width = canvas.width;
-      const height = canvas.height;
-
-      ctx.clearRect(0, 0, width, height);
-
-      // Coordinates mapping to canvas width/height
-      const sourceX = width * 0.06;
-      const sourceY = height * 0.52;
-      const g1X = width * 0.18;
-      const g1Y = height * 0.52;
-
-      // Pipe paths by Tier
-      particles.forEach((p) => {
-        p.progress += p.speed;
-        if (p.progress > 1) p.progress = 0;
-
-        let px = 0;
-        let py = 0;
-        let color = "#ffffff";
-
-        if (p.tier === "RETURN") {
-          // Arching backwards from Run (right) to G2/G3 (center-left)
-          const rx1 = width * 0.94;
-          const ry1 = height * 0.48;
-          const rx2 = width * 0.35;
-          const ry2 = height * 0.22;
-          const controlY = height * 0.04;
-
-          const prog = p.progress;
-          // Quadratic Bezier
-          px = (1 - prog) * (1 - prog) * rx1 + 2 * (1 - prog) * prog * (width * 0.65) + prog * prog * rx2;
-          py = (1 - prog) * (1 - prog) * ry1 + 2 * (1 - prog) * prog * controlY + prog * prog * ry2;
-          color = "#f59e0b"; // amber return particles
-        } else if (p.progress < 0.2) {
-          // Intake to G1
-          const progNorm = p.progress / 0.2;
-          px = sourceX + (g1X - sourceX) * progNorm;
-          py = sourceY;
-          color = "#34d399";
-        } else {
-          // G1 onwards split by tier
-          const progNorm = (p.progress - 0.2) / 0.8;
-          const destX = width * 0.94;
-          const destY = height * 0.52;
-
-          let targetBranchY = height * 0.52;
-          if (p.tier === "T1") {
-            targetBranchY = height * 0.2;
-            color = flowCalculations.steerCo.isBottleneck ? "#ef4444" : "#10b981";
-          } else if (p.tier === "T2") {
-            targetBranchY = height * 0.38;
-            color = flowCalculations.portfolioBoard.isBottleneck ? "#f59e0b" : "#38bdf8";
-          } else if (p.tier === "T3") {
-            targetBranchY = height * 0.66;
-            color = "#fbbf24";
-          } else {
-            // Self-Serve
-            targetBranchY = height * 0.84;
-            color = "#c084fc";
-          }
-
-          // Cubic bezier curve path
-          const cp1x = width * 0.32;
-          const cp1y = targetBranchY;
-          const cp2x = width * 0.72;
-          const cp2y = targetBranchY;
-
-          // Compute cubic Bezier
-          const u = 1 - progNorm;
-          const tt = progNorm * progNorm;
-          const uu = u * u;
-          const uuu = uu * u;
-          const ttt = tt * progNorm;
-
-          px = uuu * g1X + 3 * uu * progNorm * cp1x + 3 * u * tt * cp2x + ttt * destX;
-          py = uuu * g1Y + 3 * uu * progNorm * cp1y + 3 * u * tt * cp2y + ttt * destY;
-        }
-
-        // Draw particle
-        ctx.beginPath();
-        ctx.arc(px, py, p.size, 0, Math.PI * 2);
-        ctx.fillStyle = color;
-        ctx.shadowBlur = 8;
-        ctx.shadowColor = color;
-        ctx.fill();
-        ctx.shadowBlur = 0;
-      });
-
-      animationFrameId = requestAnimationFrame(render);
-    };
-
-    render();
-
-    return () => {
-      cancelAnimationFrame(animationFrameId);
-    };
-  }, [assumptions, flowCalculations]);
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8 text-gray-900">
@@ -583,14 +398,14 @@ export const PipelineFlowSimulator: React.FC = () => {
           <div className="flex items-center gap-2">
             <span className="px-3 py-1 rounded-full bg-emerald-400 text-gray-950 font-black text-xs uppercase tracking-wider flex items-center gap-1.5 shadow-sm">
               <Activity className="w-3.5 h-3.5" />
-              Tab 7 · Pipeline Flow & Bottleneck Simulator
+              Tab 7 · Pipeline Flow &amp; Bottleneck Simulator
             </span>
             <span className="text-xs bg-white/10 px-2.5 py-1 rounded-md text-emerald-300 font-mono border border-white/15">
-              Live Comitology Flow Engine
+              Live Governance Fluid Simulation
             </span>
           </div>
           <h1 className="text-2xl sm:text-3xl font-black text-white tracking-tight">
-            Use Case Flow & Governance Bottleneck Simulator
+            Use Case Flow &amp; Governance Bottleneck Simulator
           </h1>
           <p className="text-sm text-white/80 max-w-2xl leading-relaxed">
             Simulate incoming project volumes, gate lead times, meeting review cadences, and
@@ -599,14 +414,14 @@ export const PipelineFlowSimulator: React.FC = () => {
         </div>
 
         {/* SCENARIO SWITCHER BUTTONS */}
-        <div className="bg-black/40 border border-white/20 p-2 rounded-2xl shrink-0 flex flex-col gap-2">
+        <div className="bg-black/40 border border-white/20 p-2.5 rounded-2xl shrink-0 flex flex-col gap-2">
           <div className="text-[11px] font-bold text-amber-300 uppercase tracking-wider px-2 flex items-center justify-between">
             <span>Scenario Switcher:</span>
             <span className="text-[10px] text-white/60 font-mono">
               {PRESET_SCENARIOS[selectedScenario === "custom" ? "medium" : selectedScenario]?.badge}
             </span>
           </div>
-          <div className="flex items-center gap-1.5 bg-black/30 p-1 rounded-xl">
+          <div className="flex items-center gap-1.5 bg-black/30 p-1.5 rounded-xl">
             <button
               type="button"
               onClick={() => handleSelectScenario("low")}
@@ -644,7 +459,7 @@ export const PipelineFlowSimulator: React.FC = () => {
             >
               <AlertTriangle className="w-3 h-3 text-white" />
               <span>High (Stress Test)</span>
-              <span className="text-[9px] bg-black/25 px-1 rounded text-white/90">19/wk</span>
+              <span className="text-[9px] bg-black/25 px-1 rounded text-white/90">18/wk</span>
             </button>
           </div>
         </div>
@@ -672,7 +487,7 @@ export const PipelineFlowSimulator: React.FC = () => {
           </span>
           <div className="mt-2">
             <div className="text-2xl font-black text-blue-900">
-              {Math.round(flowCalculations.netThroughputToBuildPerWeek * 10) / 10}{" "}
+              {flowCalculations.netThroughputToBuildPerWeek.toFixed(1)}{" "}
               <span className="text-xs font-medium text-gray-500">UC/wk</span>
             </div>
             <div className="text-[11px] text-blue-700 font-semibold mt-0.5">
@@ -715,7 +530,7 @@ export const PipelineFlowSimulator: React.FC = () => {
           </span>
           <div className="mt-2">
             <div className="text-2xl font-black text-amber-900">
-              {Math.round(flowCalculations.returningFromRunPerWeek * 10) / 10}{" "}
+              {flowCalculations.returningFromRunPerWeek.toFixed(1)}{" "}
               <span className="text-xs font-medium text-gray-500">UC/wk</span>
             </div>
             <div className="text-[11px] text-amber-700 font-medium mt-0.5">
@@ -762,7 +577,7 @@ export const PipelineFlowSimulator: React.FC = () => {
       </div>
 
       {/* =========================================================================
-          SECTION 1: TOP PANEL — EDITABLE ASSUMPTIONS (WHITEBOARD SPECIFICATION)
+          SECTION 1: TOP PANEL — EDITABLE ASSUMPTIONS (WHITEBOARD PARAMÈTRES)
       ========================================================================= */}
       <div className="bg-white rounded-3xl p-6 shadow-sm border border-gray-200 space-y-6">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-gray-100 pb-4">
@@ -772,7 +587,7 @@ export const PipelineFlowSimulator: React.FC = () => {
               1. Top Panel — Live Editable Assumptions
             </h2>
             <p className="text-xs text-gray-600 mt-0.5">
-              Adjust incoming use cases, acceptance filter, tier distribution, and committee review capacities in real-time.
+              Modify incoming use cases, acceptance rate, tier distribution, and meeting review capacities.
             </p>
           </div>
           <div className="flex items-center gap-2">
@@ -799,8 +614,8 @@ export const PipelineFlowSimulator: React.FC = () => {
           {/* 1. Incoming Use Cases */}
           <div className="p-4 rounded-2xl bg-gray-50 border border-gray-200 space-y-3">
             <div className="flex items-center justify-between">
-              <label className="text-xs font-bold text-gray-800 flex items-center gap-1">
-                <span>Incoming Use Cases</span>
+              <label className="text-xs font-bold text-gray-800">
+                Incoming Use Cases
               </label>
               <span className="text-xs font-black text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded-md font-mono">
                 {assumptions.incomingPerWeek} UC / week
@@ -809,7 +624,7 @@ export const PipelineFlowSimulator: React.FC = () => {
             <input
               type="range"
               min="1"
-              max="35"
+              max="30"
               step="0.5"
               value={assumptions.incomingPerWeek}
               onChange={(e) => updateAssumption("incomingPerWeek", Number(e.target.value))}
@@ -818,7 +633,7 @@ export const PipelineFlowSimulator: React.FC = () => {
             <div className="flex justify-between text-[10px] text-gray-500 font-medium">
               <span>1 UC/wk (Slow)</span>
               <span>15 UC/wk</span>
-              <span>35 UC/wk (Surge)</span>
+              <span>30 UC/wk (Surge)</span>
             </div>
             <p className="text-[11px] text-gray-500 leading-snug">
               Total volume of new ideas and problem charters submitted into Front Door intake.
@@ -828,8 +643,8 @@ export const PipelineFlowSimulator: React.FC = () => {
           {/* 2. Acceptance Rate at G1 */}
           <div className="p-4 rounded-2xl bg-gray-50 border border-gray-200 space-y-3">
             <div className="flex items-center justify-between">
-              <label className="text-xs font-bold text-gray-800 flex items-center gap-1">
-                <span>Acceptance Rate (Gate G1)</span>
+              <label className="text-xs font-bold text-gray-800">
+                Acceptance Rate (Gate G1)
               </label>
               <span className="text-xs font-black text-blue-800 bg-blue-100 px-2 py-0.5 rounded-md font-mono">
                 {assumptions.acceptanceRateG1}%
@@ -858,9 +673,9 @@ export const PipelineFlowSimulator: React.FC = () => {
           <div className="p-4 rounded-2xl bg-gray-50 border border-gray-200 space-y-2.5">
             <div className="flex items-center justify-between">
               <label className="text-xs font-bold text-gray-800">
-                <span>Tier Routing Split</span>
+                Tier Routing Split
               </label>
-              <span className="text-[10px] text-gray-500 font-mono">
+              <span className="text-[10px] text-gray-600 font-mono font-bold">
                 T1: {assumptions.t1Split}% · T2: {assumptions.t2Split}% · T3: {assumptions.t3Split}%
               </span>
             </div>
@@ -870,7 +685,7 @@ export const PipelineFlowSimulator: React.FC = () => {
                 <input
                   type="range"
                   min="5"
-                  max="50"
+                  max="45"
                   step="5"
                   value={assumptions.t1Split}
                   onChange={(e) => updateAssumption("t1Split", Number(e.target.value))}
@@ -910,8 +725,8 @@ export const PipelineFlowSimulator: React.FC = () => {
           {/* 4. Return from Run Rate (Major Modification) */}
           <div className="p-4 rounded-2xl bg-gray-50 border border-gray-200 space-y-3">
             <div className="flex items-center justify-between">
-              <label className="text-xs font-bold text-gray-800 flex items-center gap-1">
-                <span>Run Modification Rate</span>
+              <label className="text-xs font-bold text-gray-800">
+                Run Modification Rate
               </label>
               <span className="text-xs font-black text-amber-800 bg-amber-100 px-2 py-0.5 rounded-md font-mono">
                 {assumptions.returnFromRunRate}% / year
@@ -920,7 +735,7 @@ export const PipelineFlowSimulator: React.FC = () => {
             <input
               type="range"
               min="0"
-              max="35"
+              max="30"
               step="2"
               value={assumptions.returnFromRunRate}
               onChange={(e) => updateAssumption("returnFromRunRate", Number(e.target.value))}
@@ -929,7 +744,7 @@ export const PipelineFlowSimulator: React.FC = () => {
             <div className="flex justify-between text-[10px] text-gray-500 font-medium">
               <span>0% (None)</span>
               <span>12% (Typical)</span>
-              <span>35% (High rework)</span>
+              <span>30% (High rework)</span>
             </div>
             <p className="text-[11px] text-gray-500 leading-snug">
               Live use cases in Run re-entering Gate G2/G3 for major upgrades or scope expansion.
@@ -943,7 +758,7 @@ export const PipelineFlowSimulator: React.FC = () => {
             <div className="flex items-center justify-between border-b border-gray-200 pb-2">
               <div className="font-bold text-gray-900 flex items-center gap-2">
                 <Clock className="w-4 h-4 text-emerald-700" />
-                Gate Evaluation Durations (Days to assemble deliverables & receive sign-off)
+                Gate Evaluation Durations (Days to assemble deliverables &amp; receive sign-off)
               </div>
               <span className="text-[11px] text-gray-500">Excludes committee queue waiting delay</span>
             </div>
@@ -957,7 +772,7 @@ export const PipelineFlowSimulator: React.FC = () => {
                     <span className="font-mono font-bold text-gray-900">{assumptions.g2T1LeadDays} days</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-gray-600">G3 Priority & VCP:</span>
+                    <span className="text-gray-600">G3 Priority &amp; VCP:</span>
                     <span className="font-mono font-bold text-gray-900">{assumptions.g3T1LeadDays} days</span>
                   </div>
                   <div className="flex justify-between">
@@ -1004,7 +819,7 @@ export const PipelineFlowSimulator: React.FC = () => {
               </div>
 
               <div className="p-3 rounded-xl bg-white border border-gray-200 space-y-2">
-                <div className="font-bold text-purple-900">Delivery & Scaling</div>
+                <div className="font-bold text-purple-900">Delivery &amp; Scaling</div>
                 <div className="space-y-1.5 text-[11px]">
                   <div className="flex justify-between">
                     <span className="text-gray-600">MVP Build Duration:</span>
@@ -1026,410 +841,513 @@ export const PipelineFlowSimulator: React.FC = () => {
       </div>
 
       {/* =========================================================================
-          SECTION 2: MAIN VIEW — THE FLOW SIMULATION (DARK FUTURISTIC FLUID VIEW)
-          Inspired by media_1795187429447_71692d45.jpg and media_1795189797396_8ad84011.jpg
+          SECTION 2: MAIN VIEW — CRISP FLUID FLOW VISUALIZER
+          (Pipes, Nodes & Animated SVG Particles in 100% Exact Alignment)
       ========================================================================= */}
-      <div className="bg-[#080e1a] rounded-3xl p-6 sm:p-8 shadow-2xl border border-gray-800 text-white space-y-6 relative overflow-hidden">
+      <div className="bg-[#0b1329] rounded-3xl p-6 sm:p-8 shadow-2xl border border-gray-800 text-white space-y-6 relative overflow-hidden">
         {/* Glow backdrop decorations */}
         <div className="absolute top-0 left-1/4 w-96 h-96 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none" />
         <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl pointer-events-none" />
 
-        {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-gray-800 pb-4 relative z-10">
+        {/* Top Title & Legend */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-gray-800/80 pb-4 relative z-10">
           <div>
             <div className="flex items-center gap-2">
               <span className="px-2.5 py-0.5 rounded bg-emerald-500/20 text-emerald-400 font-mono text-[10px] font-bold border border-emerald-500/30">
-                Interactive Fluid Pipeline
+                SVG Flow Conduits
               </span>
               <h2 className="text-xl font-black text-white tracking-tight flex items-center gap-2">
-                2. Main View — Live Project Flow & Gating Nodes
+                2. Main View — Live Project Flow &amp; Gating Nodes
               </h2>
             </div>
             <p className="text-xs text-gray-400 mt-1">
-              Particles represent live use cases moving through each gate node. Red pipes and warning badges indicate
-              where review queues exceed 1 meeting cycle.
+              Particles follow exact conduit trajectories. Bottlenecks turn conduits red and display waiting queues.
             </p>
           </div>
 
           <div className="flex items-center gap-3">
             <div className="flex items-center gap-2 text-xs">
               <span className="flex items-center gap-1.5 text-emerald-400 font-semibold">
-                <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping" /> Healthy Flow
+                <span className="w-2.5 h-2.5 rounded-full bg-emerald-400" /> Healthy Flow
               </span>
               <span className="flex items-center gap-1.5 text-rose-400 font-semibold ml-2">
-                <span className="w-2.5 h-2.5 rounded-full bg-rose-500" /> Bottleneck Alert
+                <span className="w-2.5 h-2.5 rounded-full bg-rose-500 animate-pulse" /> Bottleneck Alert (&gt;1 mo)
               </span>
             </div>
           </div>
         </div>
 
-        {/* INTERACTIVE FLOW CANVAS & SVG DIAGRAM */}
-        <div className="relative w-full aspect-[16/7] min-h-[460px] rounded-2xl bg-[#050914] border border-gray-800/80 overflow-hidden shadow-inner flex items-center justify-center">
-          {/* Animated Flow Particles Canvas */}
-          <canvas
-            ref={canvasRef}
-            width={1200}
-            height={520}
-            className="absolute inset-0 w-full h-full pointer-events-none z-10"
-          />
-
-          {/* SVG Pipe Backbone & Gating Nodes */}
-          <svg
-            viewBox="0 0 1200 520"
-            className="w-full h-full absolute inset-0 select-none z-20"
-          >
-            <defs>
-              {/* Gradients for pipes */}
-              <linearGradient id="pipeT1" x1="0%" y1="0%" x2="100%" y2="0%">
-                <stop offset="0%" stopColor="#10b981" />
-                <stop
-                  offset="50%"
-                  stopColor={flowCalculations.steerCo.isBottleneck ? "#ef4444" : "#10b981"}
-                />
-                <stop
-                  offset="100%"
-                  stopColor={flowCalculations.steerCo.isBottleneck ? "#ef4444" : "#10b981"}
-                />
-              </linearGradient>
-
-              <linearGradient id="pipeT2" x1="0%" y1="0%" x2="100%" y2="0%">
-                <stop offset="0%" stopColor="#10b981" />
-                <stop
-                  offset="50%"
-                  stopColor={flowCalculations.portfolioBoard.isBottleneck ? "#f59e0b" : "#38bdf8"}
-                />
-                <stop offset="100%" stopColor="#38bdf8" />
-              </linearGradient>
-
-              <linearGradient id="pipeT3" x1="0%" y1="0%" x2="100%" y2="0%">
-                <stop offset="0%" stopColor="#10b981" />
-                <stop offset="50%" stopColor="#fbbf24" />
-                <stop offset="100%" stopColor="#fbbf24" />
-              </linearGradient>
-
-              <linearGradient id="pipeSS" x1="0%" y1="0%" x2="100%" y2="0%">
-                <stop offset="0%" stopColor="#10b981" />
-                <stop offset="100%" stopColor="#c084fc" />
-              </linearGradient>
-
-              <linearGradient id="pipeReturn" x1="100%" y1="0%" x2="0%" y2="0%">
-                <stop offset="0%" stopColor="#f59e0b" stopOpacity="0.8" />
-                <stop offset="50%" stopColor="#f59e0b" stopOpacity="0.4" />
-                <stop offset="100%" stopColor="#f59e0b" stopOpacity="0.8" />
-              </linearGradient>
-            </defs>
-
-            {/* --- PIPES / CONDUITS --- */}
-            {/* 1. Source to G1 */}
-            <path
-              d="M 80 270 L 220 270"
-              stroke="#10b981"
-              strokeWidth="14"
-              strokeLinecap="round"
-              fill="none"
-              opacity="0.3"
-            />
-            <path
-              d="M 80 270 L 220 270"
-              stroke="#10b981"
-              strokeWidth="3"
-              fill="none"
-              strokeDasharray="4 4"
-            />
-
-            {/* 2. G1 to T1 Branch (Upper Arch to SteerCo) */}
-            <path
-              d="M 220 270 C 340 100, 720 100, 940 270"
-              stroke="url(#pipeT1)"
-              strokeWidth={flowCalculations.steerCo.isBottleneck ? "16" : "12"}
-              fill="none"
-              opacity={flowCalculations.steerCo.isBottleneck ? "0.45" : "0.25"}
-            />
-
-            {/* 3. G1 to T2 Branch (Mid-Upper Arch) */}
-            <path
-              d="M 220 270 C 360 200, 700 200, 940 270"
-              stroke="url(#pipeT2)"
-              strokeWidth="10"
-              fill="none"
-              opacity="0.25"
-            />
-
-            {/* 4. G1 to T3 Branch (Mid-Lower Arch) */}
-            <path
-              d="M 220 270 C 360 340, 700 340, 940 270"
-              stroke="url(#pipeT3)"
-              strokeWidth="10"
-              fill="none"
-              opacity="0.25"
-            />
-
-            {/* 5. G1 to Self-Serve Branch (Lower Arch) */}
-            <path
-              d="M 220 270 C 340 440, 720 440, 940 270"
-              stroke="url(#pipeSS)"
-              strokeWidth="8"
-              fill="none"
-              opacity="0.2"
-            />
-
-            {/* 6. Return Pipe from Run to G2/G3 (Top Arc with dashed line) */}
-            <path
-              d="M 1120 250 C 780 20, 440 20, 390 110"
-              stroke="url(#pipeReturn)"
-              strokeWidth="3"
-              strokeDasharray="6 6"
-              fill="none"
-            />
-
-            {/* --- NODES & GATES --- */}
-
-            {/* NODE 1: SOURCE (INCOMING USE CASES) */}
-            <g transform="translate(70, 270)" className="cursor-pointer">
-              <circle r="36" fill="#0f172a" stroke="#10b981" strokeWidth="3" />
-              <circle r="42" fill="none" stroke="#10b981" strokeWidth="1" opacity="0.4" strokeDasharray="3 3" />
-              <text x="0" y="-8" textAnchor="middle" fill="#94a3b8" fontSize="10" fontWeight="bold">
-                SOURCE
-              </text>
-              <text x="0" y="10" textAnchor="middle" fill="#ffffff" fontSize="13" fontWeight="900">
-                {assumptions.incomingPerWeek}
-              </text>
-              <text x="0" y="22" textAnchor="middle" fill="#34d399" fontSize="9" fontWeight="bold">
-                UC / wk
-              </text>
-            </g>
-
-            {/* NODE 2: GATE G1 (AI CHARTER AGENT INTAKE) */}
-            <g transform="translate(220, 270)" className="cursor-pointer">
-              <circle r="32" fill="#0f172a" stroke="#34d399" strokeWidth="3" />
-              <text x="0" y="-6" textAnchor="middle" fill="#34d399" fontSize="11" fontWeight="900">
-                GATE G1
-              </text>
-              <text x="0" y="8" textAnchor="middle" fill="#ffffff" fontSize="10" fontWeight="bold">
-                Need Filter
-              </text>
-              <text x="0" y="20" textAnchor="middle" fill="#94a3b8" fontSize="8">
-                {assumptions.acceptanceRateG1}% Pass
-              </text>
-            </g>
-
-            {/* --- T1 NODES (CRITICAL TRANSFORM PATH) --- */}
-            {/* T1 - Gate G2 (Feasibility & ADR) */}
-            <g
-              transform="translate(390, 110)"
-              className="cursor-pointer"
-              onClick={() => setSelectedGateDetail("G2_T1")}
+        {/* PURE SVG FLUID PIPELINE WITH NATIVE ANIMATEMOTION PARTICLES */}
+        <div className="w-full overflow-x-auto">
+          <div className="min-w-[980px] aspect-[16/7] relative rounded-2xl bg-[#060b18] border border-gray-800 p-2 shadow-inner">
+            <svg
+              viewBox="0 0 1100 480"
+              className="w-full h-full select-none"
+              style={{ overflow: "visible" }}
             >
-              <rect
-                x="-42"
-                y="-26"
-                width="84"
-                height="52"
-                rx="12"
-                fill="#0f172a"
-                stroke={flowCalculations.dda.isBottleneck ? "#ef4444" : "#10b981"}
-                strokeWidth="2.5"
+              <defs>
+                {/* Glowing drop shadow filter */}
+                <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+                  <feGaussianBlur stdDeviation="3" result="blur" />
+                  <feMerge>
+                    <feMergeNode in="blur" />
+                    <feMergeNode in="SourceGraphic" />
+                  </feMerge>
+                </filter>
+              </defs>
+
+              {/* --- EXACT SVG CONDUIT PATHS --- */}
+              {/* Path 0: Source to Gate G1 */}
+              <path
+                id="path-source-g1"
+                d="M 80 240 L 220 240"
+                fill="none"
+                stroke="#10b981"
+                strokeWidth="14"
+                strokeOpacity="0.25"
+                strokeLinecap="round"
               />
-              <text x="0" y="-9" textAnchor="middle" fill="#10b981" fontSize="10" fontWeight="bold">
-                G2 · Feasibility
-              </text>
-              <text x="0" y="5" textAnchor="middle" fill="#ffffff" fontSize="9" fontWeight="bold">
-                ADR + Finance
-              </text>
-              <text x="0" y="17" textAnchor="middle" fill="#94a3b8" fontSize="8">
-                DDA (Weekly)
-              </text>
-            </g>
+              <path
+                d="M 80 240 L 220 240"
+                fill="none"
+                stroke="#10b981"
+                strokeWidth="2"
+                strokeDasharray="4 4"
+              />
 
-            {/* T1 - Gate G3 (Priority & Hub 60% Capacity Pool) */}
-            <g
-              transform="translate(540, 100)"
-              className="cursor-pointer"
-              onClick={() => setSelectedGateDetail("G3_T1")}
-            >
-              <rect
-                x="-46"
-                y="-28"
-                width="92"
-                height="56"
-                rx="12"
-                fill="#0f172a"
+              {/* Path 1: T1 Transform Conduit (y = 90) */}
+              <path
+                id="path-t1"
+                d="M 220 240 C 310 90, 340 90, 420 90 L 700 90 C 780 90, 810 240, 870 240"
+                fill="none"
                 stroke={flowCalculations.steerCo.isBottleneck ? "#ef4444" : "#10b981"}
-                strokeWidth={flowCalculations.steerCo.isBottleneck ? "3.5" : "2.5"}
+                strokeWidth={flowCalculations.steerCo.isBottleneck ? "16" : "12"}
+                strokeOpacity={flowCalculations.steerCo.isBottleneck ? "0.4" : "0.22"}
+                strokeLinecap="round"
               />
-              {flowCalculations.steerCo.isBottleneck && (
-                <circle cx="38" cy="-22" r="10" fill="#ef4444" stroke="#ffffff" strokeWidth="1.5" />
-              )}
-              {flowCalculations.steerCo.isBottleneck && (
-                <text x="38" y="-18" textAnchor="middle" fill="#ffffff" fontSize="10" fontWeight="black">
-                  !
-                </text>
-              )}
-              <text x="0" y="-10" textAnchor="middle" fill="#f87171" fontSize="10" fontWeight="bold">
-                G3 · Priority
-              </text>
-              <text x="0" y="5" textAnchor="middle" fill="#ffffff" fontSize="9" fontWeight="bold">
-                60% Hub Pool
-              </text>
-              <text x="0" y="18" textAnchor="middle" fill="#fbbf24" fontSize="8" fontWeight="bold">
-                SteerCo (Monthly)
-              </text>
-            </g>
 
-            {/* T1 - Gate G4 (Mode 1 & SteerCo Budget Approval) */}
-            <g
-              transform="translate(710, 115)"
-              className="cursor-pointer"
-              onClick={() => setSelectedGateDetail("G4_T1")}
-            >
-              <rect
-                x="-44"
-                y="-26"
-                width="88"
-                height="52"
-                rx="12"
-                fill="#0f172a"
-                stroke={flowCalculations.steerCo.isBottleneck ? "#ef4444" : "#10b981"}
-                strokeWidth="2.5"
-              />
-              <text x="0" y="-9" textAnchor="middle" fill="#10b981" fontSize="10" fontWeight="bold">
-                G4 · GO BUILD
-              </text>
-              <text x="0" y="5" textAnchor="middle" fill="#ffffff" fontSize="9" fontWeight="bold">
-                Mode 1 · Hub Build
-              </text>
-              <text x="0" y="17" textAnchor="middle" fill="#94a3b8" fontSize="8">
-                SteerCo Unlock
-              </text>
-            </g>
-
-            {/* --- T2 NODES (SCALE PATH) --- */}
-            <g
-              transform="translate(540, 200)"
-              className="cursor-pointer"
-              onClick={() => setSelectedGateDetail("G2_T2")}
-            >
-              <rect
-                x="-44"
-                y="-24"
-                width="88"
-                height="48"
-                rx="12"
-                fill="#0f172a"
+              {/* Path 2: T2 Scale Conduit (y = 180) */}
+              <path
+                id="path-t2"
+                d="M 220 240 C 310 180, 360 180, 440 180 L 680 180 C 760 180, 800 240, 870 240"
+                fill="none"
                 stroke={flowCalculations.portfolioBoard.isBottleneck ? "#f59e0b" : "#38bdf8"}
-                strokeWidth="2"
+                strokeWidth="10"
+                strokeOpacity="0.25"
+                strokeLinecap="round"
               />
-              <text x="0" y="-7" textAnchor="middle" fill="#38bdf8" fontSize="10" fontWeight="bold">
-                T2 · Scale (G2–G4)
-              </text>
-              <text x="0" y="7" textAnchor="middle" fill="#ffffff" fontSize="9" fontWeight="bold">
-                Mode 2 · Shared Squad
-              </text>
-              <text x="0" y="18" textAnchor="middle" fill="#94a3b8" fontSize="8">
-                AI Portfolio Board (Fortnightly)
-              </text>
-            </g>
 
-            {/* --- T3 NODES (FAST LANE PATH) --- */}
-            <g
-              transform="translate(540, 340)"
-              className="cursor-pointer"
-              onClick={() => setSelectedGateDetail("G3_T3")}
-            >
-              <rect
-                x="-44"
-                y="-24"
-                width="88"
-                height="48"
-                rx="12"
-                fill="#0f172a"
+              {/* Path 3: T3 Fast Lane Conduit (y = 300) */}
+              <path
+                id="path-t3"
+                d="M 220 240 C 310 300, 360 300, 440 300 L 680 300 C 760 300, 800 240, 870 240"
+                fill="none"
                 stroke="#fbbf24"
-                strokeWidth="2"
+                strokeWidth="10"
+                strokeOpacity="0.25"
+                strokeLinecap="round"
               />
-              <text x="0" y="-7" textAnchor="middle" fill="#fbbf24" fontSize="10" fontWeight="bold">
-                T3 · Fast Lane
-              </text>
-              <text x="0" y="7" textAnchor="middle" fill="#ffffff" fontSize="9" fontWeight="bold">
-                1-Page Canvas
-              </text>
-              <text x="0" y="18" textAnchor="middle" fill="#34d399" fontSize="8" fontWeight="bold">
-                10-Day SLA · Agile Sprint
-              </text>
-            </g>
 
-            {/* --- SELF-SERVE NODE (BYPASS) --- */}
-            <g
-              transform="translate(540, 440)"
-              className="cursor-pointer"
-              onClick={() => setSelectedGateDetail("SS")}
-            >
-              <rect
-                x="-46"
-                y="-22"
-                width="92"
-                height="44"
-                rx="12"
-                fill="#0f172a"
+              {/* Path 4: Self-Service AI Conduit (y = 390) */}
+              <path
+                id="path-ss"
+                d="M 220 240 C 310 390, 380 390, 520 390 L 640 390 C 760 390, 800 240, 870 240"
+                fill="none"
                 stroke="#c084fc"
-                strokeWidth="2"
+                strokeWidth="8"
+                strokeOpacity="0.25"
+                strokeLinecap="round"
               />
-              <text x="0" y="-6" textAnchor="middle" fill="#c084fc" fontSize="10" fontWeight="bold">
-                Self-Service AI
-              </text>
-              <text x="0" y="7" textAnchor="middle" fill="#ffffff" fontSize="8.5">
-                AI Registry Line &amp; Go
-              </text>
-              <text x="0" y="17" textAnchor="middle" fill="#94a3b8" fontSize="7.5">
-                Instant (Skips G2–G4)
-              </text>
-            </g>
 
-            {/* CONVERGENCE NODE: MVP BUILD */}
-            <g transform="translate(940, 270)" className="cursor-pointer">
-              <circle r="34" fill="#0f172a" stroke="#10b981" strokeWidth="3" />
-              <text x="0" y="-7" textAnchor="middle" fill="#10b981" fontSize="10" fontWeight="bold">
-                MVP BUILD
-              </text>
-              <text x="0" y="8" textAnchor="middle" fill="#ffffff" fontSize="12" fontWeight="900">
-                {Math.round(flowCalculations.netThroughputToBuildPerWeek * 10) / 10}
-              </text>
-              <text x="0" y="20" textAnchor="middle" fill="#94a3b8" fontSize="8">
-                UC / wk in Build
-              </text>
-            </g>
+              {/* Path 5: MVP Build to RUN */}
+              <path
+                id="path-build-run"
+                d="M 870 240 L 960 240 L 1040 240"
+                fill="none"
+                stroke="#10b981"
+                strokeWidth="12"
+                strokeOpacity="0.25"
+                strokeLinecap="round"
+              />
 
-            {/* NODE: RUN & ACTIVE POOL */}
-            <g transform="translate(1110, 270)" className="cursor-pointer">
-              <circle r="36" fill="#0f172a" stroke="#38bdf8" strokeWidth="3" />
-              <text x="0" y="-8" textAnchor="middle" fill="#38bdf8" fontSize="10" fontWeight="bold">
-                RUN (G6)
-              </text>
-              <text x="0" y="9" textAnchor="middle" fill="#ffffff" fontSize="13" fontWeight="900">
-                {assumptions.activeInRunCount}
-              </text>
-              <text x="0" y="22" textAnchor="middle" fill="#94a3b8" fontSize="8">
-                Active in Run
-              </text>
-            </g>
+              {/* Path 6: Major Modification Return Loop (Run back to G2/G3) */}
+              <path
+                id="path-return"
+                d="M 1040 220 C 850 15, 550 15, 420 80"
+                fill="none"
+                stroke="#f59e0b"
+                strokeWidth="3"
+                strokeDasharray="6 6"
+                strokeOpacity="0.8"
+              />
 
-            {/* LOOPBACK LABEL FOR RETURNING USE CASES */}
-            <rect
-              x="620"
-              y="22"
-              width="230"
-              height="24"
-              rx="6"
-              fill="#0f172a"
-              stroke="#f59e0b"
-              strokeWidth="1.5"
-            />
-            <text x="735" y="38" textAnchor="middle" fill="#f59e0b" fontSize="9.5" fontWeight="bold">
-              ↺ Major Modification Return ({assumptions.returnFromRunRate}% / {Math.round(flowCalculations.returningFromRunPerWeek * 4.33 * 10) / 10} UC/mo)
-            </text>
-          </svg>
+              {/* --- PARTICLES FOLLOWING EXACT SVG PATHS --- */}
+              {/* Source -> G1 particles */}
+              <circle r="3.5" fill="#34d399" filter="url(#glow)">
+                <animateMotion dur="1.2s" repeatCount="indefinite">
+                  <mpath href="#path-source-g1" />
+                </animateMotion>
+              </circle>
+              <circle r="3" fill="#34d399">
+                <animateMotion dur="1.2s" begin="0.6s" repeatCount="indefinite">
+                  <mpath href="#path-source-g1" />
+                </animateMotion>
+              </circle>
+
+              {/* T1 particles */}
+              <circle
+                r="4"
+                fill={flowCalculations.steerCo.isBottleneck ? "#ef4444" : "#10b981"}
+                filter="url(#glow)"
+              >
+                <animateMotion dur="3.5s" repeatCount="indefinite">
+                  <mpath href="#path-t1" />
+                </animateMotion>
+              </circle>
+              <circle
+                r="3.5"
+                fill={flowCalculations.steerCo.isBottleneck ? "#ef4444" : "#10b981"}
+              >
+                <animateMotion dur="3.5s" begin="1.2s" repeatCount="indefinite">
+                  <mpath href="#path-t1" />
+                </animateMotion>
+              </circle>
+              <circle
+                r="3.5"
+                fill={flowCalculations.steerCo.isBottleneck ? "#ef4444" : "#10b981"}
+              >
+                <animateMotion dur="3.5s" begin="2.4s" repeatCount="indefinite">
+                  <mpath href="#path-t1" />
+                </animateMotion>
+              </circle>
+
+              {/* T2 particles */}
+              <circle r="3.5" fill="#38bdf8" filter="url(#glow)">
+                <animateMotion dur="3.2s" repeatCount="indefinite">
+                  <mpath href="#path-t2" />
+                </animateMotion>
+              </circle>
+              <circle r="3" fill="#38bdf8">
+                <animateMotion dur="3.2s" begin="1.6s" repeatCount="indefinite">
+                  <mpath href="#path-t2" />
+                </animateMotion>
+              </circle>
+
+              {/* T3 particles */}
+              <circle r="3.5" fill="#fbbf24" filter="url(#glow)">
+                <animateMotion dur="2.8s" repeatCount="indefinite">
+                  <mpath href="#path-t3" />
+                </animateMotion>
+              </circle>
+              <circle r="3" fill="#fbbf24">
+                <animateMotion dur="2.8s" begin="1.4s" repeatCount="indefinite">
+                  <mpath href="#path-t3" />
+                </animateMotion>
+              </circle>
+
+              {/* Self-Serve particles */}
+              <circle r="3" fill="#c084fc">
+                <animateMotion dur="2.5s" repeatCount="indefinite">
+                  <mpath href="#path-ss" />
+                </animateMotion>
+              </circle>
+
+              {/* Build to Run particles */}
+              <circle r="3.5" fill="#10b981">
+                <animateMotion dur="2.0s" repeatCount="indefinite">
+                  <mpath href="#path-build-run" />
+                </animateMotion>
+              </circle>
+
+              {/* Return loop particles */}
+              <circle r="3.5" fill="#f59e0b" filter="url(#glow)">
+                <animateMotion dur="4.0s" repeatCount="indefinite">
+                  <mpath href="#path-return" />
+                </animateMotion>
+              </circle>
+              <circle r="3" fill="#f59e0b">
+                <animateMotion dur="4.0s" begin="2.0s" repeatCount="indefinite">
+                  <mpath href="#path-return" />
+                </animateMotion>
+              </circle>
+
+              {/* --- GATING NODES & LABELS --- */}
+
+              {/* 1. NODE: SOURCE */}
+              <g transform="translate(80, 240)">
+                <circle r="32" fill="#0f172a" stroke="#10b981" strokeWidth="2.5" />
+                <text x="0" y="-7" textAnchor="middle" fill="#94a3b8" fontSize="10" fontWeight="bold">
+                  SOURCE
+                </text>
+                <text x="0" y="9" textAnchor="middle" fill="#ffffff" fontSize="12" fontWeight="900">
+                  {assumptions.incomingPerWeek}
+                </text>
+                <text x="0" y="20" textAnchor="middle" fill="#34d399" fontSize="8.5" fontWeight="bold">
+                  UC / wk
+                </text>
+              </g>
+
+              {/* 2. NODE: GATE G1 (AI CHARTER AGENT) */}
+              <g transform="translate(220, 240)">
+                <circle r="28" fill="#0f172a" stroke="#34d399" strokeWidth="2.5" />
+                <text x="0" y="-6" textAnchor="middle" fill="#34d399" fontSize="10" fontWeight="900">
+                  GATE G1
+                </text>
+                <text x="0" y="7" textAnchor="middle" fill="#ffffff" fontSize="9" fontWeight="bold">
+                  AI Triage
+                </text>
+                <text x="0" y="18" textAnchor="middle" fill="#94a3b8" fontSize="8">
+                  {assumptions.acceptanceRateG1}% Pass
+                </text>
+              </g>
+
+              {/* --- T1 NODES (CRITICAL TRANSFORM PATH) --- */}
+              {/* T1 - Gate G2 Feasibility */}
+              <g
+                transform="translate(420, 90)"
+                className="cursor-pointer"
+                onClick={() => setActiveInspectNode("G2_T1")}
+              >
+                <rect
+                  x="-42"
+                  y="-22"
+                  width="84"
+                  height="44"
+                  rx="10"
+                  fill="#0f172a"
+                  stroke={flowCalculations.dda.isBottleneck ? "#ef4444" : "#10b981"}
+                  strokeWidth="2"
+                />
+                <text x="0" y="-6" textAnchor="middle" fill="#10b981" fontSize="9.5" fontWeight="bold">
+                  G2 · Feasibility
+                </text>
+                <text x="0" y="7" textAnchor="middle" fill="#ffffff" fontSize="9" fontWeight="bold">
+                  ADR &amp; Finance
+                </text>
+                <text x="0" y="16" textAnchor="middle" fill="#94a3b8" fontSize="7.5">
+                  DDA (Weekly)
+                </text>
+              </g>
+
+              {/* T1 - Gate G3 Priority (60% Hub Pool) with BOTTLENECK ALERT BADGE */}
+              <g
+                transform="translate(560, 90)"
+                className="cursor-pointer"
+                onClick={() => setActiveInspectNode("G3_T1")}
+              >
+                <rect
+                  x="-46"
+                  y="-24"
+                  width="92"
+                  height="48"
+                  rx="10"
+                  fill="#0f172a"
+                  stroke={flowCalculations.steerCo.isBottleneck ? "#ef4444" : "#10b981"}
+                  strokeWidth={flowCalculations.steerCo.isBottleneck ? "3" : "2"}
+                />
+                {/* Exclamation badge above node if bottleneck */}
+                {flowCalculations.steerCo.isBottleneck && (
+                  <g transform="translate(0, -32)">
+                    <rect
+                      x="-55"
+                      y="-10"
+                      width="110"
+                      height="18"
+                      rx="6"
+                      fill="#ef4444"
+                      stroke="#ffffff"
+                      strokeWidth="1"
+                    />
+                    <text x="0" y="3" textAnchor="middle" fill="#ffffff" fontSize="8.5" fontWeight="900">
+                      ! STEERCO BACKLOG
+                    </text>
+                  </g>
+                )}
+                <text x="0" y="-8" textAnchor="middle" fill="#f87171" fontSize="9.5" fontWeight="bold">
+                  G3 · Priority
+                </text>
+                <text x="0" y="5" textAnchor="middle" fill="#ffffff" fontSize="9" fontWeight="bold">
+                  60% Hub Pool
+                </text>
+                <text x="0" y="16" textAnchor="middle" fill="#fbbf24" fontSize="8" fontWeight="bold">
+                  SteerCo (Monthly)
+                </text>
+              </g>
+
+              {/* T1 - Gate G4 (Mode 1 Do it for me) */}
+              <g
+                transform="translate(700, 90)"
+                className="cursor-pointer"
+                onClick={() => setActiveInspectNode("G4_T1")}
+              >
+                <rect
+                  x="-42"
+                  y="-22"
+                  width="84"
+                  height="44"
+                  rx="10"
+                  fill="#0f172a"
+                  stroke={flowCalculations.steerCo.isBottleneck ? "#ef4444" : "#10b981"}
+                  strokeWidth="2"
+                />
+                <text x="0" y="-6" textAnchor="middle" fill="#10b981" fontSize="9.5" fontWeight="bold">
+                  G4 · GO BUILD
+                </text>
+                <text x="0" y="6" textAnchor="middle" fill="#ffffff" fontSize="8.5" fontWeight="bold">
+                  Mode 1 · Hub
+                </text>
+                <text x="0" y="16" textAnchor="middle" fill="#94a3b8" fontSize="7.5">
+                  SteerCo Unlock
+                </text>
+              </g>
+
+              {/* --- T2 SCALE NODE (y = 180) --- */}
+              <g
+                transform="translate(560, 180)"
+                className="cursor-pointer"
+                onClick={() => setActiveInspectNode("G2_T2")}
+              >
+                <rect
+                  x="-55"
+                  y="-22"
+                  width="110"
+                  height="44"
+                  rx="10"
+                  fill="#0f172a"
+                  stroke={flowCalculations.portfolioBoard.isBottleneck ? "#f59e0b" : "#38bdf8"}
+                  strokeWidth="2"
+                />
+                {flowCalculations.portfolioBoard.isBottleneck && (
+                  <g transform="translate(0, -30)">
+                    <rect
+                      x="-50"
+                      y="-9"
+                      width="100"
+                      height="17"
+                      rx="5"
+                      fill="#f59e0b"
+                      stroke="#ffffff"
+                      strokeWidth="1"
+                    />
+                    <text x="0" y="3" textAnchor="middle" fill="#000000" fontSize="8" fontWeight="900">
+                      ⚠️ BOARD QUEUE
+                    </text>
+                  </g>
+                )}
+                <text x="0" y="-6" textAnchor="middle" fill="#38bdf8" fontSize="9.5" fontWeight="bold">
+                  T2 · Scale (G2–G4)
+                </text>
+                <text x="0" y="6" textAnchor="middle" fill="#ffffff" fontSize="8.5" fontWeight="bold">
+                  Mode 2 · Shared Squad
+                </text>
+                <text x="0" y="16" textAnchor="middle" fill="#94a3b8" fontSize="7.5">
+                  AI Portfolio Board (Fortnightly)
+                </text>
+              </g>
+
+              {/* --- T3 FAST LANE NODE (y = 300) --- */}
+              <g
+                transform="translate(560, 300)"
+                className="cursor-pointer"
+                onClick={() => setActiveInspectNode("G3_T3")}
+              >
+                <rect
+                  x="-55"
+                  y="-22"
+                  width="110"
+                  height="44"
+                  rx="10"
+                  fill="#0f172a"
+                  stroke="#fbbf24"
+                  strokeWidth="2"
+                />
+                <text x="0" y="-6" textAnchor="middle" fill="#fbbf24" fontSize="9.5" fontWeight="bold">
+                  T3 · Fast Lane (G2–G4)
+                </text>
+                <text x="0" y="6" textAnchor="middle" fill="#ffffff" fontSize="8.5" fontWeight="bold">
+                  1-Page Canvas · Enable me
+                </text>
+                <text x="0" y="16" textAnchor="middle" fill="#34d399" fontSize="8" fontWeight="bold">
+                  10-Day SLA · Agile Sprint
+                </text>
+              </g>
+
+              {/* --- SELF-SERVICE AI NODE (y = 390) --- */}
+              <g
+                transform="translate(580, 390)"
+                className="cursor-pointer"
+                onClick={() => setActiveInspectNode("SS")}
+              >
+                <rect
+                  x="-55"
+                  y="-20"
+                  width="110"
+                  height="40"
+                  rx="10"
+                  fill="#0f172a"
+                  stroke="#c084fc"
+                  strokeWidth="2"
+                />
+                <text x="0" y="-5" textAnchor="middle" fill="#c084fc" fontSize="9" fontWeight="bold">
+                  Self-Service AI
+                </text>
+                <text x="0" y="7" textAnchor="middle" fill="#ffffff" fontSize="8">
+                  Registry Line &amp; Guardrails
+                </text>
+                <text x="0" y="16" textAnchor="middle" fill="#94a3b8" fontSize="7">
+                  Instant (Bypass G2–G4)
+                </text>
+              </g>
+
+              {/* NODE: MVP BUILD CONVERGENCE */}
+              <g transform="translate(870, 240)">
+                <circle r="30" fill="#0f172a" stroke="#10b981" strokeWidth="2.5" />
+                <text x="0" y="-6" textAnchor="middle" fill="#10b981" fontSize="9.5" fontWeight="bold">
+                  MVP BUILD
+                </text>
+                <text x="0" y="8" textAnchor="middle" fill="#ffffff" fontSize="11" fontWeight="900">
+                  {flowCalculations.netThroughputToBuildPerWeek.toFixed(1)}
+                </text>
+                <text x="0" y="19" textAnchor="middle" fill="#94a3b8" fontSize="8">
+                  UC / wk in Build
+                </text>
+              </g>
+
+              {/* NODE: RUN (G6) */}
+              <g transform="translate(1040, 240)">
+                <circle r="32" fill="#0f172a" stroke="#38bdf8" strokeWidth="2.5" />
+                <text x="0" y="-7" textAnchor="middle" fill="#38bdf8" fontSize="10" fontWeight="bold">
+                  RUN (G6)
+                </text>
+                <text x="0" y="9" textAnchor="middle" fill="#ffffff" fontSize="13" fontWeight="900">
+                  {assumptions.activeInRunCount}
+                </text>
+                <text x="0" y="21" textAnchor="middle" fill="#94a3b8" fontSize="8">
+                  Live Operations
+                </text>
+              </g>
+
+              {/* FLOATING PILL FOR RETURNING FLOW */}
+              <g transform="translate(730, 28)">
+                <rect
+                  x="-120"
+                  y="-12"
+                  width="240"
+                  height="24"
+                  rx="8"
+                  fill="#0f172a"
+                  stroke="#f59e0b"
+                  strokeWidth="1.5"
+                />
+                <text x="0" y="4" textAnchor="middle" fill="#f59e0b" fontSize="9.5" fontWeight="bold">
+                  ↺ Run Modification Return ({assumptions.returnFromRunRate}% · {Math.round(flowCalculations.returningFromRunPerWeek * 4.33 * 10) / 10} UC/mo)
+                </text>
+              </g>
+            </svg>
+          </div>
         </div>
 
-        {/* BOTTOM FLOW LEGEND */}
+        {/* BOTTOM METRICS RIBBON UNDER FLOW */}
         <div className="grid grid-cols-1 sm:grid-cols-4 gap-3 pt-2 text-xs border-t border-gray-800 text-gray-300">
           <div className="p-3 rounded-xl bg-black/40 border border-white/10 flex items-center gap-2.5">
             <span className="w-3 h-3 rounded-full bg-emerald-500 shrink-0" />
@@ -1474,7 +1392,7 @@ export const PipelineFlowSimulator: React.FC = () => {
       </div>
 
       {/* =========================================================================
-          SECTION 3: RISK SIGNALS & GOVERNANCE BOTTLENECK ANALYSIS
+          SECTION 3: COMITOLOGY REVIEW FORUMS & BOTTLENECK ANALYSIS
           (User Rule: "if a use case is waiting for more than 1 meeting we should say bottleneck")
       ========================================================================= */}
       <div className="bg-white rounded-3xl p-6 sm:p-8 shadow-sm border border-gray-200 space-y-6">
@@ -1547,10 +1465,10 @@ export const PipelineFlowSimulator: React.FC = () => {
                   {flowCalculations.steerCo.queue} UCs in line
                 </td>
                 <td className="py-3.5 px-3 font-mono font-bold">
-                  {flowCalculations.steerCo.waitingWeeks} weeks
+                  {flowCalculations.steerCo.waitWeeks} weeks
                 </td>
                 <td className="py-3.5 px-3 font-mono font-bold">
-                  {flowCalculations.steerCo.meetingDelays} cycles
+                  {flowCalculations.steerCo.cyclesDelay} cycles
                 </td>
                 <td className="py-3.5 px-4">
                   {flowCalculations.steerCo.isSevere ? (
@@ -1605,10 +1523,10 @@ export const PipelineFlowSimulator: React.FC = () => {
                   {flowCalculations.portfolioBoard.queue} UCs in line
                 </td>
                 <td className="py-3.5 px-3 font-mono font-bold">
-                  {flowCalculations.portfolioBoard.waitingWeeks} weeks
+                  {flowCalculations.portfolioBoard.waitWeeks} weeks
                 </td>
                 <td className="py-3.5 px-3 font-mono font-bold">
-                  {flowCalculations.portfolioBoard.meetingDelays} cycles
+                  {flowCalculations.portfolioBoard.cyclesDelay} cycles
                 </td>
                 <td className="py-3.5 px-4">
                   {flowCalculations.portfolioBoard.isSevere ? (
@@ -1663,10 +1581,10 @@ export const PipelineFlowSimulator: React.FC = () => {
                   {flowCalculations.dda.queue} ADRs in line
                 </td>
                 <td className="py-3.5 px-3 font-mono font-bold">
-                  {flowCalculations.dda.waitingWeeks} weeks
+                  {flowCalculations.dda.waitWeeks} weeks
                 </td>
                 <td className="py-3.5 px-3 font-mono font-bold">
-                  {flowCalculations.dda.meetingDelays} cycles
+                  {flowCalculations.dda.cyclesDelay} cycles
                 </td>
                 <td className="py-3.5 px-4">
                   {flowCalculations.dda.isSevere ? (
