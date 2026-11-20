@@ -6,7 +6,8 @@ import { EXAMPLES, MODES, PATHS, PATH_ORDER, STEPS, StepId, exampleById } from "
 import { cx } from "@/components/miro/MiroPrimitives";
 import { MiroOverview } from "@/components/miro/MiroOverview";
 import { FramingCanvas, FRAMING_SIZE } from "@/components/miro/FramingCanvas";
-import { BuildCanvas, PreScaleCanvas, RunCanvas, ScaleCanvas } from "@/components/miro/StepCanvases";
+import { PreScaleCanvas, RunCanvas, ScaleCanvas } from "@/components/miro/StepCanvases";
+import { BuildCanvas } from "@/components/miro/BuildCanvas";
 import { DetailPanel } from "@/components/miro/DetailPanel";
 
 interface MiroBoardViewProps {
@@ -219,7 +220,7 @@ export const MiroBoardView: React.FC<MiroBoardViewProps> = () => {
             {view === "framing" && (
               <FramingCanvas example={example} onOpenDetail={setDetailId} onGoToBuild={() => openStep("build")} />
             )}
-            {view === "build" && <BuildCanvas example={example} onOpenDetail={setDetailId} />}
+            {view === "build" && <BuildCanvas example={example} onBackToFraming={() => openStep("framing")} />}
             {view === "prescale" && <PreScaleCanvas example={example} onOpenDetail={setDetailId} />}
             {view === "scale" && <ScaleCanvas example={example} onOpenDetail={setDetailId} />}
             {view === "run" && <RunCanvas example={example} onOpenDetail={setDetailId} />}
