@@ -2,7 +2,7 @@
 
 import React from "react";
 import { Bot, Lightbulb } from "lucide-react";
-import { ExampleCase, ExampleNoteKey, MODES, PATHS } from "@/lib/miroLifecycle";
+import { ExampleCase, ExampleNoteKey, MODES, PATHS, PATH_ORDER } from "@/lib/miroLifecycle";
 import { FlowArrow, GateDiamond, MiroCard, MiroFrame, Sticky } from "./MiroPrimitives";
 
 interface StepCanvasProps {
@@ -41,56 +41,51 @@ const AgentChip: React.FC<{ name: string; does: string }> = ({ name, does }) => 
 );
 
 // ---------------------------------------------------------------------
-// IV · Scale
+// IV · Scale: one line, the same path for all tiers
 // ---------------------------------------------------------------------
 
 export const ScaleCanvas: React.FC<StepCanvasProps> = () => (
-  <div className="flex items-center justify-center gap-4" style={{ width: 1400 }}>
-    <div className="flex flex-col items-center">
-      <div className="rounded-lg bg-pink-600 px-3 py-2 text-center text-xs font-black text-white shadow-md">
-        G5 passed
-      </div>
+  <div style={{ width: 1400 }}>
+    {/* One path for every tier */}
+    <div className="mb-6 flex items-center justify-center gap-3 text-xs font-bold text-gray-700">
+      <span className="font-black">Same path for all tiers</span>
+      {PATH_ORDER.map((p) => (
+        <span key={p} className="rounded px-2 py-1 text-[11px] font-black text-white" style={{ background: PATHS[p].color }}>
+          {PATHS[p].label}
+        </span>
+      ))}
+      <span className="font-normal text-gray-500">T3 and self-service arrive as T2</span>
     </div>
-    <FlowArrow width={40} />
 
-    <MiroFrame title="Roll out" className="w-[480px]">
-      <div className="grid grid-cols-2 gap-4">
-        <Sticky color="green" tilt={-1} title="Roll out">
-          To the target users and scope, market by market.
-        </Sticky>
-        <Sticky color="orange" tilt={1} title="Adoption plan">
-          Executed with role-based targets and training.
-        </Sticky>
-        <Sticky color="blue" tilt={1} title="Handover">
-          To the function where the mode requires it (Enable me).
-        </Sticky>
-        <Sticky color="green" tilt={-1} title="Run owner">
-          Named run owner and SLA support in place.
-        </Sticky>
-      </div>
-    </MiroFrame>
+    <div className="flex items-center justify-center gap-4">
+      <div className="rounded-lg bg-pink-600 px-3 py-2 text-center text-xs font-black text-white shadow-md">G5 passed</div>
+      <FlowArrow width={40} />
 
-    <FlowArrow width={40} />
+      <MiroFrame title="Deploy" className="w-[420px]">
+        <div className="grid grid-cols-2 gap-4">
+          <Sticky color="orange" tilt={-1} title="Train the users">
+            The target users are trained before they start.
+          </Sticky>
+          <Sticky color="green" tilt={1} title="Deploy in production">
+            The elements go live in production.
+          </Sticky>
+        </div>
+      </MiroFrame>
 
-    <MiroFrame title="Enterprise discipline" className="w-[420px]">
-      <div className="grid grid-cols-2 gap-4">
-        <Sticky color="yellow" tilt={1} title="Tranche funding">
-          Released by tranche, not upfront.
-        </Sticky>
-        <Sticky color="yellow" tilt={-1} title="Planisware">
-          Portfolio roll-up for T1 and T2.
-        </Sticky>
-        <Sticky color="yellow" tilt={-1} title="Change Board">
-          Market roll-out approved.
-        </Sticky>
-        <Sticky color="yellow" tilt={1} title="Live tracking">
-          Risk, cost and adoption.
-        </Sticky>
-      </div>
-    </MiroFrame>
+      <FlowArrow width={40} />
 
-    <FlowArrow width={40} />
-    <div>
+      <MiroFrame title="Roll out" className="w-[420px]">
+        <div className="grid grid-cols-2 gap-4">
+          <Sticky color="blue" tilt={1} title="Other geographies">
+            Extend to another geography.
+          </Sticky>
+          <Sticky color="blue" tilt={-1} title="New market">
+            Extend to a new market.
+          </Sticky>
+        </div>
+      </MiroFrame>
+
+      <FlowArrow width={40} />
       <MiroCard kicker="Next" title="V · Run" accent="#0d3824" style={{ width: 150 }}>
         Value tracked quarterly at G6.
       </MiroCard>
