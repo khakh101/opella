@@ -641,7 +641,7 @@ export const HistoryView: React.FC<HistoryViewProps> = ({
   const decision = getDecisionRecord(activeGateId);
 
   return (
-    <div className="max-w-6xl mx-auto px-4 py-8 space-y-8">
+    <div className="w-full max-w-[1600px] 2xl:max-w-[1850px] mx-auto px-4 sm:px-6 lg:px-10 py-8 space-y-8">
       {/* 1. Header & Use Case Selector */}
       <div className="bg-white rounded-2xl p-6 shadow-sm border border-opella-border flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div>

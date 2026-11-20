@@ -21,7 +21,7 @@ export const Header: React.FC<HeaderProps> = ({ activeTab, setActiveTab, useCase
   return (
     <header className="bg-opella-forest text-white border-b border-opella-deep shadow-md sticky top-0 z-50">
       {/* Top Banner */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3.5">
+      <div className="w-full max-w-[1600px] 2xl:max-w-[1850px] mx-auto px-4 sm:px-6 lg:px-10 py-3.5">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           {/* Brand & Title */}
           <div className="flex items-center space-x-3">

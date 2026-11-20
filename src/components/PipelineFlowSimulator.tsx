@@ -44,6 +44,9 @@ export interface SimulationAssumptions {
   incomingPerWeek: number; // Exact integer count per burst
   acceptanceRateG1: number; // % passing G1 (AI Charter intake)
   g4PassRate: number; // % passing G4 to GO BUILD
+  t3G4PassRate: number; // % passing G4 1-Page Canvas
+  t3PromoteToT2Rate: number; // % of passing T3 promoted to T2 Scale at G4
+  t3PromoteToT1Rate: number; // % of passing T3 promoted to T1 Transform at G4
   postMvpPromotionRate: number; // % of T3 & T4 promoted to T2 Scale AFTER MVP build at Gate G5
   t1Split: number; // % Transform
   t2Split: number; // % Scale
@@ -91,6 +94,9 @@ const PRESET_SCENARIOS: Record<
       incomingPerWeek: 4,
       acceptanceRateG1: 80,
       g4PassRate: 85,
+      t3G4PassRate: 85,
+      t3PromoteToT2Rate: 15,
+      t3PromoteToT1Rate: 5,
       postMvpPromotionRate: 15,
       t1Split: 15,
       t2Split: 35,
@@ -124,6 +130,9 @@ const PRESET_SCENARIOS: Record<
       incomingPerWeek: 8,
       acceptanceRateG1: 85,
       g4PassRate: 80,
+      t3G4PassRate: 80,
+      t3PromoteToT2Rate: 15,
+      t3PromoteToT1Rate: 5,
       postMvpPromotionRate: 20,
       t1Split: 20,
       t2Split: 35,
@@ -157,6 +166,9 @@ const PRESET_SCENARIOS: Record<
       incomingPerWeek: 18,
       acceptanceRateG1: 88,
       g4PassRate: 75,
+      t3G4PassRate: 75,
+      t3PromoteToT2Rate: 20,
+      t3PromoteToT1Rate: 10,
       postMvpPromotionRate: 25,
       t1Split: 25,
       t2Split: 35,
@@ -200,6 +212,7 @@ interface Ball {
   speed: number;
   passG1: boolean;
   passG4: boolean;
+  t3Outcome?: "MVP" | "T2" | "T1" | "KILLED";
   isPromoted: boolean;
   state: "MOVING" | "QUEUED_STEERCO" | "QUEUED_BOARD" | "COMPLETED";
   queueIndex?: number;
@@ -248,9 +261,11 @@ export const PipelineFlowSimulator: React.FC = () => {
   // DOM SVG Path refs for mathematically exact path querying
   const pathRefs = useRef<Record<string, SVGPathElement | null>>({});
 
-  // Direct SVG path refs for real-time color and width updates
+  // Direct SVG path refs for real-time color and width updates (Dual-layer for resilient glow)
   const t1BottleneckPathRef = useRef<SVGPathElement | null>(null);
+  const t1BottleneckGlowRef = useRef<SVGPathElement | null>(null);
   const t2BottleneckPathRef = useRef<SVGPathElement | null>(null);
+  const t2BottleneckGlowRef = useRef<SVGPathElement | null>(null);
 
   // Reset simulation completely (Everything starts green!)
   const resetSimulation = useCallback(() => {
@@ -265,14 +280,22 @@ export const PipelineFlowSimulator: React.FC = () => {
     if (t1BottleneckPathRef.current) {
       t1BottleneckPathRef.current.setAttribute("stroke", "#10b981");
       t1BottleneckPathRef.current.setAttribute("stroke-width", "8");
-      t1BottleneckPathRef.current.setAttribute("stroke-opacity", "0.4");
-      t1BottleneckPathRef.current.removeAttribute("filter");
+      t1BottleneckPathRef.current.setAttribute("stroke-opacity", "0.6");
+    }
+    if (t1BottleneckGlowRef.current) {
+      t1BottleneckGlowRef.current.setAttribute("stroke", "#10b981");
+      t1BottleneckGlowRef.current.setAttribute("stroke-width", "14");
+      t1BottleneckGlowRef.current.setAttribute("stroke-opacity", "0.2");
     }
     if (t2BottleneckPathRef.current) {
       t2BottleneckPathRef.current.setAttribute("stroke", "#38bdf8");
       t2BottleneckPathRef.current.setAttribute("stroke-width", "8");
-      t2BottleneckPathRef.current.setAttribute("stroke-opacity", "0.4");
-      t2BottleneckPathRef.current.removeAttribute("filter");
+      t2BottleneckPathRef.current.setAttribute("stroke-opacity", "0.6");
+    }
+    if (t2BottleneckGlowRef.current) {
+      t2BottleneckGlowRef.current.setAttribute("stroke", "#38bdf8");
+      t2BottleneckGlowRef.current.setAttribute("stroke-width", "14");
+      t2BottleneckGlowRef.current.setAttribute("stroke-opacity", "0.2");
     }
   }, []);
 
@@ -722,10 +745,11 @@ export const PipelineFlowSimulator: React.FC = () => {
 
     tierSequence.forEach((tier, idx) => {
       const passG1 = Math.random() * 100 < assumptions.acceptanceRateG1;
-      const passG4 = Math.random() * 100 < assumptions.g4PassRate;
-      const isPromoted =
+      let passG4 = Math.random() * 100 < assumptions.g4PassRate;
+      let isPromoted =
         (tier === "T3" || tier === "T4") &&
         Math.random() * 100 < assumptions.postMvpPromotionRate;
+      let t3Outcome: "MVP" | "T2" | "T1" | "KILLED" | undefined = undefined;
 
       let color = "#10b981"; // T1 Emerald
       let glowColor = "rgba(16, 185, 129, 0.8)";
@@ -738,7 +762,29 @@ export const PipelineFlowSimulator: React.FC = () => {
       } else if (tier === "T3") {
         color = "#f59e0b"; // Amber
         glowColor = "rgba(245, 158, 11, 0.8)";
-        pathKey = isPromoted ? "t3-promoted" : "t3-main";
+        // T3 G4 Decision: Killed, Promoted to T2, Promoted to T1, or Proceed to MVP
+        const passesT3G4 = Math.random() * 100 < assumptions.t3G4PassRate;
+        if (!passesT3G4) {
+          t3Outcome = "KILLED";
+          passG4 = false;
+          pathKey = "t3-main";
+        } else {
+          passG4 = true;
+          const roll = Math.random() * 100;
+          if (roll < assumptions.t3PromoteToT1Rate) {
+            t3Outcome = "T1";
+            pathKey = "t3-to-t1";
+            isPromoted = true;
+          } else if (roll < assumptions.t3PromoteToT1Rate + assumptions.t3PromoteToT2Rate) {
+            t3Outcome = "T2";
+            pathKey = "t3-to-t2";
+            isPromoted = true;
+          } else {
+            t3Outcome = "MVP";
+            pathKey = "t3-main";
+            isPromoted = false;
+          }
+        }
       } else if (tier === "T4") {
         color = "#c084fc"; // Purple
         glowColor = "rgba(192, 132, 252, 0.8)";
@@ -763,6 +809,7 @@ export const PipelineFlowSimulator: React.FC = () => {
         speed: 105,
         passG1,
         passG4,
+        t3Outcome,
         isPromoted,
         state: "MOVING",
       });
@@ -853,6 +900,23 @@ export const PipelineFlowSimulator: React.FC = () => {
               continue;
             }
 
+            // T3 G4 KILLED DECISION: DELETE BALL IMMEDIATELY AT G4
+            if (b.tier === "T3" && b.t3Outcome === "KILLED" && b.distance >= 720) {
+              b.state = "COMPLETED";
+              continue;
+            }
+
+            // T3 POST-G4 PROMOTION COLOR SHIFT (Turn Blue for T2, Green for T1)
+            if (b.tier === "T3" && b.distance >= 720) {
+              if (b.t3Outcome === "T1") {
+                b.color = "#34d399";
+                b.glowColor = "rgba(52, 211, 153, 0.8)";
+              } else if (b.t3Outcome === "T2") {
+                b.color = "#38bdf8";
+                b.glowColor = "rgba(56, 189, 248, 0.8)";
+              }
+            }
+
             // BOTTLENECK QUEUE CHECKS
             if (b.tier === "T1" && b.state === "MOVING" && b.distance >= 510 && b.distance < 570) {
               if (flowCalculations.steerCo.isBottleneck) {
@@ -934,48 +998,58 @@ export const PipelineFlowSimulator: React.FC = () => {
 
           ballsRef.current = activeBalls;
 
-          // DYNAMIC CONDUIT UPDATE (G2 to G3)
-          if (t1BottleneckPathRef.current) {
+          // DYNAMIC CONDUIT UPDATE (G2 to G3) - DUAL LAYER RESILIENT GLOW (NEVER DISAPPEARS)
+          if (t1BottleneckPathRef.current && t1BottleneckGlowRef.current) {
             if (steerCoWaitingCount === 0) {
               t1BottleneckPathRef.current.setAttribute("stroke", "#10b981");
               t1BottleneckPathRef.current.setAttribute("stroke-width", "8");
-              t1BottleneckPathRef.current.setAttribute("stroke-opacity", "0.4");
-              t1BottleneckPathRef.current.removeAttribute("filter");
+              t1BottleneckPathRef.current.setAttribute("stroke-opacity", "0.6");
+              t1BottleneckGlowRef.current.setAttribute("stroke", "#10b981");
+              t1BottleneckGlowRef.current.setAttribute("stroke-width", "14");
+              t1BottleneckGlowRef.current.setAttribute("stroke-opacity", "0.2");
             } else if (steerCoWaitingCount <= 2) {
               t1BottleneckPathRef.current.setAttribute("stroke", "#f59e0b");
-              t1BottleneckPathRef.current.setAttribute("stroke-width", "13");
-              t1BottleneckPathRef.current.setAttribute("stroke-opacity", "0.85");
-              t1BottleneckPathRef.current.setAttribute("filter", "url(#conduit-amber-glow)");
+              t1BottleneckPathRef.current.setAttribute("stroke-width", "11");
+              t1BottleneckPathRef.current.setAttribute("stroke-opacity", "0.9");
+              t1BottleneckGlowRef.current.setAttribute("stroke", "#f59e0b");
+              t1BottleneckGlowRef.current.setAttribute("stroke-width", "18");
+              t1BottleneckGlowRef.current.setAttribute("stroke-opacity", "0.35");
             } else {
+              const coreW = Math.min(20, 11 + steerCoWaitingCount * 1.1);
+              const glowW = Math.min(36, 18 + steerCoWaitingCount * 1.8);
               t1BottleneckPathRef.current.setAttribute("stroke", "#ef4444");
-              t1BottleneckPathRef.current.setAttribute(
-                "stroke-width",
-                String(Math.min(26, 16 + steerCoWaitingCount * 1.5))
-              );
+              t1BottleneckPathRef.current.setAttribute("stroke-width", String(coreW));
               t1BottleneckPathRef.current.setAttribute("stroke-opacity", "1");
-              t1BottleneckPathRef.current.setAttribute("filter", "url(#conduit-red-glow)");
+              t1BottleneckGlowRef.current.setAttribute("stroke", "#ef4444");
+              t1BottleneckGlowRef.current.setAttribute("stroke-width", String(glowW));
+              t1BottleneckGlowRef.current.setAttribute("stroke-opacity", "0.45");
             }
           }
 
-          if (t2BottleneckPathRef.current) {
+          if (t2BottleneckPathRef.current && t2BottleneckGlowRef.current) {
             if (boardWaitingCount === 0) {
               t2BottleneckPathRef.current.setAttribute("stroke", "#38bdf8");
               t2BottleneckPathRef.current.setAttribute("stroke-width", "8");
-              t2BottleneckPathRef.current.setAttribute("stroke-opacity", "0.4");
-              t2BottleneckPathRef.current.removeAttribute("filter");
+              t2BottleneckPathRef.current.setAttribute("stroke-opacity", "0.6");
+              t2BottleneckGlowRef.current.setAttribute("stroke", "#38bdf8");
+              t2BottleneckGlowRef.current.setAttribute("stroke-width", "14");
+              t2BottleneckGlowRef.current.setAttribute("stroke-opacity", "0.2");
             } else if (boardWaitingCount <= 2) {
               t2BottleneckPathRef.current.setAttribute("stroke", "#f59e0b");
-              t2BottleneckPathRef.current.setAttribute("stroke-width", "13");
-              t2BottleneckPathRef.current.setAttribute("stroke-opacity", "0.85");
-              t2BottleneckPathRef.current.setAttribute("filter", "url(#conduit-amber-glow)");
+              t2BottleneckPathRef.current.setAttribute("stroke-width", "11");
+              t2BottleneckPathRef.current.setAttribute("stroke-opacity", "0.9");
+              t2BottleneckGlowRef.current.setAttribute("stroke", "#f59e0b");
+              t2BottleneckGlowRef.current.setAttribute("stroke-width", "18");
+              t2BottleneckGlowRef.current.setAttribute("stroke-opacity", "0.35");
             } else {
+              const coreW = Math.min(20, 11 + boardWaitingCount * 1.1);
+              const glowW = Math.min(34, 18 + boardWaitingCount * 1.8);
               t2BottleneckPathRef.current.setAttribute("stroke", "#ef4444");
-              t2BottleneckPathRef.current.setAttribute(
-                "stroke-width",
-                String(Math.min(24, 15 + boardWaitingCount * 1.5))
-              );
+              t2BottleneckPathRef.current.setAttribute("stroke-width", String(coreW));
               t2BottleneckPathRef.current.setAttribute("stroke-opacity", "1");
-              t2BottleneckPathRef.current.setAttribute("filter", "url(#conduit-red-glow)");
+              t2BottleneckGlowRef.current.setAttribute("stroke", "#ef4444");
+              t2BottleneckGlowRef.current.setAttribute("stroke-width", String(glowW));
+              t2BottleneckGlowRef.current.setAttribute("stroke-opacity", "0.45");
             }
           }
 
@@ -1008,7 +1082,7 @@ export const PipelineFlowSimulator: React.FC = () => {
   ]);
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8 text-gray-900">
+    <div className="w-full max-w-[1600px] 2xl:max-w-[1850px] mx-auto px-4 sm:px-6 lg:px-10 py-8 space-y-8 text-gray-900">
       {/* HEADER BANNER */}
       <div className="bg-gradient-to-r from-[#072417] via-[#093c1f] to-[#044c23] rounded-3xl p-6 sm:p-8 text-white shadow-xl border border-emerald-500/30 flex flex-col lg:flex-row lg:items-center justify-between gap-6">
         <div className="space-y-2">
@@ -1522,6 +1596,72 @@ export const PipelineFlowSimulator: React.FC = () => {
               scope expansion.
             </p>
           </div>
+
+          {/* 7. T3 Gate G4 Decisions (1-Page Canvas Outcome) */}
+          <div className="p-4 rounded-2xl bg-amber-50/60 border border-amber-300 ring-1 ring-amber-500/20 space-y-2.5">
+            <div className="flex items-center justify-between">
+              <label className="text-xs font-bold text-gray-900 flex items-center gap-1.5">
+                <span className="w-2 h-2 rounded-full bg-amber-600" />
+                T3 Gate G4 Decisions (Canvas Outcome)
+              </label>
+              <span className="text-xs font-black text-amber-800 bg-amber-100 px-2 py-0.5 rounded-md font-mono">
+                {assumptions.t3G4PassRate}% Pass · {100 - assumptions.t3G4PassRate}% Killed
+              </span>
+            </div>
+
+            <div className="space-y-2 text-xs">
+              <div>
+                <div className="flex justify-between text-[11px] mb-0.5">
+                  <span className="text-gray-700 font-semibold">G4 Approval Pass Rate:</span>
+                  <span className="font-mono font-bold text-gray-900">{assumptions.t3G4PassRate}%</span>
+                </div>
+                <input
+                  type="range"
+                  min="40"
+                  max="100"
+                  step="5"
+                  value={assumptions.t3G4PassRate}
+                  onChange={(e) => updateAssumption("t3G4PassRate", Number(e.target.value))}
+                  className="w-full accent-amber-600 h-1.5 cursor-pointer"
+                />
+              </div>
+
+              <div>
+                <div className="flex justify-between text-[11px] mb-0.5">
+                  <span className="text-blue-700 font-semibold">Promote to T2 Scale:</span>
+                  <span className="font-mono font-bold text-blue-900">{assumptions.t3PromoteToT2Rate}%</span>
+                </div>
+                <input
+                  type="range"
+                  min="0"
+                  max="40"
+                  step="5"
+                  value={assumptions.t3PromoteToT2Rate}
+                  onChange={(e) => updateAssumption("t3PromoteToT2Rate", Number(e.target.value))}
+                  className="w-full accent-blue-600 h-1.5 cursor-pointer"
+                />
+              </div>
+
+              <div>
+                <div className="flex justify-between text-[11px] mb-0.5">
+                  <span className="text-emerald-700 font-semibold">Promote to T1 Transform:</span>
+                  <span className="font-mono font-bold text-emerald-900">{assumptions.t3PromoteToT1Rate}%</span>
+                </div>
+                <input
+                  type="range"
+                  min="0"
+                  max="30"
+                  step="5"
+                  value={assumptions.t3PromoteToT1Rate}
+                  onChange={(e) => updateAssumption("t3PromoteToT1Rate", Number(e.target.value))}
+                  className="w-full accent-emerald-600 h-1.5 cursor-pointer"
+                />
+              </div>
+            </div>
+            <p className="text-[10px] text-gray-500 leading-snug">
+              Decided at G4: passing T3 can branch to <strong>T2 Scale</strong>, <strong>T1 Transform</strong>, or <strong>Agile MVP</strong>. Fails are killed immediately.
+            </p>
+          </div>
         </div>
 
         {/* ADVANCED COLLAPSIBLE: GATE LEAD TIME OVERRIDES */}
@@ -1741,15 +1881,6 @@ export const PipelineFlowSimulator: React.FC = () => {
               className="w-full h-full select-none absolute inset-0 pointer-events-none"
               style={{ overflow: "visible" }}
             >
-              <defs>
-                <filter id="conduit-red-glow" x="-30%" y="-30%" width="160%" height="160%">
-                  <feDropShadow dx="0" dy="0" stdDeviation="5" floodColor="#ef4444" floodOpacity="0.85" />
-                </filter>
-                <filter id="conduit-amber-glow" x="-30%" y="-30%" width="160%" height="160%">
-                  <feDropShadow dx="0" dy="0" stdDeviation="4" floodColor="#f59e0b" floodOpacity="0.75" />
-                </filter>
-              </defs>
-
               {/* --- HIDDEN MASTER PATHS USED FOR ACCURATE BALL TRAJECTORY QUERYING --- */}
               <path
                 id="t1-main"
@@ -1775,6 +1906,26 @@ export const PipelineFlowSimulator: React.FC = () => {
                   pathRefs.current["t3-main"] = el;
                 }}
                 d="M 80 290 L 220 290 C 290 350, 340 350, 400 350 L 750 350 C 820 350, 850 290, 900 290 L 1030 290 L 1140 290"
+                fill="none"
+                stroke="transparent"
+              />
+              {/* T3 Promoted to T2 at G4 */}
+              <path
+                id="t3-to-t2"
+                ref={(el) => {
+                  pathRefs.current["t3-to-t2"] = el;
+                }}
+                d="M 80 290 L 220 290 C 290 350, 340 350, 400 350 L 750 350 C 790 350, 810 210, 850 210 L 900 290 L 1030 290 L 1140 290"
+                fill="none"
+                stroke="transparent"
+              />
+              {/* T3 Promoted to T1 at G4 */}
+              <path
+                id="t3-to-t1"
+                ref={(el) => {
+                  pathRefs.current["t3-to-t1"] = el;
+                }}
+                d="M 80 290 L 220 290 C 290 350, 340 350, 400 350 L 750 350 C 790 350, 810 90, 850 90 L 900 290 L 1030 290 L 1140 290"
                 fill="none"
                 stroke="transparent"
               />
@@ -1831,7 +1982,17 @@ export const PipelineFlowSimulator: React.FC = () => {
 
               {/* T1 CONDUIT SEGMENTS */}
               <path d="M 220 290 C 290 90, 320 90, 400 90" fill="none" stroke="#10b981" strokeWidth="8" strokeOpacity="0.25" strokeLinecap="round" />
-              {/* G2 to G3 BOTTLENECK CONDUIT (TURNS RED & SWELLS AS QUEUE BUILDS) */}
+              {/* T1 BOTTLENECK CONDUIT (G2 to G3) - DUAL LAYER RESILIENT GLOW */}
+              <path
+                id="conduit-g2-g3-t1-glow"
+                ref={t1BottleneckGlowRef}
+                d="M 400 90 L 580 90"
+                fill="none"
+                stroke="#10b981"
+                strokeWidth="14"
+                strokeOpacity="0.2"
+                strokeLinecap="round"
+              />
               <path
                 id="conduit-g2-g3-t1"
                 ref={t1BottleneckPathRef}
@@ -1839,16 +2000,25 @@ export const PipelineFlowSimulator: React.FC = () => {
                 fill="none"
                 stroke="#10b981"
                 strokeWidth="8"
-                strokeOpacity="0.4"
+                strokeOpacity="0.6"
                 strokeLinecap="round"
-                className="transition-all duration-300"
               />
               <path d="M 580 90 L 750 90" fill="none" stroke="#10b981" strokeWidth="8" strokeOpacity="0.25" strokeLinecap="round" />
               <path d="M 750 90 C 820 90, 850 290, 900 290" fill="none" stroke="#10b981" strokeWidth="7" strokeOpacity="0.2" />
 
               {/* T2 CONDUIT SEGMENTS */}
               <path d="M 220 290 C 290 210, 320 210, 400 210" fill="none" stroke="#38bdf8" strokeWidth="8" strokeOpacity="0.25" strokeLinecap="round" />
-              {/* G2 to G3 BOTTLENECK CONDUIT (TURNS RED & SWELLS AS QUEUE BUILDS) */}
+              {/* T2 BOTTLENECK CONDUIT (G2 to G3) - DUAL LAYER RESILIENT GLOW */}
+              <path
+                id="conduit-g2-g3-t2-glow"
+                ref={t2BottleneckGlowRef}
+                d="M 400 210 L 580 210"
+                fill="none"
+                stroke="#38bdf8"
+                strokeWidth="14"
+                strokeOpacity="0.2"
+                strokeLinecap="round"
+              />
               <path
                 id="conduit-g2-g3-t2"
                 ref={t2BottleneckPathRef}
@@ -1856,16 +2026,70 @@ export const PipelineFlowSimulator: React.FC = () => {
                 fill="none"
                 stroke="#38bdf8"
                 strokeWidth="8"
-                strokeOpacity="0.4"
+                strokeOpacity="0.6"
                 strokeLinecap="round"
-                className="transition-all duration-300"
               />
               <path d="M 580 210 L 750 210" fill="none" stroke="#38bdf8" strokeWidth="8" strokeOpacity="0.25" strokeLinecap="round" />
               <path d="M 750 210 C 820 210, 850 290, 900 290" fill="none" stroke="#38bdf8" strokeWidth="7" strokeOpacity="0.2" />
 
-              {/* T3 CONDUIT (Skips G2 & G3) */}
+              {/* T3 CONDUIT (Skips G2 & G3 to G4 1-Page Canvas) */}
               <path d="M 220 290 C 290 350, 340 350, 400 350 L 750 350" fill="none" stroke="#f59e0b" strokeWidth="8" strokeOpacity="0.2" strokeLinecap="round" />
-              <path d="M 750 350 C 820 350, 850 290, 900 290" fill="none" stroke="#f59e0b" strokeWidth="7" strokeOpacity="0.2" />
+
+              {/* T3 POST-G4 OUTCOME ROUTING CONDUITS */}
+              {/* 1. T3 to T2 Scale Promotion Curve */}
+              <path
+                d="M 750 350 C 790 350, 810 210, 850 210"
+                fill="none"
+                stroke="#38bdf8"
+                strokeWidth="5"
+                strokeOpacity="0.45"
+                strokeDasharray="4 4"
+                strokeLinecap="round"
+              />
+              {/* 2. T3 to T1 Transform Promotion Curve */}
+              <path
+                d="M 750 350 C 790 350, 810 90, 850 90"
+                fill="none"
+                stroke="#10b981"
+                strokeWidth="5"
+                strokeOpacity="0.4"
+                strokeDasharray="4 4"
+                strokeLinecap="round"
+              />
+              {/* 3. T3 Killed / Shelved at G4 Drop */}
+              <path
+                d="M 750 350 C 765 390, 780 430, 800 455"
+                fill="none"
+                stroke="#ef4444"
+                strokeWidth="3.5"
+                strokeOpacity="0.4"
+                strokeDasharray="3 3"
+                strokeLinecap="round"
+              />
+              {/* 4. T3 Proceed to MVP Build (Mode 3 Sprint) */}
+              <path d="M 750 350 C 820 350, 850 290, 900 290" fill="none" stroke="#f59e0b" strokeWidth="7" strokeOpacity="0.3" />
+
+              {/* T3 Post-G4 Badges */}
+              <g transform="translate(805, 170)">
+                <rect x="-48" y="-9" width="96" height="18" rx="5" fill="#0b1329" stroke="#38bdf8" strokeWidth="1" />
+                <text x="0" y="3.5" textAnchor="middle" fill="#38bdf8" fontSize="7.5" fontWeight="900">
+                  ↑ To T2 ({assumptions.t3PromoteToT2Rate}%)
+                </text>
+              </g>
+
+              <g transform="translate(805, 80)">
+                <rect x="-48" y="-9" width="96" height="18" rx="5" fill="#0b1329" stroke="#10b981" strokeWidth="1" />
+                <text x="0" y="3.5" textAnchor="middle" fill="#34d399" fontSize="7.5" fontWeight="900">
+                  ↑ To T1 ({assumptions.t3PromoteToT1Rate}%)
+                </text>
+              </g>
+
+              <g transform="translate(800, 465)">
+                <rect x="-56" y="-9" width="112" height="18" rx="5" fill="#0b1329" stroke="#ef4444" strokeWidth="1" />
+                <text x="0" y="3.5" textAnchor="middle" fill="#f87171" fontSize="7.5" fontWeight="900">
+                  ✕ Shelved ({100 - assumptions.t3G4PassRate}%)
+                </text>
+              </g>
 
               {/* T4 CONDUIT (Skips G2 & G3) */}
               <path d="M 220 290 C 290 470, 340 470, 400 470 L 750 470" fill="none" stroke="#c084fc" strokeWidth="7" strokeOpacity="0.2" strokeLinecap="round" />
@@ -2312,6 +2536,352 @@ export const PipelineFlowSimulator: React.FC = () => {
             </span>
           </div>
         )}
+
+        {/* COMPREHENSIVE ALL-MEETINGS REVIEW TABLE (SHOWING ALL GOVERNING FORUMS) */}
+        <div className="overflow-x-auto pt-3 border-t border-gray-200">
+          <div className="text-xs font-black text-gray-900 uppercase tracking-wider mb-2.5 flex items-center justify-between">
+            <span className="flex items-center gap-1.5">
+              <Calendar className="w-4 h-4 text-emerald-700" />
+              All Opella Comitology Bodies &amp; Review Metrics ({3 + customMeetings.length} forums)
+            </span>
+            <span className="text-[11px] font-normal text-gray-500">
+              Evaluated against review cycle capacity vs arriving demand
+            </span>
+          </div>
+
+          <table className="w-full text-left text-xs text-gray-700 border border-gray-200 rounded-xl overflow-hidden">
+            <thead className="bg-gray-100/90 border-b border-gray-200 text-gray-700 font-bold uppercase tracking-wider text-[11px]">
+              <tr>
+                <th className="py-3 px-4">Governing Forum</th>
+                <th className="py-3 px-3">Cadence</th>
+                <th className="py-3 px-3">Slot Capacity</th>
+                <th className="py-3 px-3">Arriving Demand</th>
+                <th className="py-3 px-3">Queue Backlog</th>
+                <th className="py-3 px-3">Est. Wait Time</th>
+                <th className="py-3 px-3">Meeting Delays</th>
+                <th className="py-3 px-4">Bottleneck Status</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-100 font-medium bg-white">
+              {/* 1. Transformation SteerCo */}
+              <tr
+                className={`${
+                  flowCalculations.steerCo.isSevere
+                    ? "bg-rose-50/70"
+                    : flowCalculations.steerCo.isBottleneck
+                    ? "bg-amber-50/60"
+                    : "hover:bg-gray-50"
+                }`}
+              >
+                <td className="py-3.5 px-4 font-bold text-gray-900">
+                  <div className="flex items-center gap-2">
+                    <span className="w-2.5 h-2.5 rounded-full bg-emerald-700 shrink-0" />
+                    <div>
+                      <div>Transformation SteerCo</div>
+                      <div className="text-[10px] text-gray-500 font-normal">
+                        Chaired by TO Lead &amp; ExCo Stream Sponsors · T1 Gating &amp; Funding
+                      </div>
+                    </div>
+                  </div>
+                </td>
+                <td className="py-3.5 px-3">
+                  <span className="px-2 py-0.5 rounded bg-gray-100 text-gray-800 font-mono font-bold text-[10px]">
+                    {assumptions.steerCoCadenceWeeks === 1
+                      ? "Weekly (1 wk)"
+                      : assumptions.steerCoCadenceWeeks === 2
+                      ? "Fortnightly (2 wks)"
+                      : "Monthly (4 wks)"}
+                  </span>
+                </td>
+                <td className="py-3.5 px-3 font-mono font-bold text-gray-900">
+                  {assumptions.steerCoCapacity} UCs / meeting
+                  <span className="text-[10px] text-gray-500 block font-normal">
+                    {flowCalculations.steerCo.weeklyCap.toFixed(2)} UC/wk
+                  </span>
+                </td>
+                <td className="py-3.5 px-3 font-mono font-bold text-gray-900">
+                  {flowCalculations.steerCo.demandPerWeek.toFixed(2)} UC / wk
+                </td>
+                <td className="py-3.5 px-3 font-mono font-bold">
+                  <span
+                    className={
+                      flowCalculations.steerCo.isBottleneck
+                        ? "text-rose-700"
+                        : "text-gray-900"
+                    }
+                  >
+                    {steerCoLiveCount > 0 ? steerCoLiveCount : flowCalculations.steerCo.queue.toFixed(1)} in line
+                  </span>
+                </td>
+                <td className="py-3.5 px-3 font-mono font-bold">
+                  <span
+                    className={
+                      flowCalculations.steerCo.isBottleneck
+                        ? "text-rose-700"
+                        : "text-gray-900"
+                    }
+                  >
+                    {flowCalculations.steerCo.waitWeeks.toFixed(1)} wks
+                  </span>
+                </td>
+                <td className="py-3.5 px-3 font-mono font-bold">
+                  <span
+                    className={
+                      flowCalculations.steerCo.cyclesDelay > 1
+                        ? "text-rose-700"
+                        : "text-emerald-700"
+                    }
+                  >
+                    {flowCalculations.steerCo.cyclesDelay.toFixed(1)} cycles
+                  </span>
+                </td>
+                <td className="py-3.5 px-4">
+                  {flowCalculations.steerCo.isSevere ? (
+                    <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-rose-600 text-white">
+                      🚨 Severe Bottleneck (&gt;2 meetings)
+                    </span>
+                  ) : flowCalculations.steerCo.isBottleneck ? (
+                    <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-amber-500 text-white">
+                      ⚠️ Bottleneck (&gt;1 meeting)
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-800">
+                      Balanced Flow ✓
+                    </span>
+                  )}
+                </td>
+              </tr>
+
+              {/* 2. AI Portfolio Board */}
+              <tr
+                className={`${
+                  flowCalculations.portfolioBoard.isSevere
+                    ? "bg-rose-50/70"
+                    : flowCalculations.portfolioBoard.isBottleneck
+                    ? "bg-amber-50/60"
+                    : "hover:bg-gray-50"
+                }`}
+              >
+                <td className="py-3.5 px-4 font-bold text-gray-900">
+                  <div className="flex items-center gap-2">
+                    <span className="w-2.5 h-2.5 rounded-full bg-blue-600 shrink-0" />
+                    <div>
+                      <div>AI Portfolio Board</div>
+                      <div className="text-[10px] text-gray-500 font-normal">
+                        Chaired by Stream Leadership &amp; Hub Delegates · T2 Scaling &amp; T3 SLA
+                      </div>
+                    </div>
+                  </div>
+                </td>
+                <td className="py-3.5 px-3">
+                  <span className="px-2 py-0.5 rounded bg-gray-100 text-gray-800 font-mono font-bold text-[10px]">
+                    {assumptions.portfolioBoardCadenceWeeks === 1
+                      ? "Weekly (1 wk)"
+                      : assumptions.portfolioBoardCadenceWeeks === 2
+                      ? "Fortnightly (2 wks)"
+                      : "Monthly (4 wks)"}
+                  </span>
+                </td>
+                <td className="py-3.5 px-3 font-mono font-bold text-gray-900">
+                  {assumptions.portfolioBoardCapacity} UCs / meeting
+                  <span className="text-[10px] text-gray-500 block font-normal">
+                    {flowCalculations.portfolioBoard.weeklyCap.toFixed(2)} UC/wk
+                  </span>
+                </td>
+                <td className="py-3.5 px-3 font-mono font-bold text-gray-900">
+                  {flowCalculations.portfolioBoard.demandPerWeek.toFixed(2)} UC / wk
+                </td>
+                <td className="py-3.5 px-3 font-mono font-bold">
+                  <span
+                    className={
+                      flowCalculations.portfolioBoard.isBottleneck
+                        ? "text-rose-700"
+                        : "text-gray-900"
+                    }
+                  >
+                    {boardLiveCount > 0 ? boardLiveCount : flowCalculations.portfolioBoard.queue.toFixed(1)} in line
+                  </span>
+                </td>
+                <td className="py-3.5 px-3 font-mono font-bold">
+                  <span
+                    className={
+                      flowCalculations.portfolioBoard.isBottleneck
+                        ? "text-rose-700"
+                        : "text-gray-900"
+                    }
+                  >
+                    {flowCalculations.portfolioBoard.waitWeeks.toFixed(1)} wks
+                  </span>
+                </td>
+                <td className="py-3.5 px-3 font-mono font-bold">
+                  <span
+                    className={
+                      flowCalculations.portfolioBoard.cyclesDelay > 1
+                        ? "text-rose-700"
+                        : "text-emerald-700"
+                    }
+                  >
+                    {flowCalculations.portfolioBoard.cyclesDelay.toFixed(1)} cycles
+                  </span>
+                </td>
+                <td className="py-3.5 px-4">
+                  {flowCalculations.portfolioBoard.isSevere ? (
+                    <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-rose-600 text-white">
+                      🚨 Severe Bottleneck (&gt;2 meetings)
+                    </span>
+                  ) : flowCalculations.portfolioBoard.isBottleneck ? (
+                    <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-amber-500 text-white">
+                      ⚠️ Bottleneck (&gt;1 meeting)
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-800">
+                      Balanced Flow ✓
+                    </span>
+                  )}
+                </td>
+              </tr>
+
+              {/* 3. Digital Design Authority (DDA) */}
+              <tr
+                className={`${
+                  flowCalculations.dda.isSevere
+                    ? "bg-rose-50/70"
+                    : flowCalculations.dda.isBottleneck
+                    ? "bg-amber-50/60"
+                    : "hover:bg-gray-50"
+                }`}
+              >
+                <td className="py-3.5 px-4 font-bold text-gray-900">
+                  <div className="flex items-center gap-2">
+                    <span className="w-2.5 h-2.5 rounded-full bg-purple-600 shrink-0" />
+                    <div>
+                      <div>Digital Design Authority (DDA)</div>
+                      <div className="text-[10px] text-gray-500 font-normal">
+                        Enterprise Architecture, Cyber &amp; ORAI · Architecture Decision Records (ADRs)
+                      </div>
+                    </div>
+                  </div>
+                </td>
+                <td className="py-3.5 px-3">
+                  <span className="px-2 py-0.5 rounded bg-gray-100 text-gray-800 font-mono font-bold text-[10px]">
+                    {assumptions.ddaCadenceWeeks === 1 ? "Weekly (1 wk)" : "Fortnightly (2 wks)"}
+                  </span>
+                </td>
+                <td className="py-3.5 px-3 font-mono font-bold text-gray-900">
+                  {assumptions.ddaCapacity} ADRs / meeting
+                  <span className="text-[10px] text-gray-500 block font-normal">
+                    {flowCalculations.dda.weeklyCap.toFixed(2)} ADR/wk
+                  </span>
+                </td>
+                <td className="py-3.5 px-3 font-mono font-bold text-gray-900">
+                  {flowCalculations.dda.demandPerWeek.toFixed(2)} ADR / wk
+                </td>
+                <td className="py-3.5 px-3 font-mono font-bold">
+                  <span
+                    className={
+                      flowCalculations.dda.isBottleneck
+                        ? "text-rose-700"
+                        : "text-gray-900"
+                    }
+                  >
+                    {flowCalculations.dda.queue.toFixed(1)} ADRs in line
+                  </span>
+                </td>
+                <td className="py-3.5 px-3 font-mono font-bold">
+                  <span
+                    className={
+                      flowCalculations.dda.isBottleneck
+                        ? "text-rose-700"
+                        : "text-gray-900"
+                    }
+                  >
+                    {flowCalculations.dda.waitWeeks.toFixed(1)} wks
+                  </span>
+                </td>
+                <td className="py-3.5 px-3 font-mono font-bold">
+                  <span
+                    className={
+                      flowCalculations.dda.cyclesDelay > 1
+                        ? "text-rose-700"
+                        : "text-emerald-700"
+                    }
+                  >
+                    {flowCalculations.dda.cyclesDelay.toFixed(1)} cycles
+                  </span>
+                </td>
+                <td className="py-3.5 px-4">
+                  {flowCalculations.dda.isSevere ? (
+                    <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-rose-600 text-white">
+                      🚨 Severe Bottleneck (&gt;2 meetings)
+                    </span>
+                  ) : flowCalculations.dda.isBottleneck ? (
+                    <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-amber-500 text-white">
+                      ⚠️ Bottleneck (&gt;1 meeting)
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-800">
+                      Surplus Capacity ✓
+                    </span>
+                  )}
+                </td>
+              </tr>
+
+              {/* 4. Custom Extra Meetings (if any active) */}
+              {customMeetings.map((m) => {
+                const weeklyCap = m.slotCapacity / m.cadenceWeeks;
+                return (
+                  <tr key={m.id} className="hover:bg-amber-50/40">
+                    <td className="py-3.5 px-4 font-bold text-gray-900">
+                      <div className="flex items-center gap-2">
+                        <span className="w-2.5 h-2.5 rounded-full bg-amber-500 shrink-0" />
+                        <div>
+                          <div>{m.name}</div>
+                          <div className="text-[10px] text-gray-500 font-normal">
+                            {m.chair} · Scope: {m.targetTier === "ALL" ? "All Tiers" : `${m.targetTier} Only`}
+                          </div>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="py-3.5 px-3">
+                      <span className="px-2 py-0.5 rounded bg-gray-100 text-gray-800 font-mono font-bold text-[10px]">
+                        {m.cadence === "weekly" ? "Weekly (1 wk)" : m.cadence === "fortnightly" ? "Fortnightly (2 wks)" : "Monthly (4 wks)"}
+                      </span>
+                    </td>
+                    <td className="py-3.5 px-3 font-mono font-bold text-gray-900">
+                      {m.slotCapacity} UCs / meeting
+                      <span className="text-[10px] text-emerald-700 block font-bold">
+                        +{weeklyCap.toFixed(2)} UC/wk relief
+                      </span>
+                    </td>
+                    <td className="py-3.5 px-3 font-mono font-bold text-gray-500">
+                      Absorption
+                    </td>
+                    <td className="py-3.5 px-3 font-mono font-bold text-emerald-700">
+                      0 in line
+                    </td>
+                    <td className="py-3.5 px-3 font-mono font-bold text-emerald-700">
+                      Immediate
+                    </td>
+                    <td className="py-3.5 px-3 font-mono font-bold text-emerald-700">
+                      0 cycles
+                    </td>
+                    <td className="py-3.5 px-4">
+                      <span
+                        className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold ${
+                          m.active
+                            ? "bg-emerald-100 text-emerald-800 border border-emerald-300"
+                            : "bg-gray-100 text-gray-600"
+                        }`}
+                      >
+                        {m.active ? "Active Extra Session ✓" : "Paused"}
+                      </span>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
       </div>
 
       {/* =========================================================================

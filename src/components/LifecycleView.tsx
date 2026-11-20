@@ -567,7 +567,7 @@ export const LifecycleView: React.FC<LifecycleViewProps> = ({
   };
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8 animate-fade-in">
+    <div className="w-full max-w-[1600px] 2xl:max-w-[1850px] mx-auto px-4 sm:px-6 lg:px-10 py-8 space-y-8 animate-fade-in">
       {/* ------------------------------------------------------------- */}
       {/* TOP INITIATIVE BANNER */}
       {/* ------------------------------------------------------------- */}

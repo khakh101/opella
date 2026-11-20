@@ -145,7 +145,7 @@ export default function Home() {
 
       {/* Opella Playbook Footer */}
       <footer className="bg-white border-t border-opella-border py-6 mt-12 text-xs text-gray-500">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row items-center justify-between gap-4">
+        <div className="w-full max-w-[1600px] 2xl:max-w-[1850px] mx-auto px-4 sm:px-6 lg:px-10 flex flex-col md:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-2">
             <div className="w-5 h-5 rounded bg-opella-forest text-white flex items-center justify-center font-bold text-[10px]">
               Op.

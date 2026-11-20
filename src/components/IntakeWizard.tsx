@@ -242,6 +242,88 @@ export const IntakeWizard: React.FC<IntakeWizardProps> = ({
     }
   }, [decision.tier, decision.mode]);
 
+  // AUTO-SYNC: Any information filled in the preliminary intake form (Step 1)
+  // is automatically mapped into subsequent business case forms (T1, T2, T3, Self-Serve)
+  useEffect(() => {
+    // Sync T3 One-Page Canvas (Fast Lane)
+    setT3Canvas((prev) => ({
+      ...prev,
+      summaryAndHypothesis: answers.description?.trim()
+        ? `Hypothesis: ${answers.description}`
+        : prev.summaryAndHypothesis,
+      kpi1: answers.estimatedValueDescription?.trim()
+        ? `Target Impact: ${answers.estimatedValueDescription}`
+        : prev.kpi1,
+      baselineMetrics: answers.description?.trim()
+        ? `Current manual baseline: ${answers.description.slice(0, 100)}`
+        : prev.baselineMetrics,
+      assignedBuilderOrCatalyst: answers.businessOwnerName?.trim()
+        ? `${answers.businessOwnerName} (Catalyst)`
+        : prev.assignedBuilderOrCatalyst,
+      budgetEnvelope: answers.estimatedCost || prev.budgetEnvelope,
+    }));
+
+    // Sync T2 Lite Business Case (Scale Lane)
+    setT2BC((prev) => ({
+      ...prev,
+      problemStatement: answers.description?.trim() || prev.problemStatement,
+      directionalValue: answers.estimatedValueDescription?.trim() || prev.directionalValue,
+      governance: {
+        ...prev.governance,
+        namedBusinessOwner: answers.businessOwnerName?.trim() || prev.governance.namedBusinessOwner,
+        targetUserCount: answers.targetUserCount || prev.governance.targetUserCount,
+      },
+      existingDataFit: {
+        ...prev.existingDataFit,
+        dataSourcesDetails: answers.technologyProposed?.trim() || prev.existingDataFit.dataSourcesDetails,
+      },
+    }));
+
+    // Sync T1 Full Business Case (Transform Lane)
+    setT1BC((prev) => ({
+      ...prev,
+      recurringItems: {
+        ...prev.recurringItems,
+        topLineImpact: answers.estimatedValueDescription?.trim() || prev.recurringItems.topLineImpact,
+        opexImpact: answers.description?.trim()
+          ? `Automates manual friction described in: ${answers.initiativeTitle || answers.description.slice(0, 50)}`
+          : prev.recurringItems.opexImpact,
+        fteImpact: answers.targetUserCount
+          ? `${Math.max(1, Math.round(answers.targetUserCount * 0.05))} FTE capacity unlocked`
+          : prev.recurringItems.fteImpact,
+      },
+      resourcePeopleCosts: {
+        ...prev.resourcePeopleCosts,
+        namedInternalRoles: answers.businessOwnerName?.trim()
+          ? `${answers.businessOwnerName} (Accountable Business Owner)`
+          : prev.resourcePeopleCosts.namedInternalRoles,
+      },
+      siNonStaff: {
+        ...prev.siNonStaff,
+        systemEnablers: answers.technologyProposed?.trim() || prev.siNonStaff.systemEnablers,
+      },
+    }));
+
+    // Sync Self-Service AI Registry
+    setSelfServeRegistry((prev) => ({
+      ...prev,
+      agentOrToolName: answers.initiativeTitle?.trim() || prev.agentOrToolName,
+      purposeSummary: answers.description?.trim() || prev.purposeSummary,
+      targetUserGroup: answers.targetUserGroupDescription?.trim() || answers.functionName || prev.targetUserGroup,
+      userCount: answers.targetUserCount || prev.userCount,
+    }));
+  }, [
+    answers.initiativeTitle,
+    answers.description,
+    answers.businessOwnerName,
+    answers.targetUserGroupDescription,
+    answers.targetUserCount,
+    answers.estimatedCost,
+    answers.estimatedValueDescription,
+    answers.technologyProposed,
+    answers.functionName,
+  ]);
+
   // Step 1 Active Collection Confirmation States
   const [qQuestionsConfirmed, setQQuestionsConfirmed] = useState<boolean>(false);
   const [oraiConfirmed, setOraiConfirmed] = useState<boolean>(false);
@@ -550,7 +632,7 @@ export const IntakeWizard: React.FC<IntakeWizardProps> = ({
   };
 
   return (
-    <div className="max-w-5xl mx-auto px-4 py-8">
+    <div className="w-full max-w-[1600px] 2xl:max-w-[1850px] mx-auto px-4 sm:px-6 lg:px-10 py-8">
       {/* Wizard Progress Stepper */}
       <div className="mb-8 bg-white rounded-xl p-5 shadow-sm border border-opella-border">
         <div className="flex items-center justify-between text-xs font-semibold text-gray-500 mb-2">

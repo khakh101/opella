@@ -447,7 +447,7 @@ export const OperatingModelMap: React.FC<OperatingModelMapProps> = ({
   const [highlightedMode, setHighlightedMode] = useState<DeliveryMode | "ALL">("ALL");
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6 animate-fade-in bg-[#fbfaf6]">
+    <div className="w-full max-w-[1600px] 2xl:max-w-[1850px] mx-auto px-4 sm:px-6 lg:px-10 py-8 space-y-6 animate-fade-in bg-[#fbfaf6]">
       {/* ----------------------------------------------------------------- */}
       {/* 1. SLIDE HEADER BANNER                                            */}
       {/* ----------------------------------------------------------------- */}
