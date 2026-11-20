@@ -7,10 +7,11 @@ import { GateDiamond, cx } from "./MiroPrimitives";
 
 interface MiroOverviewProps {
   onOpenStep: (id: StepId) => void;
+  onOpenGate: (gateId: string) => void;
 }
 
 // First page: the 5 steps, the gates under each, and nothing else.
-export const MiroOverview: React.FC<MiroOverviewProps> = ({ onOpenStep }) => (
+export const MiroOverview: React.FC<MiroOverviewProps> = ({ onOpenStep, onOpenGate }) => (
   <div style={{ width: 1400 }}>
     {/* Zones */}
     <div className="mb-3 grid grid-cols-5 gap-4 text-[11px] font-bold">
@@ -87,14 +88,24 @@ export const MiroOverview: React.FC<MiroOverviewProps> = ({ onOpenStep }) => (
             </div>
           ) : (
             s.gates.map((g) => (
-              <GateDiamond
+              <div
                 key={g.id}
-                id={g.id}
-                type={g.type}
-                size={s.gates.length > 2 ? 34 : 46}
-                label={g.label}
-                showDetailsButton={false}
-              />
+                role="button"
+                tabIndex={0}
+                onClick={() => onOpenGate(g.id)}
+                onKeyDown={(e) => e.key === "Enter" && onOpenGate(g.id)}
+                title={`Click for the ${g.id} details`}
+                className="cursor-pointer rounded-lg transition-transform hover:-translate-y-0.5"
+              >
+                <GateDiamond
+                  id={g.id}
+                  type={g.type}
+                  size={s.gates.length > 2 ? 34 : 46}
+                  label={g.label}
+                  showDetailsButton={false}
+                  onOpen={() => onOpenGate(g.id)}
+                />
+              </div>
             ))
           )}
         </div>
@@ -112,7 +123,7 @@ export const MiroOverview: React.FC<MiroOverviewProps> = ({ onOpenStep }) => (
         Manual gate: validated by people
       </span>
       <span className="flex items-center gap-2 font-semibold text-gray-800">
-        <MousePointerClick className="h-4 w-4" /> Click a step to see what is inside
+        <MousePointerClick className="h-4 w-4" /> Click a step to see what is inside, or a gate for its details
       </span>
     </div>
   </div>

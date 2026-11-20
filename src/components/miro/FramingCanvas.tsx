@@ -9,6 +9,7 @@ interface FramingCanvasProps {
   example: ExampleCase;
   onOpenDetail: (id: string) => void;
   onGoToBuild: () => void;
+  focusPath?: PathId; // set when arriving from Pre-scale: this lane is the one shown as active
 }
 
 // Fixed Miro-like canvas: absolute positions + one SVG layer for connectors.
@@ -29,8 +30,9 @@ const curve = (x1: number, y1: number, x2: number, y2: number) => {
   return `M ${x1} ${y1} C ${mx} ${y1}, ${mx} ${y2}, ${x2} ${y2}`;
 };
 
-export const FramingCanvas: React.FC<FramingCanvasProps> = ({ example, onOpenDetail, onGoToBuild }) => {
-  const active = example.path;
+export const FramingCanvas: React.FC<FramingCanvasProps> = ({ example, onOpenDetail, onGoToBuild, focusPath }) => {
+  const active = focusPath ?? example.path;
+  const showExample = !focusPath;
   const exColor = PATHS[active].color;
   const lineColor = (p: PathId) => (p === active ? PATHS[p].color : "#9ca3af");
   const lineWidth = (p: PathId) => (p === active ? 3 : 2);
@@ -67,7 +69,7 @@ export const FramingCanvas: React.FC<FramingCanvasProps> = ({ example, onOpenDet
               <span className={cx("text-[11px] font-black", def.text)}>{def.name}</span>
               <span className="text-[10px] text-gray-500">{def.entryRule}</span>
             </div>
-            {p === active && (
+            {p === active && showExample && (
               <div className="absolute right-3 top-2 flex items-center gap-1 rounded-full border border-amber-300 bg-[#fff59d] px-2 py-0.5 text-[10px] font-bold text-amber-950 shadow-sm">
                 <Lightbulb className="h-3 w-3" /> Example: {example.short} · {MODES[example.mode].label}
               </div>
@@ -246,7 +248,7 @@ export const FramingCanvas: React.FC<FramingCanvasProps> = ({ example, onOpenDet
 
             <MiroCard
               kicker="GO BUILD"
-              title={p === "T1" ? "Build · Do it for me" : "Build · mode from G4"}
+              title="Build · mode from G4"
               onOpen={onGoToBuild}
               className="absolute"
               style={{ left: BUILD_X, top: LANE_Y[p] - 46, width: BUILD_W }}
@@ -254,7 +256,7 @@ export const FramingCanvas: React.FC<FramingCanvasProps> = ({ example, onOpenDet
               highlight={!dim}
               dimmed={dim}
             >
-              {p === "T1" ? "The hub builds" : p === active ? `Example: ${MODES[example.mode].label}` : "For me, with me or Enable me"}
+              {p === active && showExample ? `Example: ${MODES[example.mode].label}` : "Any build mode"}
             </MiroCard>
           </React.Fragment>
         );
