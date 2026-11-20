@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import { ChevronRight, CornerUpLeft, Lightbulb, LogOut, Users, Bot } from "lucide-react";
-import { BUILD_MODES, BUILD_MODE_ORDER, BUILD_STEPS, BuildMode, SELF_SERVICE_EXITS, SELF_SERVICE_EXIT_RESULT } from "@/lib/miroBuild";
+import { BUILD_MODES, BUILD_MODE_ORDER, BUILD_STEPS, BuildMode, ORIGIN, SELF_SERVICE_AGENTS, SELF_SERVICE_EXITS, SELF_SERVICE_EXIT_RESULT } from "@/lib/miroBuild";
 import { ExampleCase } from "@/lib/miroLifecycle";
 import { cx } from "./MiroPrimitives";
 import { OriginLegend, WhoChip } from "./BuildShared";
@@ -22,8 +22,12 @@ const GRID = { gridTemplateColumns: "250px repeat(4, minmax(0, 1fr))", columnGap
 export const BuildCanvas: React.FC<BuildCanvasProps> = ({ example, onBackToFraming }) => {
   const [step, setStep] = useState<{ mode: BuildMode; n: StepNo } | null>(null);
   const [team, setTeam] = useState<BuildMode | null>(null);
+  const [guardrails, setGuardrails] = useState(false);
 
-  const openTeam = (m: BuildMode) => setTeam(m);
+  const openTeam = (m: BuildMode) => {
+    setGuardrails(false);
+    setTeam(m);
+  };
 
   return (
     <div style={{ width: 1400 }}>
@@ -34,8 +38,11 @@ export const BuildCanvas: React.FC<BuildCanvasProps> = ({ example, onBackToFrami
         </div>
         <div className="flex items-center gap-3 text-xs font-semibold text-gray-600">
           <span className="rounded-md border border-amber-200 bg-amber-100 px-2 py-1 text-amber-900">Double-click a step to open it</span>
-          <span className="flex items-center gap-1">
-            <Users className="h-3.5 w-3.5" /> View the team opens each mode's team
+          <span className="flex items-center gap-1.5">
+            <span className="inline-block h-3 w-3 rounded border-2 border-gray-400 bg-white" /> Human step
+          </span>
+          <span className="flex items-center gap-1.5">
+            <span className="inline-block h-3 w-3 rounded border-2" style={{ borderColor: ORIGIN.agent.color, background: ORIGIN.agent.soft }} /> Agentic step
           </span>
         </div>
       </div>
@@ -82,8 +89,15 @@ export const BuildCanvas: React.FC<BuildCanvasProps> = ({ example, onBackToFrami
                   <div className="text-lg font-black leading-tight">{m.label}</div>
                   <div className="text-xs font-semibold opacity-90">{m.tagline}</div>
                   <div className="mt-2 flex flex-1 flex-col gap-1">
+                    <div className="text-[9px] font-black uppercase tracking-wider opacity-80">Core team</div>
                     {m.builders.map((b) => (
-                      <div key={b.label} className="rounded bg-white/15 px-2 py-1 text-[11px] font-semibold leading-tight">
+                      <div key={b.label} className="rounded bg-white/25 px-2 py-1 text-[11px] font-bold leading-tight ring-1 ring-white/60">
+                        {b.label}
+                      </div>
+                    ))}
+                    <div className="mt-1.5 text-[9px] font-black uppercase tracking-wider opacity-80">Support team</div>
+                    {m.support.map((b) => (
+                      <div key={b.label} className="rounded border border-dashed border-white/50 px-2 py-1 text-[10px] font-semibold leading-tight opacity-90">
                         {b.label}
                       </div>
                     ))}
@@ -140,6 +154,43 @@ export const BuildCanvas: React.FC<BuildCanvasProps> = ({ example, onBackToFrami
                   );
                 })}
               </div>
+
+              {/* Self-service: agentic row, always on across the 4 steps */}
+              {isSelf && (
+                <div className="mt-3 grid items-stretch" style={GRID}>
+                  <div className="flex items-center rounded-xl border-2 px-3 py-2 text-xs font-black" style={{ borderColor: ORIGIN.agent.color, background: ORIGIN.agent.soft, color: ORIGIN.agent.color }}>
+                    <Bot className="mr-1.5 h-4 w-4" /> Agentic: always on
+                  </div>
+                  <div
+                    className="col-span-4 grid grid-cols-2 gap-4 rounded-xl border-2 p-3"
+                    style={{ borderColor: ORIGIN.agent.color, background: ORIGIN.agent.soft }}
+                  >
+                    {SELF_SERVICE_AGENTS.map((a) => (
+                      <div
+                        key={a.id}
+                        role="button"
+                        tabIndex={0}
+                        onDoubleClick={() => {
+                          setGuardrails(a.id === "audit");
+                          setTeam("self-service");
+                        }}
+                        title={a.id === "audit" ? "Double-click for the guardrails" : undefined}
+                        className={cx(
+                          "rounded-lg border bg-white p-3 shadow-sm",
+                          a.id === "audit" && "cursor-pointer hover:shadow-md"
+                        )}
+                        style={{ borderColor: ORIGIN.agent.color }}
+                      >
+                        <div className="flex items-center gap-2 text-[13px] font-bold text-gray-900">
+                          <Bot className="h-4 w-4" style={{ color: ORIGIN.agent.color }} /> {a.name}
+                        </div>
+                        <div className="mt-1 text-[11px] leading-snug text-gray-700">{a.does}</div>
+                        {a.id === "audit" && <div className="mt-1.5 text-[10px] font-semibold text-gray-400">Double-click: the guardrails</div>}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
 
               {/* Example note on the active lane */}
               {isExample && example.notes.build && (
@@ -199,7 +250,7 @@ export const BuildCanvas: React.FC<BuildCanvasProps> = ({ example, onBackToFrami
         <TeamDeepDive mode={team} onClose={() => setTeam(null)} onChange={openTeam} />
       )}
       {team === "self-service" && (
-        <AgentDeepDive onClose={() => setTeam(null)} onChange={openTeam} onBackToFraming={onBackToFraming} />
+        <AgentDeepDive key={String(guardrails)} onClose={() => setTeam(null)} onChange={openTeam} onBackToFraming={onBackToFraming} openGuardrails={guardrails} />
       )}
     </div>
   );

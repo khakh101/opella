@@ -15,13 +15,14 @@ export const BUILD_MODE_ORDER: BuildMode[] = ["enable-me", "with-me", "for-me", 
 // Where a role sits (legend of the Roles slide)
 // ---------------------------------------------------------------------
 
-export type Origin = "function" | "to" | "dai" | "bs" | "external" | "agent" | "user";
+export type Origin = "function" | "to" | "dai" | "bs" | "other" | "external" | "agent" | "user";
 
 export const ORIGIN: Record<Origin, { label: string; color: string; soft: string }> = {
   function: { label: "Function", color: "#6d4fc9", soft: "#ede8fb" },
   to: { label: "Transformation Office and other supporting functions", color: "#e0763a", soft: "#fdebdd" },
   dai: { label: "Data & AI", color: "#0f9d8a", soft: "#dcf4ef" },
   bs: { label: "Business Solutions", color: "#c99a06", soft: "#fbf0cc" },
+  other: { label: "Other supporting functions", color: "#d0558f", soft: "#fde8f2" },
   external: { label: "External", color: "#64748b", soft: "#eef1f5" },
   agent: { label: "Agent", color: "#4f46e5", soft: "#e6e5fb" },
   user: { label: "The user", color: "#6d4fc9", soft: "#ede8fb" },
@@ -66,7 +67,8 @@ export interface ModeBuild {
   label: string;
   tagline: string;
   whoBuilds: string;
-  builders: Chip[]; // lane header
+  builders: Chip[]; // lane header: core team
+  support: Chip[]; // lane header: support team
   color: string;
   steps: Record<1 | 2 | 3 | 4, StepCell>;
 }
@@ -85,8 +87,8 @@ export const BUILD_MODES: Record<BuildMode, ModeBuild> = {
       C("The user (AI builder)", "function"),
       C("Engineers in the function", "function"),
       C("External provider (BUY)", "external"),
-      C("Data & AI: support and audit", "dai"),
     ],
+    support: [C("Data & AI: support and audit", "dai"), C("Transversal teams", "to")],
     color: "#6d4fc9",
     steps: {
       1: {
@@ -151,6 +153,7 @@ export const BUILD_MODES: Record<BuildMode, ModeBuild> = {
       C("Engineers in the function", "function"),
       C("Engineers in Data & AI", "dai"),
     ],
+    support: [C("Transversal teams", "to")],
     color: "#0369a1",
     steps: {
       1: {
@@ -212,6 +215,7 @@ export const BUILD_MODES: Record<BuildMode, ModeBuild> = {
       C("Data & AI engineers", "dai"),
       C("Function: business owner, AI catalyst, potential PO", "function"),
     ],
+    support: [C("Transversal teams", "to")],
     color: "#0d3824",
     steps: {
       1: {
@@ -266,56 +270,50 @@ export const BUILD_MODES: Record<BuildMode, ModeBuild> = {
   "self-service": {
     id: "self-service",
     label: "Self-service AI",
-    tagline: "The user builds, agents help",
+    tagline: "The user builds, agents watch",
     whoBuilds:
-      "The user builds it alone with an approved tool, helped by a suite of agents. At any time the user can leave this mode.",
-    builders: [C("The user", "user"), C("A suite of agents", "agent")],
+      "The user builds it alone with an approved tool. Two agents watch the whole build: audit and monitoring, and token control. At any time the user can leave this mode.",
+    builders: [C("The user", "user")],
+    support: [C("Audit & monitoring agent", "agent"), C("Token control agent", "agent")],
     color: "#7c3aed",
     steps: {
       1: {
-        short: "The user owns it; the charter agent checks",
-        who: [C("The user", "user"), C("Charter agent", "agent"), C("OR.AI screening", "agent")],
+        short: "The user owns it",
+        who: [C("The user", "user"), C("Business owner", "function")],
         happens: [
-          "The user declares the idea in the charter form; the charter agent gathers what is missing",
-          "The OR.AI screening agent sets the risk level",
-          "The business owner approves the use case",
           "The user owns the assistant end to end",
+          "The business owner has approved the use case at framing",
         ],
         output: "An approved idea, owned by the user",
       },
       2: {
-        short: "An agent drafts a short backlog",
-        who: [C("The user", "user"), C("Backlog agent", "agent")],
+        short: "The user writes a short backlog",
+        who: [C("The user", "user")],
         happens: [
-          "The user describes what the assistant should do",
-          "A backlog agent drafts the user stories and the acceptance criteria",
-          "The user keeps, edits or drops each story",
+          "The user lists what the assistant should do as a few user stories",
+          "The user sets the acceptance criteria: what good looks like",
         ],
         output: "A short list of user stories",
-        note: "The backlog agent is proposed, not named in the deck.",
       },
       3: {
-        short: "The user builds in the sandbox, agents watch",
-        who: [C("The user", "user"), C("Build assistant", "agent"), C("Token control", "agent")],
+        short: "The user builds in the sandbox",
+        who: [C("The user", "user"), C("Token control", "agent"), C("Audit & monitoring", "agent")],
         happens: [
           "The user configures an approved tool (for example a personal Copilot agent) in the builder sandbox: low or no code, approved or synthetic data",
-          "A build assistant agent suggests prompts, settings and templates",
           "The token control agent tracks token usage and cost against the cap",
-          "Guardrails always apply: cost caps, auto-expiry, no production connection, no external sharing",
+          "The audit and monitoring agent checks data access, prompts and guardrails",
         ],
         output: "A working assistant, inside the sandbox",
-        note: "The build assistant agent is proposed, not named in the deck.",
       },
       4: {
-        short: "The user tests, the audit agent checks",
-        who: [C("The user", "user"), C("Test agent", "agent"), C("Audit & monitoring", "agent")],
+        short: "The user tests and registers it",
+        who: [C("The user", "user"), C("Audit & monitoring", "agent")],
         happens: [
-          "The user tests the assistant against the user stories, helped by a test agent",
-          "The audit and monitoring agent runs automated checks: data access, prompts, guardrails",
+          "The user tests the assistant against the user stories",
+          "The audit and monitoring agent runs its automated checks",
           "The user validates it and registers it: one line in the AI registry",
         ],
-        output: "A registered assistant, with a quarterly value pulse",
-        note: "The test agent is proposed, not named in the deck.",
+        output: "A registered assistant",
       },
     },
   },
@@ -343,6 +341,7 @@ export interface TeamRole {
   isNew?: boolean; // "NEW" tag of the Roles slide
   deployed?: boolean; // Data & AI profile deployed in the function (ring)
   external?: boolean; // external team or business-side resource (asterisk)
+  split?: boolean; // Digital PO: Data & AI or Business Solutions (two-colour avatar)
   note?: string;
 }
 
@@ -374,7 +373,7 @@ export const TEAM_VIEWS: Partial<Record<BuildMode, TeamView>> = {
       { role: "Business analytics", origin: "function" },
       { role: "Business architect", origin: "to", isNew: true },
       { role: "AI builder", origin: "function", isNew: true, note: "Often the user who raised the use case" },
-      { role: "Digital PO", origin: "dai", note: "From Data & AI or Business Solutions, per use case" },
+      { role: "Digital PO", origin: "dai", split: true, note: "From Data & AI or Business Solutions, per use case" },
       { role: "Data scientist", origin: "function", external: true },
       { role: "AI engineer", origin: "function", external: true },
       { role: "Data eng. / architect", origin: "function", external: true },
@@ -410,7 +409,7 @@ export const TEAM_VIEWS: Partial<Record<BuildMode, TeamView>> = {
       { role: "Business architect", origin: "to", isNew: true },
       { role: "AI builder", origin: "function", isNew: true },
       { role: "FDE", origin: "dai", isNew: true },
-      { role: "Digital PO", origin: "dai", note: "From Data & AI or Business Solutions, per use case" },
+      { role: "Digital PO", origin: "dai", split: true, note: "From Data & AI or Business Solutions, per use case" },
       { role: "Data scientist", origin: "dai", deployed: true },
       { role: "AI engineer", origin: "dai", deployed: true },
       { role: "Data eng. / architect", origin: "dai", deployed: true },
@@ -439,7 +438,7 @@ export const TEAM_VIEWS: Partial<Record<BuildMode, TeamView>> = {
       { role: "BO / PO", origin: "function", isNew: true },
       { role: "Business architect", origin: "to", isNew: true },
       { role: "FDE", origin: "dai", isNew: true },
-      { role: "Digital PO", origin: "dai", note: "From Data & AI or Business Solutions, per use case" },
+      { role: "Digital PO", origin: "dai", split: true, note: "From Data & AI or Business Solutions, per use case" },
       { role: "Data scientist", origin: "dai" },
       { role: "AI engineer", origin: "dai" },
       { role: "Data eng. / architect", origin: "dai" },
@@ -477,87 +476,35 @@ export const TRANSVERSAL_TEAMS: { name: string; origin: Origin; members: string[
   { name: "Digital transversal teams", origin: "bs", members: ["Business Solutions team", "Enterprise architecture", "Infra and cyber"] },
   {
     name: "Other supporting functions",
-    origin: "to",
+    origin: "other",
     members: ["Value officer (Finance)", "OR.AI team (Legal)", "Internal communication", "P&C counterpart (case by case)"],
   },
 ];
 
 // ---------------------------------------------------------------------
-// Self-service: the agent suite (deep dive)
+// Self-service: the two agents that watch the build
 // ---------------------------------------------------------------------
 
 export interface AgentDef {
-  id: string;
+  id: "audit" | "token";
   name: string;
   does: string;
-  source: "deck" | "proposed";
-  placement: 1 | 2 | 3 | 4 | "always" | "after";
 }
 
 export const SELF_SERVICE_AGENTS: AgentDef[] = [
   {
-    id: "charter",
-    name: "Project charter agent",
-    does: "Gathers the missing information from the charter form and checks the need is complete and new",
-    source: "deck",
-    placement: 1,
-  },
-  {
-    id: "orai",
-    name: "OR.AI screening agent",
-    does: "Sets the risk level and checks the use case stays inside the self-service limits",
-    source: "deck",
-    placement: 1,
-  },
-  {
-    id: "backlog",
-    name: "Backlog agent",
-    does: "Drafts the user stories and acceptance criteria from the user's description",
-    source: "proposed",
-    placement: 2,
-  },
-  {
-    id: "build",
-    name: "Build assistant agent",
-    does: "Suggests prompts, settings and templates while the user configures the tool",
-    source: "proposed",
-    placement: 3,
-  },
-  {
-    id: "test",
-    name: "Test agent",
-    does: "Runs the user stories as test cases and reports what fails",
-    source: "proposed",
-    placement: 4,
-  },
-  {
     id: "audit",
     name: "Audit & monitoring agent",
     does: "Runs automated checks: data access, prompts, guardrails",
-    source: "deck",
-    placement: "always",
   },
   {
     id: "token",
     name: "Token control agent",
     does: "Tracks token usage and cost against the cap; alerts, throttles or blocks over budget",
-    source: "deck",
-    placement: "always",
-  },
-  {
-    id: "perf",
-    name: "Performance monitoring agent",
-    does: "Follows value, run cost and usage after go-live, for the quarterly value pulse",
-    source: "deck",
-    placement: "after",
   },
 ];
 
-export const SELF_SERVICE_LEVELS: { level: string; name: string; text: string }[] = [
-  { level: "Level 1 · everyone", name: "Approved AI tools", text: "Copilot and approved GenAI tools, open after the AI for All basics. No build, no new data." },
-  { level: "Level 2 · builders", name: "Builder sandbox", text: "Non-production workspaces on approved or synthetic data, time-boxed with cost caps, after a short sandbox passport." },
-];
-
+// Zoom of the audit & monitoring agent
 export const SELF_SERVICE_GUARDRAILS: string[] = [
   "No personal, health or confidential data without OR.AI clearance",
   "No connection to production systems",

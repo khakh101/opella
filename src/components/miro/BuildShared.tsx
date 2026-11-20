@@ -27,21 +27,23 @@ export const WhoChip: React.FC<{ chip: Chip; size?: "sm" | "md" }> = ({ chip, si
   );
 };
 
-// Avatar used in the team deep dives (Roles slide look: circle, NEW tag, ring)
+// Avatar used in the team deep dives (Roles slide look: pastel circle, NEW tag, ring)
 export const RoleAvatar: React.FC<{ r: TeamRole }> = ({ r }) => {
   const o = ORIGIN[r.origin];
+  const dai = ORIGIN.dai;
+  const bs = ORIGIN.bs;
   return (
     <div className="flex w-[104px] flex-col items-center text-center" title={r.note}>
       <div className="relative">
         <div
           className={cx(
             "flex h-14 w-14 items-center justify-center rounded-full",
-            r.external ? "border-2 border-dashed" : "border-2",
+            r.external || r.origin === "external" ? "border-2 border-dashed" : "border",
             r.deployed && "ring-4 ring-offset-2"
           )}
           style={{
-            background: o.soft,
-            borderColor: o.color,
+            background: r.split ? `linear-gradient(135deg, ${bs.soft} 50%, ${dai.soft} 50%)` : o.soft,
+            borderColor: r.split ? dai.color : o.color,
             // ring colour for the profiles deployed on the function side
             ["--tw-ring-color" as string]: ORIGIN.function.color,
           }}
@@ -49,7 +51,7 @@ export const RoleAvatar: React.FC<{ r: TeamRole }> = ({ r }) => {
           {r.origin === "agent" ? (
             <Bot className="h-6 w-6" style={{ color: o.color }} />
           ) : (
-            <User className="h-6 w-6" style={{ color: o.color }} />
+            <User className="h-6 w-6" style={{ color: r.split ? dai.color : o.color }} />
           )}
         </div>
         {r.isNew && (
