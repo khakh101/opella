@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { ArrowRight, CornerUpLeft, Lightbulb } from "lucide-react";
+import { CornerUpLeft, Lightbulb } from "lucide-react";
 import { BUILD_MODES, BUILD_MODE_ORDER } from "@/lib/miroBuild";
 import { ExampleCase, ExampleNoteKey, MODES, PATHS } from "@/lib/miroLifecycle";
 import { GateDiamond, MiroCard, Sticky, cx } from "./MiroPrimitives";
@@ -139,8 +139,7 @@ export const PreScaleCanvas: React.FC<PreScaleCanvasProps> = ({ example, onOpenD
         <path d={curve(270, Y_T3 + 40, BTN.x - 4, BTN.y + BTN.h / 2 - 12)} stroke={topColor(PATHS.T3.color)} strokeWidth={mergedActive ? 3 : 2} fill="none" markerEnd={`url(#ps-${mergedActive ? "t3" : "grey"})`} />
         <path d={curve(270, Y_SS + 40, BTN.x - 4, BTN.y + BTN.h / 2 + 12)} stroke={topColor(PATHS.SS.color)} strokeWidth={mergedActive ? 3 : 2} fill="none" markerEnd={`url(#ps-${mergedActive ? "ss" : "grey"})`} />
         {/* button to T2 gates, then Build as T2 */}
-        <path d={`M ${BTN.x + BTN.w} ${BTN.y + BTN.h / 2} L 786 ${BTN.y + BTN.h / 2}`} stroke={topColor(T2)} strokeWidth={3} markerEnd={`url(#ps-${mergedActive ? "t2" : "grey"})`} />
-        <path d={`M 1196 ${BTN.y + BTN.h / 2} L 1236 ${BTN.y + BTN.h / 2}`} stroke={topColor(T2)} strokeWidth={3} markerEnd={`url(#ps-${mergedActive ? "t2" : "grey"})`} />
+        <path d={`M ${BTN.x + BTN.w} ${BTN.y + BTN.h / 2} L 876 ${BTN.y + BTN.h / 2}`} stroke={topColor(T2)} strokeWidth={3} markerEnd={`url(#ps-${mergedActive ? "t2" : "grey"})`} />
 
         {/* T1 and T2 into the business case */}
         <path d={curve(270, Y_T1 + 40, BC.x - 4, BC.y + 90)} stroke={bottomColor("T1")} strokeWidth={!mergedActive && example.path === "T1" ? 3 : 2} fill="none" markerEnd={`url(#ps-${!mergedActive && example.path === "T1" ? "t1" : "grey"})`} />
@@ -192,22 +191,12 @@ export const PreScaleCanvas: React.FC<PreScaleCanvasProps> = ({ example, onOpenD
         </span>
       </button>
 
-      {/* T2 gates in Framing */}
+      {/* Label on the arrow: the T2 gates are passed in Framing, not shown again here */}
       <div
-        className={cx("absolute rounded-xl border-2 bg-white/95 shadow-md", !mergedActive && "opacity-60")}
-        style={{ left: 790, top: Y_T3 - 25, width: 406, height: 150, borderColor: T2 }}
+        className="absolute text-center text-[11px] font-bold leading-tight"
+        style={{ left: BTN.x + BTN.w + 8, top: BTN.y + BTN.h / 2 - 44, width: 170, color: topColor(T2) }}
       >
-        <div className="flex items-center justify-between rounded-t-[10px] px-3 py-1 text-[11px] font-black text-white" style={{ background: T2 }}>
-          <span>All the T2 gates, in Framing</span>
-          <span className="text-[10px] font-semibold opacity-80">Double-click a gate</span>
-        </div>
-        <div className="flex items-start justify-around px-2 pt-1">
-          <GateDiamond id="G2" type="human" size={40} label="Approval" onOpen={() => onOpenDetail("g2-T2")} />
-          <ArrowRight className="mt-11 h-4 w-4 shrink-0 text-gray-400" />
-          <GateDiamond id="G3" type="human" size={40} label="Prioritisation" onOpen={() => onOpenDetail("g3-T2")} />
-          <ArrowRight className="mt-11 h-4 w-4 shrink-0 text-gray-400" />
-          <GateDiamond id="G4" type="human" size={40} label="Mode selection" onOpen={() => onOpenDetail("g4-T2")} />
-        </div>
+        All the T2 gates (G2 to G4), passed in Framing
       </div>
 
       <MiroCard
@@ -215,13 +204,13 @@ export const PreScaleCanvas: React.FC<PreScaleCanvasProps> = ({ example, onOpenD
         title="II · Build as T2"
         accent={T2}
         className="absolute"
-        style={{ left: 1240, top: Y_T3 - 5, width: 150 }}
+        style={{ left: 880, top: BTN.y + BTN.h / 2 - 40, width: 300 }}
         dimmed={!mergedActive}
       >
-        Any build mode.
+        Then the use case is built as a T2, in any build mode.
       </MiroCard>
 
-      <ExampleNote example={example} noteKey="t2" width={400} style={mergedActive ? { left: 790, top: 255 } : { display: "none" }} />
+      <ExampleNote example={example} noteKey="t2" width={420} style={mergedActive ? { left: 880, top: 270 } : { display: "none" }} />
 
       {/* ----------------------------------------------------------- */}
       {/* Band B content */}

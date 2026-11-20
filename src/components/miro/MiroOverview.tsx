@@ -3,7 +3,7 @@
 import React from "react";
 import { MousePointerClick } from "lucide-react";
 import { PATHS, PATH_ORDER, STEPS, StepId } from "@/lib/miroLifecycle";
-import { GateDiamond, cx } from "./MiroPrimitives";
+import { cx } from "./MiroPrimitives";
 
 interface MiroOverviewProps {
   onOpenStep: (id: StepId) => void;
@@ -78,34 +78,38 @@ export const MiroOverview: React.FC<MiroOverviewProps> = ({ onOpenStep, onOpenGa
       ))}
     </div>
 
-    {/* Gates */}
+    {/* Gates: same size and same top line in every column */}
     <div className="mt-6 grid grid-cols-5 gap-4">
       {STEPS.map((s) => (
-        <div key={s.id} className="flex min-h-[120px] items-start justify-center gap-1">
+        <div key={s.id} className="flex min-h-[110px] items-start justify-center gap-1">
           {s.gates.length === 0 ? (
             <div className="pt-8 text-center text-[11px] italic text-gray-400">
               {s.id === "build" ? "Starts at GO BUILD" : "Roll-out after G5"}
             </div>
           ) : (
             s.gates.map((g) => (
-              <div
+              <button
                 key={g.id}
-                role="button"
-                tabIndex={0}
+                type="button"
                 onClick={() => onOpenGate(g.id)}
-                onKeyDown={(e) => e.key === "Enter" && onOpenGate(g.id)}
                 title={`Click for the ${g.id} details`}
-                className="cursor-pointer rounded-lg transition-transform hover:-translate-y-0.5"
+                className="group flex w-[64px] flex-col items-center focus:outline-none"
               >
-                <GateDiamond
-                  id={g.id}
-                  type={g.type}
-                  size={s.gates.length > 2 ? 34 : 46}
-                  label={g.label}
-                  showDetailsButton={false}
-                  onOpen={() => onOpenGate(g.id)}
-                />
-              </div>
+                <span className="relative flex h-[46px] w-[46px] items-center justify-center">
+                  <span
+                    className={cx(
+                      "absolute h-[34px] w-[34px] rotate-45 rounded-md shadow-md transition-transform group-hover:scale-110",
+                      g.type === "agent"
+                        ? "border-[3px] border-dashed border-violet-500 bg-violet-50"
+                        : "border-2 border-pink-600 bg-pink-500"
+                    )}
+                  />
+                  <span className={cx("relative text-xs font-black", g.type === "agent" ? "text-violet-800" : "text-white")}>
+                    {g.id}
+                  </span>
+                </span>
+                <span className="mt-1 text-center text-[10px] font-bold leading-tight text-gray-800">{g.label}</span>
+              </button>
             ))
           )}
         </div>
