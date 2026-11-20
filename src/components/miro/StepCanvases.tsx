@@ -2,8 +2,8 @@
 
 import React from "react";
 import { Bot, Lightbulb } from "lucide-react";
-import { ExampleCase, ExampleNoteKey, MODES, MODE_ORDER, ModeId, PATHS, PathId } from "@/lib/miroLifecycle";
-import { FlowArrow, GateDiamond, MiroCard, MiroFrame, Sticky, cx } from "./MiroPrimitives";
+import { ExampleCase, ExampleNoteKey, MODES, PATHS } from "@/lib/miroLifecycle";
+import { FlowArrow, GateDiamond, MiroCard, MiroFrame, Sticky } from "./MiroPrimitives";
 
 interface StepCanvasProps {
   example: ExampleCase;
@@ -37,96 +37,6 @@ const AgentChip: React.FC<{ name: string; does: string }> = ({ name, does }) => 
       <div className="font-bold">{name}</div>
       <div className="text-violet-800">{does}</div>
     </div>
-  </div>
-);
-
-// ---------------------------------------------------------------------
-// II · Build (MVP)
-// ---------------------------------------------------------------------
-
-const MODE_PATHS: Record<ModeId, PathId[]> = {
-  "for-me": ["T1", "T2", "T3"],
-  "with-me": ["T2", "T3"],
-  "enable-me": ["T3"],
-  "self-service": ["SS"],
-};
-
-export const BuildCanvas: React.FC<StepCanvasProps> = ({ example }) => (
-  <div className="flex items-center justify-center gap-6" style={{ width: 1400 }}>
-    <div className="flex flex-col items-center">
-      <div className="rounded-lg bg-opella-forest px-4 py-3 text-center text-sm font-black text-white shadow-md">
-        GO BUILD
-        <div className="text-[10px] font-semibold opacity-80">after G4</div>
-      </div>
-    </div>
-    <FlowArrow width={40} />
-
-    <MiroFrame title="Who builds · decided at G4" className="w-[560px]">
-      <div className="space-y-3">
-        {MODE_ORDER.map((m) => {
-          const def = MODES[m];
-          const isEx = example.mode === m;
-          return (
-            <div
-              key={m}
-              className={cx(
-                "flex items-center gap-3 rounded-lg border p-3 transition-all",
-                isEx ? "border-amber-400 bg-amber-50 shadow-md" : "border-gray-200 bg-white"
-              )}
-            >
-              <div className="w-28 shrink-0">
-                <div className="text-[10px] font-bold uppercase text-gray-500">{def.motto}</div>
-                <div className="text-sm font-black text-gray-900">{def.label}</div>
-                <div className="mt-1 flex gap-1">
-                  {MODE_PATHS[m].map((p) => (
-                    <span key={p} className="rounded px-1 text-[9px] font-black text-white" style={{ background: PATHS[p].color }}>
-                      {PATHS[p].label}
-                    </span>
-                  ))}
-                </div>
-              </div>
-              <div className="flex-1 text-xs text-gray-700">
-                <div className="font-semibold text-gray-900">{def.whoBuilds}</div>
-                <div>{def.hubRole}</div>
-                {isEx && (
-                  <div className="mt-1 text-[11px] font-semibold text-amber-900">
-                    Example: {example.short}. {example.whyMode}.
-                  </div>
-                )}
-              </div>
-            </div>
-          );
-        })}
-      </div>
-    </MiroFrame>
-
-    <FlowArrow width={40} />
-
-    <MiroFrame title="Every mode" className="w-[470px]">
-      <div className="grid grid-cols-2 gap-4">
-        <Sticky color="green" tilt={-1} title="Build the MVP">
-          In 6–8 week sprints, with real users and data.
-        </Sticky>
-        <Sticky color="green" tilt={1} title="Test it">
-          Against functional requirements and acceptance criteria.
-        </Sticky>
-        <Sticky color="green" tilt={1} title="Check the run">
-          Validate the data and platform needed to run it.
-        </Sticky>
-        <Sticky color="blue" tilt={-1} title="Where it is built">
-          Builder sandbox (approved data, cost caps) or the ODP environment for MVPs.
-        </Sticky>
-        <Sticky color="orange" tilt={-1} title="Process redesign">
-          If G2 said yes: designed with the function during the build.
-        </Sticky>
-        <Sticky color="pink" tilt={1} title="End of the MVP">
-          Kill, iterate, or submit to pre-scale.
-        </Sticky>
-      </div>
-      <div className="mt-4">
-        <ExampleSticky example={example} noteKey="build" width={420} />
-      </div>
-    </MiroFrame>
   </div>
 );
 

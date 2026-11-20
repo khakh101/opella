@@ -198,9 +198,9 @@ export const STEPS: StepDef[] = [
     name: "Build (MVP)",
     oneLiner: "Build and test the MVP in the selected mode",
     bullets: [
-      "Hub, function or both build",
-      "Tested against acceptance criteria",
-      "6–8 week sprints, then kill or continue",
+      "4 steps: PO, backlog, MVP, user test",
+      "4 modes: Enable me, with me, for me, self-service",
+      "Validated MVP goes to Pre-scale",
     ],
     gates: [],
     zone: "agility",
