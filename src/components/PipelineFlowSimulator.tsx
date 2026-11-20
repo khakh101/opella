@@ -24,7 +24,7 @@ import {
 export type ScenarioId = "low" | "medium" | "high" | "custom";
 
 export interface SimulationAssumptions {
-  incomingPerWeek: number;
+  incomingPerWeek: number; // Exact integer count per burst
   acceptanceRateG1: number; // % passing G1 (AI Charter intake)
   g4PassRate: number; // % passing G4 to GO BUILD
   postMvpPromotionRate: number; // % of T3 & T4 promoted to T2 Scale AFTER MVP build at Gate G5
@@ -53,7 +53,7 @@ export interface SimulationAssumptions {
   g5LeadWeeks: number;
 }
 
-// Preset Scenarios (Always normalized to sum exactly to 100%)
+// Preset Scenarios (Exact integer burst numbers, splits sum to 100%)
 const PRESET_SCENARIOS: Record<
   "low" | "medium" | "high",
   {
@@ -65,10 +65,10 @@ const PRESET_SCENARIOS: Record<
 > = {
   low: {
     name: "Low Volume (Smooth Flow)",
-    description: "Conservative intake (~3–4 UC/week). All governance forums review initiatives within 1 meeting cycle with zero comitology delay.",
+    description: "Conservative intake (4 UC/week). All governance forums review initiatives within 1 meeting cycle with zero comitology delay.",
     badge: "Low · Balanced Flow",
     assumptions: {
-      incomingPerWeek: 3.5,
+      incomingPerWeek: 4,
       acceptanceRateG1: 80,
       g4PassRate: 85,
       postMvpPromotionRate: 15,
@@ -95,10 +95,10 @@ const PRESET_SCENARIOS: Record<
   },
   medium: {
     name: "Medium Volume (Opella Baseline)",
-    description: "Expected steady-state intake (~8–9 UC/week). Transformation SteerCo experiences agenda pressure, creating a backlog exceeding 1 monthly meeting cycle.",
+    description: "Expected steady-state intake (8 UC/week). Transformation SteerCo experiences agenda pressure, creating a backlog exceeding 1 monthly meeting cycle.",
     badge: "Medium · Baseline",
     assumptions: {
-      incomingPerWeek: 8.5,
+      incomingPerWeek: 8,
       acceptanceRateG1: 85,
       g4PassRate: 80,
       postMvpPromotionRate: 20,
@@ -125,10 +125,10 @@ const PRESET_SCENARIOS: Record<
   },
   high: {
     name: "High Volume (Surge Stress Test)",
-    description: "Surge intake (16–20 UC/week). SteerCo and Portfolio Board agendas are overwhelmed; wait times stretch across 2+ consecutive meeting cycles (severe bottleneck).",
+    description: "Surge intake (18 UC/week). SteerCo and Portfolio Board agendas are overwhelmed; wait times stretch across 2+ consecutive meeting cycles (severe bottleneck).",
     badge: "High · Severe Bottleneck",
     assumptions: {
-      incomingPerWeek: 18.0,
+      incomingPerWeek: 18,
       acceptanceRateG1: 88,
       g4PassRate: 75,
       postMvpPromotionRate: 25,
@@ -166,21 +166,14 @@ interface Ball {
   radius: number;
   pathKey: string;
   distance: number; // distance along SVG path in px
-  lateralOffset: number; // perpendicular offset so balls in same burst don't overlap
-  longitudinalOffset: number; // slight longitudinal spread within the burst pack
+  lateralOffset: number; // spread across pipe
+  longitudinalOffset: number; // spread along burst convoy
   speed: number;
   passG1: boolean;
   passG4: boolean;
   isPromoted: boolean; // For T3/T4 after MVP build at G5
-  state:
-    | "MOVING"
-    | "QUEUED_STEERCO"
-    | "QUEUED_BOARD"
-    | "DROPPING_G1"
-    | "DROPPING_G4"
-    | "COMPLETED";
+  state: "MOVING" | "QUEUED_STEERCO" | "QUEUED_BOARD" | "COMPLETED";
   queueIndex?: number;
-  alpha: number;
 }
 
 export const PipelineFlowSimulator: React.FC = () => {
@@ -199,11 +192,9 @@ export const PipelineFlowSimulator: React.FC = () => {
   const [simulatedWeek, setSimulatedWeek] = useState(1);
   const [secondsUntilNextBurst, setSecondsUntilNextBurst] = useState(10.0);
 
-  // Live Queue state for SVG rendering (Starts at 0 = 100% GREEN, grows as bottleneck appears)
-  const [liveQueues, setLiveQueues] = useState({
-    steerCo: 0,
-    board: 0,
-  });
+  // Live Queue counts (Starts at 0 = 100% GREEN, increases as queue forms)
+  const [steerCoLiveCount, setSteerCoLiveCount] = useState(0);
+  const [boardLiveCount, setBoardLiveCount] = useState(0);
 
   // Canvas and animation refs
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -212,14 +203,16 @@ export const PipelineFlowSimulator: React.FC = () => {
   const lastTimeRef = useRef<number>(performance.now());
   const burstTimerRef = useRef<number>(0);
 
-  // Meeting cycle timers (in milliseconds)
+  // Meeting cycle timers
   const steerCoTimerRef = useRef<number>(0);
   const boardTimerRef = useRef<number>(0);
-  const steerCoCapacityUsedRef = useRef<number>(0);
-  const boardCapacityUsedRef = useRef<number>(0);
 
-  // SVG Path DOM refs for mathematically exact path querying via getPointAtLength
+  // DOM SVG Path refs for mathematically exact path querying
   const pathRefs = useRef<Record<string, SVGPathElement | null>>({});
+
+  // Direct SVG path refs for real-time color and width updates
+  const t1BottleneckPathRef = useRef<SVGPathElement | null>(null);
+  const t2BottleneckPathRef = useRef<SVGPathElement | null>(null);
 
   // Reset simulation completely (Everything starts green!)
   const resetSimulation = useCallback(() => {
@@ -227,11 +220,18 @@ export const PipelineFlowSimulator: React.FC = () => {
     burstTimerRef.current = 0;
     steerCoTimerRef.current = 0;
     boardTimerRef.current = 0;
-    steerCoCapacityUsedRef.current = 0;
-    boardCapacityUsedRef.current = 0;
     setSimulatedWeek(1);
     setSecondsUntilNextBurst(10.0);
-    setLiveQueues({ steerCo: 0, board: 0 });
+    setSteerCoLiveCount(0);
+    setBoardLiveCount(0);
+    if (t1BottleneckPathRef.current) {
+      t1BottleneckPathRef.current.setAttribute("stroke", "#10b981");
+      t1BottleneckPathRef.current.setAttribute("stroke-width", "8");
+    }
+    if (t2BottleneckPathRef.current) {
+      t2BottleneckPathRef.current.setAttribute("stroke", "#38bdf8");
+      t2BottleneckPathRef.current.setAttribute("stroke-width", "8");
+    }
   }, []);
 
   // Handle switching scenario preset
@@ -256,7 +256,7 @@ export const PipelineFlowSimulator: React.FC = () => {
     resetSimulation();
   };
 
-  // Auto-Balancing 4-Tier Slider Handler (Guarantees exact 100% sum)
+  // Auto-Balancing 4-Tier Slider Handler (Always equals 100%)
   const handleTierSplitChange = (
     changedTier: "t1" | "t2" | "t3" | "t4",
     rawNewValue: number
@@ -603,22 +603,37 @@ export const PipelineFlowSimulator: React.FC = () => {
     };
   }, [assumptions]);
 
-  // SPAWNS ALL BALLS IN ONE SINGLE BURST (Exactly matching incomingPerWeek)
+  // SPAWNS THE EXACT SELECTED NUMBER OF BALLS ALL IN ONE BURST
   const spawnWeeklyBurst = useCallback(() => {
-    const totalBurstCount = Math.max(1, Math.round(assumptions.incomingPerWeek));
+    // EXACT count selected by the user
+    const exactTotalCount = Math.max(1, Math.round(assumptions.incomingPerWeek));
     const newBalls: Ball[] = [];
 
-    // Exact count distribution across tiers
-    const t1Count = Math.round((totalBurstCount * assumptions.t1Split) / 100);
-    const t2Count = Math.round((totalBurstCount * assumptions.t2Split) / 100);
-    const t3Count = Math.round((totalBurstCount * assumptions.t3Split) / 100);
-    const t4Count = Math.max(0, totalBurstCount - t1Count - t2Count - t3Count);
+    // Distribute using Largest Remainder Method so sum matches exactTotalCount to the single integer!
+    const rawCounts = [
+      { tier: "T1" as const, count: (exactTotalCount * assumptions.t1Split) / 100 },
+      { tier: "T2" as const, count: (exactTotalCount * assumptions.t2Split) / 100 },
+      { tier: "T3" as const, count: (exactTotalCount * assumptions.t3Split) / 100 },
+      { tier: "T4" as const, count: (exactTotalCount * assumptions.selfServeSplit) / 100 },
+    ];
+    const floored = rawCounts.map((c) => ({
+      tier: c.tier,
+      count: Math.floor(c.count),
+      rem: c.count - Math.floor(c.count),
+    }));
+    const sumFloored = floored.reduce((acc, c) => acc + c.count, 0);
+    const sorted = [...floored].sort((a, b) => b.rem - a.rem);
+    const diff = exactTotalCount - sumFloored;
+    for (let i = 0; i < diff; i++) {
+      const target = sorted[i % sorted.length];
+      const match = floored.find((c) => c.tier === target.tier);
+      if (match) match.count++;
+    }
 
     const tierSequence: Array<"T1" | "T2" | "T3" | "T4"> = [];
-    for (let i = 0; i < t1Count; i++) tierSequence.push("T1");
-    for (let i = 0; i < t2Count; i++) tierSequence.push("T2");
-    for (let i = 0; i < t3Count; i++) tierSequence.push("T3");
-    for (let i = 0; i < t4Count; i++) tierSequence.push("T4");
+    floored.forEach((f) => {
+      for (let i = 0; i < f.count; i++) tierSequence.push(f.tier);
+    });
 
     tierSequence.forEach((tier, idx) => {
       const passG1 = Math.random() * 100 < assumptions.acceptanceRateG1;
@@ -628,27 +643,26 @@ export const PipelineFlowSimulator: React.FC = () => {
         Math.random() * 100 < assumptions.postMvpPromotionRate;
 
       let color = "#10b981"; // T1 Emerald
-      let glowColor = "rgba(16, 185, 129, 0.7)";
+      let glowColor = "rgba(16, 185, 129, 0.8)";
       let pathKey = "t1-main";
 
       if (tier === "T2") {
         color = "#38bdf8"; // Sky Blue
-        glowColor = "rgba(56, 189, 248, 0.7)";
+        glowColor = "rgba(56, 189, 248, 0.8)";
         pathKey = "t2-main";
       } else if (tier === "T3") {
         color = "#f59e0b"; // Amber
-        glowColor = "rgba(245, 158, 11, 0.7)";
+        glowColor = "rgba(245, 158, 11, 0.8)";
         pathKey = isPromoted ? "t3-promoted" : "t3-main";
       } else if (tier === "T4") {
         color = "#c084fc"; // Purple
-        glowColor = "rgba(192, 132, 252, 0.7)";
+        glowColor = "rgba(192, 132, 252, 0.8)";
         pathKey = isPromoted ? "t4-promoted" : "t4-main";
       }
 
-      // Lateral spread perpendicular to pipe so all balls in the burst travel side-by-side
-      const lateralOffset = ((idx % 3) - 1) * 7 + (Math.random() - 0.5) * 3;
-      // Tight longitudinal pack so they move together as a single convoy/burst
-      const longitudinalOffset = Math.floor(idx / 3) * -12 + (Math.random() - 0.5) * 4;
+      // Compact lateral and longitudinal spread for convoy
+      const lateralOffset = ((idx % 3) - 1) * 4.5 + (Math.random() - 0.5) * 2;
+      const longitudinalOffset = Math.floor(idx / 3) * -8 + (Math.random() - 0.5) * 2;
 
       newBalls.push({
         id: `ball-${Date.now()}-${idx}-${Math.random()}`,
@@ -657,31 +671,29 @@ export const PipelineFlowSimulator: React.FC = () => {
         glowColor,
         x: 80,
         y: 290,
-        radius: 5,
+        radius: 3.2, // Smaller balls so 2 can stack vertically in queue
         pathKey,
-        distance: 0, // ALL BALLS START TOGETHER AT 0 DISTANCE!
+        distance: 0, // ALL SPAWN TOGETHER AT DISTANCE 0
         lateralOffset,
         longitudinalOffset,
-        speed: 105 + (Math.random() - 0.5) * 6, // Base speed ~105 px/s
+        speed: 105,
         passG1,
         passG4,
         isPromoted,
         state: "MOVING",
-        alpha: 1,
       });
     });
 
     ballsRef.current = [...ballsRef.current, ...newBalls];
   }, [assumptions]);
 
-  // MAIN 60FPS ANIMATION LOOP
+  // MAIN 60FPS SIMULATION ANIMATION LOOP
   useEffect(() => {
     let animationFrameId: number;
     const WEEK_MS = 10000 / simSpeed;
     const STEERCO_CYCLE_MS = 40000 / simSpeed; // Monthly meeting (4 weeks)
     const BOARD_CYCLE_MS = 20000 / simSpeed; // Fortnightly meeting (2 weeks)
 
-    // Trigger initial burst
     if (ballsRef.current.length === 0) {
       spawnWeeklyBurst();
     }
@@ -699,19 +711,18 @@ export const PipelineFlowSimulator: React.FC = () => {
         if (burstTimerRef.current >= WEEK_MS) {
           burstTimerRef.current = 0;
           setSimulatedWeek((w) => w + 1);
-          spawnWeeklyBurst(); // Fire next burst of balls!
+          spawnWeeklyBurst(); // Fire next burst of exact count!
         }
 
         // --- 2. COMITOLOGY MEETING CYCLES (RELEASES QUEUED BALLS) ---
         steerCoTimerRef.current += dt;
         if (steerCoTimerRef.current >= STEERCO_CYCLE_MS) {
           steerCoTimerRef.current = 0;
-          // SteerCo Meeting session held: release up to steerCoCapacity balls from front of queue!
           let released = 0;
           for (const b of ballsRef.current) {
             if (b.state === "QUEUED_STEERCO" && released < assumptions.steerCoCapacity) {
               b.state = "MOVING";
-              b.distance = 585; // Move past SteerCo node!
+              b.distance = 585; // Release past SteerCo node!
               released++;
             }
           }
@@ -720,19 +731,18 @@ export const PipelineFlowSimulator: React.FC = () => {
         boardTimerRef.current += dt;
         if (boardTimerRef.current >= BOARD_CYCLE_MS) {
           boardTimerRef.current = 0;
-          // AI Portfolio Board meeting held: release up to portfolioBoardCapacity balls!
           let released = 0;
           for (const b of ballsRef.current) {
             if (b.state === "QUEUED_BOARD" && released < assumptions.portfolioBoardCapacity) {
               b.state = "MOVING";
-              b.distance = 585;
+              b.distance = 585; // Release past Portfolio Board!
               released++;
             }
           }
         }
       }
 
-      // --- 3. CANVAS DRAWING & PRECISE SVG PATH QUERYING ---
+      // --- 3. CANVAS 2D DRAWING & ACCURATE SVG PATH QUERYING ---
       const canvas = canvasRef.current;
       if (canvas) {
         const ctx = canvas.getContext("2d");
@@ -744,32 +754,24 @@ export const PipelineFlowSimulator: React.FC = () => {
           const activeBalls: Ball[] = [];
 
           for (const b of ballsRef.current) {
-            if (isPlaying) {
-              if (b.state === "MOVING") {
-                b.distance += (b.speed * dt * simSpeed) / 1000;
-              }
+            if (isPlaying && b.state === "MOVING") {
+              b.distance += (b.speed * dt * simSpeed) / 1000;
             }
 
-            // G1 FILTER CHECK (Gate G1 is at x=220, approx distance=140px)
-            if (b.distance >= 140 && !b.passG1 && b.state === "MOVING") {
-              b.state = "DROPPING_G1";
-              b.pathKey = "drop-g1";
-              b.distance = 0;
+            // G1 REJECTION FILTER: DELETE BALL IMMEDIATELY AT G1 IF REJECTED!
+            if (b.distance >= 140 && !b.passG1) {
+              b.state = "COMPLETED"; // Instantly removed!
+              continue;
             }
 
-            // G4 FILTER CHECK (Gate G4 is at x=750, approx distance=720px)
-            if (b.distance >= 720 && !b.passG4 && b.state === "MOVING") {
-              b.state = "DROPPING_G4";
-              if (b.tier === "T1") b.pathKey = "drop-g4-t1";
-              else if (b.tier === "T2") b.pathKey = "drop-g4-t2";
-              else if (b.tier === "T3") b.pathKey = "drop-g4-t3";
-              else b.pathKey = "drop-g4-t4";
-              b.distance = 0;
+            // G4 APPROVAL FILTER: DELETE BALL IMMEDIATELY AT G4 IF REJECTED!
+            if (b.distance >= 720 && !b.passG4) {
+              b.state = "COMPLETED"; // Instantly removed!
+              continue;
             }
 
-            // BOTTLENECK QUEUE CHECKS AT G3 (x=580, approx distance=510px)
+            // BOTTLENECK QUEUE CHECKS IN FRONT OF G3 (x ~ 545, distance ~ 510px)
             if (b.tier === "T1" && b.state === "MOVING" && b.distance >= 510 && b.distance < 570) {
-              // Check if SteerCo has already processed capacity for this meeting cycle
               if (flowCalculations.steerCo.isBottleneck) {
                 b.state = "QUEUED_STEERCO";
               }
@@ -781,44 +783,33 @@ export const PipelineFlowSimulator: React.FC = () => {
               }
             }
 
-            // POSITION COMPUTATION VIA DOM SVG PATH
+            // EXACT POSITION QUERYING
             const pathEl = pathRefs.current[b.pathKey];
-            if (pathEl) {
+            if (pathEl && b.state !== "COMPLETED") {
               const totalLen = pathEl.getTotalLength();
 
               if (b.state === "QUEUED_STEERCO") {
+                // STACK 2 ON TOP OF EACH OTHER IN A LINE!
                 b.queueIndex = steerCoWaitingCount++;
-                // Neatly stacked in queue in front of SteerCo node (x=540, y=90)
-                b.x = 540 - b.queueIndex * 15;
-                b.y = 90 + Math.sin(time / 200 + b.queueIndex) * 1.5;
+                const col = Math.floor(b.queueIndex / 2);
+                const row = b.queueIndex % 2;
+                b.x = 545 - col * 9;
+                b.y = row === 0 ? 85.5 : 94.5;
               } else if (b.state === "QUEUED_BOARD") {
+                // STACK 2 ON TOP OF EACH OTHER IN A LINE!
                 b.queueIndex = boardWaitingCount++;
-                // Stacked in front of Portfolio Board (x=540, y=210)
-                b.x = 540 - b.queueIndex * 15;
-                b.y = 210 + Math.sin(time / 200 + b.queueIndex) * 1.5;
-              } else if (b.state === "DROPPING_G1") {
-                const effectiveDist = Math.min(totalLen, b.distance);
-                const pt = pathEl.getPointAtLength(effectiveDist);
-                b.x = pt.x;
-                b.y = pt.y;
-                b.alpha = Math.max(0, 1 - b.distance / totalLen);
-                if (b.distance >= totalLen) b.state = "COMPLETED";
-              } else if (b.state === "DROPPING_G4") {
-                const effectiveDist = Math.min(totalLen, b.distance);
-                const pt = pathEl.getPointAtLength(effectiveDist);
-                b.x = pt.x;
-                b.y = pt.y;
-                b.alpha = Math.max(0, 1 - b.distance / totalLen);
-                if (b.distance >= totalLen) b.state = "COMPLETED";
+                const col = Math.floor(b.queueIndex / 2);
+                const row = b.queueIndex % 2;
+                b.x = 545 - col * 9;
+                b.y = row === 0 ? 205.5 : 214.5;
               } else {
-                // NORMAL MOVEMENT: Exact point along the SVG path
+                // NORMAL MOVEMENT ALONG EXACT SVG PATH
                 const effectiveDist = Math.min(
                   totalLen,
                   Math.max(0, b.distance + b.longitudinalOffset)
                 );
                 const pt = pathEl.getPointAtLength(effectiveDist);
 
-                // Compute tangent angle for lateral offset perpendicular to curve
                 const ptNext = pathEl.getPointAtLength(
                   Math.min(totalLen, effectiveDist + 2)
                 );
@@ -829,23 +820,18 @@ export const PipelineFlowSimulator: React.FC = () => {
                 b.x = pt.x + normalX;
                 b.y = pt.y + normalY;
 
-                // Fades out into RUN
-                if (effectiveDist >= totalLen - 20) {
-                  b.alpha = Math.max(0, (totalLen - effectiveDist) / 20);
-                }
                 if (effectiveDist >= totalLen) {
                   b.state = "COMPLETED";
                 }
               }
 
               // DRAW BALL ON CANVAS
-              if (b.alpha > 0.05 && b.state !== "COMPLETED") {
+              if (b.state !== "COMPLETED") {
                 ctx.save();
-                ctx.globalAlpha = b.alpha;
 
-                // Glowing outer halo
+                // Outer soft halo
                 ctx.beginPath();
-                ctx.arc(b.x, b.y, b.radius * 2.2, 0, Math.PI * 2);
+                ctx.arc(b.x, b.y, b.radius * 2, 0, Math.PI * 2);
                 ctx.fillStyle = b.glowColor;
                 ctx.fill();
 
@@ -853,16 +839,14 @@ export const PipelineFlowSimulator: React.FC = () => {
                 ctx.beginPath();
                 ctx.arc(b.x, b.y, b.radius, 0, Math.PI * 2);
                 ctx.fillStyle = b.color;
-                ctx.shadowColor = b.color;
-                ctx.shadowBlur = 8;
                 ctx.fill();
 
-                // Promoted star/ring after MVP build
+                // Promoted star/ring
                 if (b.isPromoted && b.distance > 800) {
                   ctx.beginPath();
-                  ctx.arc(b.x, b.y, b.radius + 3, 0, Math.PI * 2);
+                  ctx.arc(b.x, b.y, b.radius + 2.5, 0, Math.PI * 2);
                   ctx.strokeStyle = "#ffffff";
-                  ctx.lineWidth = 1.5;
+                  ctx.lineWidth = 1.2;
                   ctx.stroke();
                 }
 
@@ -874,15 +858,53 @@ export const PipelineFlowSimulator: React.FC = () => {
 
           ballsRef.current = activeBalls;
 
-          // Sync live queue counts for dynamic SVG line swelling & color shift
-          if (
-            steerCoWaitingCount !== liveQueues.steerCo ||
-            boardWaitingCount !== liveQueues.board
-          ) {
-            setLiveQueues({
-              steerCo: steerCoWaitingCount,
-              board: boardWaitingCount,
-            });
+          // --- 4. DYNAMIC PATH SWELLING & TURNING RED AS QUEUE ACCUMULATES ---
+          // T1 Bottleneck Path Update (Between G2 and G3, x=400 to x=580 at y=90)
+          if (t1BottleneckPathRef.current) {
+            if (steerCoWaitingCount === 0) {
+              t1BottleneckPathRef.current.setAttribute("stroke", "#10b981");
+              t1BottleneckPathRef.current.setAttribute("stroke-width", "8");
+              t1BottleneckPathRef.current.setAttribute("stroke-opacity", "0.4");
+            } else if (steerCoWaitingCount <= 2) {
+              t1BottleneckPathRef.current.setAttribute("stroke", "#f59e0b");
+              t1BottleneckPathRef.current.setAttribute("stroke-width", "13");
+              t1BottleneckPathRef.current.setAttribute("stroke-opacity", "0.8");
+            } else {
+              t1BottleneckPathRef.current.setAttribute("stroke", "#ef4444"); // Glowing Red!
+              t1BottleneckPathRef.current.setAttribute(
+                "stroke-width",
+                String(Math.min(24, 15 + steerCoWaitingCount * 1.5))
+              );
+              t1BottleneckPathRef.current.setAttribute("stroke-opacity", "0.95");
+            }
+          }
+
+          // T2 Bottleneck Path Update (Between G2 and G3, x=400 to x=580 at y=210)
+          if (t2BottleneckPathRef.current) {
+            if (boardWaitingCount === 0) {
+              t2BottleneckPathRef.current.setAttribute("stroke", "#38bdf8");
+              t2BottleneckPathRef.current.setAttribute("stroke-width", "8");
+              t2BottleneckPathRef.current.setAttribute("stroke-opacity", "0.4");
+            } else if (boardWaitingCount <= 2) {
+              t2BottleneckPathRef.current.setAttribute("stroke", "#f59e0b");
+              t2BottleneckPathRef.current.setAttribute("stroke-width", "13");
+              t2BottleneckPathRef.current.setAttribute("stroke-opacity", "0.8");
+            } else {
+              t2BottleneckPathRef.current.setAttribute("stroke", "#ef4444");
+              t2BottleneckPathRef.current.setAttribute(
+                "stroke-width",
+                String(Math.min(22, 14 + boardWaitingCount * 1.5))
+              );
+              t2BottleneckPathRef.current.setAttribute("stroke-opacity", "0.95");
+            }
+          }
+
+          // Keep live counts synced for header HUD
+          if (steerCoWaitingCount !== steerCoLiveCount) {
+            setSteerCoLiveCount(steerCoWaitingCount);
+          }
+          if (boardWaitingCount !== boardLiveCount) {
+            setBoardLiveCount(boardWaitingCount);
           }
         }
       }
@@ -896,41 +918,15 @@ export const PipelineFlowSimulator: React.FC = () => {
     return () => {
       cancelAnimationFrame(animationFrameId);
     };
-  }, [isPlaying, simSpeed, spawnWeeklyBurst, flowCalculations, assumptions]);
-
-  // DYNAMIC CONDUIT COLOR & SWELLING CALCULATOR
-  // Starts 100% green at queue = 0, swells wider and turns fiery red as queue grows!
-  const getBottleneckLineProps = (queueCount: number, baseColor = "#10b981") => {
-    if (queueCount === 0) {
-      return {
-        stroke: baseColor,
-        strokeWidth: 9,
-        strokeOpacity: 0.35,
-        filter: "none",
-        isAlert: false,
-      };
-    }
-    if (queueCount <= 2) {
-      return {
-        stroke: "#f59e0b", // Amber warning
-        strokeWidth: 14 + queueCount * 2,
-        strokeOpacity: 0.7,
-        filter: "url(#glow-amber)",
-        isAlert: true,
-      };
-    }
-    // Severe Red Bottleneck Swelling!
-    return {
-      stroke: "#ef4444", // Bright Crimson Red
-      strokeWidth: Math.min(26, 16 + queueCount * 2.5),
-      strokeOpacity: 0.9,
-      filter: "url(#glow-red)",
-      isAlert: true,
-    };
-  };
-
-  const steerCoLineProps = getBottleneckLineProps(liveQueues.steerCo, "#10b981");
-  const boardLineProps = getBottleneckLineProps(liveQueues.board, "#38bdf8");
+  }, [
+    isPlaying,
+    simSpeed,
+    spawnWeeklyBurst,
+    flowCalculations,
+    assumptions,
+    steerCoLiveCount,
+    boardLiveCount,
+  ]);
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8 text-gray-900">
@@ -950,9 +946,10 @@ export const PipelineFlowSimulator: React.FC = () => {
             Use Case Flow &amp; Governance Bottleneck Simulator
           </h1>
           <p className="text-sm text-white/80 max-w-2xl leading-relaxed">
-            Every 10 seconds, a burst containing all weekly use cases enters the
-            pipeline together. All lines start green. As meeting capacities are
-            exceeded over time, lines swell and turn red where queues form.
+            Every 10 seconds, exactly{" "}
+            <strong>{Math.round(assumptions.incomingPerWeek)} use cases</strong>{" "}
+            enter the pipeline in one burst. Lines start green, and dynamically
+            swell and turn red between G2 and G3 as queues build up.
           </p>
         </div>
 
@@ -980,7 +977,7 @@ export const PipelineFlowSimulator: React.FC = () => {
             >
               <span>Low Volume</span>
               <span className="text-[9px] bg-black/25 px-1 rounded text-white/90">
-                3.5/wk
+                4/burst
               </span>
             </button>
 
@@ -995,7 +992,7 @@ export const PipelineFlowSimulator: React.FC = () => {
             >
               <span>Medium (Baseline)</span>
               <span className="text-[9px] bg-black/25 px-1 rounded text-white/90">
-                8.5/wk
+                8/burst
               </span>
             </button>
 
@@ -1011,7 +1008,7 @@ export const PipelineFlowSimulator: React.FC = () => {
               <AlertTriangle className="w-3 h-3 text-white" />
               <span>High (Stress Test)</span>
               <span className="text-[9px] bg-black/25 px-1 rounded text-white/90">
-                18/wk
+                18/burst
               </span>
             </button>
           </div>
@@ -1022,12 +1019,12 @@ export const PipelineFlowSimulator: React.FC = () => {
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3.5">
         <div className="p-4 rounded-2xl bg-white border border-gray-200 shadow-sm flex flex-col justify-between">
           <span className="text-xs font-bold text-gray-500 uppercase tracking-wider flex items-center gap-1">
-            <TrendingUp className="w-3.5 h-3.5 text-emerald-600" /> Intake Burst
+            <TrendingUp className="w-3.5 h-3.5 text-emerald-600" /> Selected Burst
           </span>
           <div className="mt-2">
             <div className="text-2xl font-black text-gray-900">
-              {assumptions.incomingPerWeek}{" "}
-              <span className="text-xs font-medium text-gray-500">UC/wk</span>
+              {Math.round(assumptions.incomingPerWeek)}{" "}
+              <span className="text-xs font-medium text-gray-500">UC/burst</span>
             </div>
             <div className="text-[11px] text-emerald-700 font-semibold mt-0.5">
               ~{Math.round(flowCalculations.totalInflowPerMonth)} UC / month
@@ -1099,7 +1096,7 @@ export const PipelineFlowSimulator: React.FC = () => {
 
         <div
           className={`p-4 rounded-2xl border shadow-sm flex flex-col justify-between transition-all ${
-            liveQueues.steerCo > 0 || liveQueues.board > 0
+            steerCoLiveCount > 0 || boardLiveCount > 0
               ? "bg-rose-50 border-rose-300 ring-2 ring-rose-500/20"
               : "bg-emerald-50 border-emerald-300"
           }`}
@@ -1107,7 +1104,7 @@ export const PipelineFlowSimulator: React.FC = () => {
           <span className="text-xs font-bold uppercase tracking-wider flex items-center gap-1 text-gray-700">
             <ShieldAlert
               className={`w-3.5 h-3.5 ${
-                liveQueues.steerCo > 0 || liveQueues.board > 0
+                steerCoLiveCount > 0 || boardLiveCount > 0
                   ? "text-rose-600 animate-bounce"
                   : "text-emerald-600"
               }`}
@@ -1117,23 +1114,23 @@ export const PipelineFlowSimulator: React.FC = () => {
           <div className="mt-2">
             <div
               className={`text-2xl font-black ${
-                liveQueues.steerCo > 0 || liveQueues.board > 0
+                steerCoLiveCount > 0 || boardLiveCount > 0
                   ? "text-rose-700"
                   : "text-emerald-800"
               }`}
             >
-              {liveQueues.steerCo + liveQueues.board}{" "}
+              {steerCoLiveCount + boardLiveCount}{" "}
               <span className="text-xs font-semibold">UCs Queued</span>
             </div>
             <div
               className={`text-[11px] font-bold mt-0.5 ${
-                liveQueues.steerCo > 0 || liveQueues.board > 0
+                steerCoLiveCount > 0 || boardLiveCount > 0
                   ? "text-rose-800"
                   : "text-emerald-700"
               }`}
             >
-              {liveQueues.steerCo > 0
-                ? `SteerCo: ${liveQueues.steerCo} in line`
+              {steerCoLiveCount > 0
+                ? `SteerCo: ${steerCoLiveCount} in line`
                 : "Queues Clear"}
             </div>
           </div>
@@ -1151,8 +1148,8 @@ export const PipelineFlowSimulator: React.FC = () => {
               1. Top Panel — Live Editable Assumptions
             </h2>
             <p className="text-xs text-gray-600 mt-0.5">
-              All 4 tiers (T1–T4) are explicitly shown and always sum to exactly
-              100%. Moving one slider automatically balances the remaining tiers.
+              The exact number of balls selected here enters the pipeline in each
+              burst. All 4 tiers (T1–T4) always sum to exactly 100%.
             </p>
           </div>
           <div className="flex items-center gap-2">
@@ -1182,31 +1179,31 @@ export const PipelineFlowSimulator: React.FC = () => {
 
         {/* 6 PRIMARY ASSUMPTION CONTROLS */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-          {/* 1. Incoming Use Cases */}
+          {/* 1. Exact Number of Balls in Burst */}
           <div className="p-4 rounded-2xl bg-gray-50 border border-gray-200 space-y-2.5">
             <div className="flex items-center justify-between">
               <label className="text-xs font-bold text-gray-800">
-                Incoming Use Cases (Intake Burst)
+                Burst Volume (Exact Balls Count)
               </label>
               <span className="text-xs font-black text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded-md font-mono">
-                {assumptions.incomingPerWeek} UC / burst
+                {Math.round(assumptions.incomingPerWeek)} balls / burst
               </span>
             </div>
             <input
               type="range"
               min="1"
               max="30"
-              step="0.5"
+              step="1"
               value={assumptions.incomingPerWeek}
               onChange={(e) =>
-                updateAssumption("incomingPerWeek", Number(e.target.value))
+                updateAssumption("incomingPerWeek", Math.round(Number(e.target.value)))
               }
               className="w-full accent-emerald-600 cursor-pointer"
             />
             <div className="flex justify-between text-[10px] text-gray-500 font-medium">
-              <span>1 UC/wk (Slow)</span>
-              <span>15 UC/wk</span>
-              <span>30 UC/wk (Surge)</span>
+              <span>1 ball (Slow)</span>
+              <span>15 balls</span>
+              <span>30 balls (Surge)</span>
             </div>
             <p className="text-[11px] text-gray-500 leading-snug">
               Every 10 seconds (1 week), exactly{" "}
@@ -1242,8 +1239,8 @@ export const PipelineFlowSimulator: React.FC = () => {
               <span>100% (Pass-all)</span>
             </div>
             <p className="text-[11px] text-gray-500 leading-snug">
-              % of incoming use cases validated by OpellaGPT Charter Agent to
-              pass into framing gates.
+              Rejected use cases are <strong>immediately deleted</strong> on
+              arrival at Gate G1.
             </p>
           </div>
 
@@ -1275,13 +1272,11 @@ export const PipelineFlowSimulator: React.FC = () => {
               <span>100% (Pass-all)</span>
             </div>
             <p className="text-[11px] text-gray-600 leading-snug">
-              Not all use cases pass G4:{" "}
-              <strong>{100 - assumptions.g4PassRate}%</strong> drop out into the
-              shelved bin.
+              Use cases failing G4 are <strong>deleted immediately</strong>.
             </p>
           </div>
 
-          {/* 4. Post-MVP Promotion Rate (At Gate G5 after MVP Build) */}
+          {/* 4. Post-MVP Promotion Rate */}
           <div className="p-4 rounded-2xl bg-gray-50 border border-indigo-300 ring-1 ring-indigo-500/20 space-y-2.5">
             <div className="flex items-center justify-between">
               <label className="text-xs font-bold text-gray-900 flex items-center gap-1.5">
@@ -1309,12 +1304,12 @@ export const PipelineFlowSimulator: React.FC = () => {
               <span>50% (High scaling)</span>
             </div>
             <p className="text-[11px] text-gray-600 leading-snug">
-              Decided <strong>AFTER MVP build at Gate G5</strong>: T3 and T4
-              solutions that proved value get promoted to T2 Scale.
+              Decided <strong>after building MVP at Gate G5</strong>: T3 and T4
+              solutions get upgraded to T2 Scale.
             </p>
           </div>
 
-          {/* 5. TIER ROUTING SPLIT (ALWAYS EQUAL TO 100%) */}
+          {/* 5. TIER ROUTING SPLIT (100% SUM) */}
           <div className="p-4 rounded-2xl bg-gray-50 border border-gray-200 space-y-3">
             <div className="flex items-center justify-between">
               <label className="text-xs font-bold text-gray-800">
@@ -1325,7 +1320,6 @@ export const PipelineFlowSimulator: React.FC = () => {
               </span>
             </div>
             <div className="space-y-2 text-xs">
-              {/* T1 */}
               <div className="space-y-0.5">
                 <div className="flex justify-between text-[11px]">
                   <span className="font-bold text-emerald-800">
@@ -1348,7 +1342,6 @@ export const PipelineFlowSimulator: React.FC = () => {
                 />
               </div>
 
-              {/* T2 */}
               <div className="space-y-0.5">
                 <div className="flex justify-between text-[11px]">
                   <span className="font-bold text-blue-800">
@@ -1371,7 +1364,6 @@ export const PipelineFlowSimulator: React.FC = () => {
                 />
               </div>
 
-              {/* T3 */}
               <div className="space-y-0.5">
                 <div className="flex justify-between text-[11px]">
                   <span className="font-bold text-amber-800">
@@ -1394,7 +1386,6 @@ export const PipelineFlowSimulator: React.FC = () => {
                 />
               </div>
 
-              {/* T4 */}
               <div className="space-y-0.5">
                 <div className="flex justify-between text-[11px]">
                   <span className="font-bold text-purple-800">
@@ -1419,7 +1410,7 @@ export const PipelineFlowSimulator: React.FC = () => {
             </div>
           </div>
 
-          {/* 6. Return from Run Rate (Major Modification) */}
+          {/* 6. Return from Run Rate */}
           <div className="p-4 rounded-2xl bg-gray-50 border border-gray-200 space-y-2.5">
             <div className="flex items-center justify-between">
               <label className="text-xs font-bold text-gray-800">
@@ -1583,10 +1574,9 @@ export const PipelineFlowSimulator: React.FC = () => {
 
       {/* =========================================================================
           SECTION 2: MAIN VIEW — BURST SIMULATION & DYNAMIC SWELLING BOTTLENECK
-          (All balls in 1 burst · Exact SVG Path Tracking · Swells Red as Queue grows)
+          (Exact balls count in burst · Exact SVG Path Tracking · Swells Red in queue)
       ========================================================================= */}
       <div className="bg-[#080d1a] rounded-3xl p-6 sm:p-8 shadow-2xl border border-gray-800 text-white space-y-6 relative overflow-hidden">
-        {/* Glow backdrop decorations */}
         <div className="absolute top-0 left-1/4 w-96 h-96 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none" />
         <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl pointer-events-none" />
 
@@ -1602,12 +1592,12 @@ export const PipelineFlowSimulator: React.FC = () => {
               </h2>
             </div>
             <p className="text-xs text-gray-400 mt-1">
-              Every 10 seconds, a burst of{" "}
+              Every 10 seconds, exactly{" "}
               <strong className="text-emerald-400">
-                {Math.round(assumptions.incomingPerWeek)} use cases
+                {Math.round(assumptions.incomingPerWeek)} balls
               </strong>{" "}
-              travels together down the pipeline. Lines start green and swell
-              red as queue backlogs build up.
+              travel together down the pipeline. Lines start green, and swell red
+              between G2 and G3 as queues build up.
             </p>
           </div>
 
@@ -1670,23 +1660,6 @@ export const PipelineFlowSimulator: React.FC = () => {
               className="w-full h-full select-none absolute inset-0 pointer-events-none"
               style={{ overflow: "visible" }}
             >
-              <defs>
-                <filter id="glow-red" x="-30%" y="-30%" width="160%" height="160%">
-                  <feGaussianBlur stdDeviation="6" result="blur" />
-                  <feMerge>
-                    <feMergeNode in="blur" />
-                    <feMergeNode in="SourceGraphic" />
-                  </feMerge>
-                </filter>
-                <filter id="glow-amber" x="-30%" y="-30%" width="160%" height="160%">
-                  <feGaussianBlur stdDeviation="5" result="blur" />
-                  <feMerge>
-                    <feMergeNode in="blur" />
-                    <feMergeNode in="SourceGraphic" />
-                  </feMerge>
-                </filter>
-              </defs>
-
               {/* --- HIDDEN MASTER PATHS USED FOR ACCURATE BALL TRAJECTORY QUERYING --- */}
               <path
                 id="t1-main"
@@ -1742,51 +1715,6 @@ export const PipelineFlowSimulator: React.FC = () => {
                 fill="none"
                 stroke="transparent"
               />
-              <path
-                id="drop-g1"
-                ref={(el) => {
-                  pathRefs.current["drop-g1"] = el;
-                }}
-                d="M 220 290 L 220 380"
-                fill="none"
-                stroke="transparent"
-              />
-              <path
-                id="drop-g4-t1"
-                ref={(el) => {
-                  pathRefs.current["drop-g4-t1"] = el;
-                }}
-                d="M 750 90 C 780 250, 800 570, 830 570"
-                fill="none"
-                stroke="transparent"
-              />
-              <path
-                id="drop-g4-t2"
-                ref={(el) => {
-                  pathRefs.current["drop-g4-t2"] = el;
-                }}
-                d="M 750 210 C 780 350, 800 570, 830 570"
-                fill="none"
-                stroke="transparent"
-              />
-              <path
-                id="drop-g4-t3"
-                ref={(el) => {
-                  pathRefs.current["drop-g4-t3"] = el;
-                }}
-                d="M 750 350 C 780 430, 800 570, 830 570"
-                fill="none"
-                stroke="transparent"
-              />
-              <path
-                id="drop-g4-t4"
-                ref={(el) => {
-                  pathRefs.current["drop-g4-t4"] = el;
-                }}
-                d="M 750 470 C 780 500, 800 570, 830 570"
-                fill="none"
-                stroke="transparent"
-              />
 
               {/* --- BACKGROUND SWIMLANE GUIDES --- */}
               <rect x="40" y="55" width="720" height="70" rx="14" fill="#10b981" fillOpacity="0.03" stroke="#10b981" strokeOpacity="0.1" />
@@ -1808,69 +1736,60 @@ export const PipelineFlowSimulator: React.FC = () => {
                 T4 · SELF-SERVICE AI (&lt;€50k · Catalog · Skips G2 &amp; G3)
               </text>
 
-              {/* --- VISUAL CONDUIT PIPES --- */}
+              {/* --- VISUAL CONDUIT PIPES (NO DOTTED LINES) --- */}
               {/* Pipe: Source to G1 */}
-              <path d="M 80 290 L 220 290" fill="none" stroke="#10b981" strokeWidth="12" strokeOpacity="0.25" strokeLinecap="round" />
-              {/* Pipe: G1 Drop */}
-              <path d="M 220 290 L 220 380" fill="none" stroke="#ef4444" strokeWidth="2.5" strokeDasharray="4 4" strokeOpacity="0.5" />
+              <path d="M 80 290 L 220 290" fill="none" stroke="#10b981" strokeWidth="10" strokeOpacity="0.25" strokeLinecap="round" />
 
               {/* T1 CONDUIT SEGMENTS */}
-              {/* Segment 1: G1 to G2 */}
-              <path d="M 220 290 C 290 90, 320 90, 400 90" fill="none" stroke="#10b981" strokeWidth="10" strokeOpacity="0.25" strokeLinecap="round" />
-              {/* Segment 2: G2 to G3 BOTTLENECK CONDUIT (STARTS GREEN, SWELLS WIDE & TURNS RED!) */}
+              <path d="M 220 290 C 290 90, 320 90, 400 90" fill="none" stroke="#10b981" strokeWidth="8" strokeOpacity="0.25" strokeLinecap="round" />
+              {/* G2 to G3 BOTTLENECK CONDUIT (TURNS RED & SWELLS AS QUEUE BUILDS) */}
               <path
+                id="conduit-g2-g3-t1"
+                ref={t1BottleneckPathRef}
                 d="M 400 90 L 580 90"
                 fill="none"
-                stroke={steerCoLineProps.stroke}
-                strokeWidth={steerCoLineProps.strokeWidth}
-                strokeOpacity={steerCoLineProps.strokeOpacity}
-                filter={steerCoLineProps.filter}
+                stroke="#10b981"
+                strokeWidth="8"
+                strokeOpacity="0.4"
                 strokeLinecap="round"
                 className="transition-all duration-300"
               />
-              {/* Segment 3: G3 to G4 */}
-              <path d="M 580 90 L 750 90" fill="none" stroke="#10b981" strokeWidth="10" strokeOpacity="0.25" strokeLinecap="round" />
-              {/* Segment 4: G4 to MVP Build */}
-              <path d="M 750 90 C 820 90, 850 290, 900 290" fill="none" stroke="#10b981" strokeWidth="8" strokeOpacity="0.2" />
+              <path d="M 580 90 L 750 90" fill="none" stroke="#10b981" strokeWidth="8" strokeOpacity="0.25" strokeLinecap="round" />
+              <path d="M 750 90 C 820 90, 850 290, 900 290" fill="none" stroke="#10b981" strokeWidth="7" strokeOpacity="0.2" />
 
               {/* T2 CONDUIT SEGMENTS */}
-              <path d="M 220 290 C 290 210, 320 210, 400 210" fill="none" stroke="#38bdf8" strokeWidth="10" strokeOpacity="0.25" strokeLinecap="round" />
-              {/* G2 to G3 BOTTLENECK CONDUIT (SWELLS & TURNS RED AS QUEUE GROWS) */}
+              <path d="M 220 290 C 290 210, 320 210, 400 210" fill="none" stroke="#38bdf8" strokeWidth="8" strokeOpacity="0.25" strokeLinecap="round" />
+              {/* G2 to G3 BOTTLENECK CONDUIT (TURNS RED & SWELLS AS QUEUE BUILDS) */}
               <path
+                id="conduit-g2-g3-t2"
+                ref={t2BottleneckPathRef}
                 d="M 400 210 L 580 210"
                 fill="none"
-                stroke={boardLineProps.stroke}
-                strokeWidth={boardLineProps.strokeWidth}
-                strokeOpacity={boardLineProps.strokeOpacity}
-                filter={boardLineProps.filter}
+                stroke="#38bdf8"
+                strokeWidth="8"
+                strokeOpacity="0.4"
                 strokeLinecap="round"
                 className="transition-all duration-300"
               />
-              <path d="M 580 210 L 750 210" fill="none" stroke="#38bdf8" strokeWidth="10" strokeOpacity="0.25" strokeLinecap="round" />
-              <path d="M 750 210 C 820 210, 850 290, 900 290" fill="none" stroke="#38bdf8" strokeWidth="8" strokeOpacity="0.2" />
+              <path d="M 580 210 L 750 210" fill="none" stroke="#38bdf8" strokeWidth="8" strokeOpacity="0.25" strokeLinecap="round" />
+              <path d="M 750 210 C 820 210, 850 290, 900 290" fill="none" stroke="#38bdf8" strokeWidth="7" strokeOpacity="0.2" />
 
               {/* T3 CONDUIT (Skips G2 & G3) */}
-              <path d="M 220 290 C 290 350, 340 350, 400 350 L 750 350" fill="none" stroke="#f59e0b" strokeWidth="9" strokeOpacity="0.2" strokeLinecap="round" />
-              <path d="M 750 350 C 820 350, 850 290, 900 290" fill="none" stroke="#f59e0b" strokeWidth="8" strokeOpacity="0.2" />
+              <path d="M 220 290 C 290 350, 340 350, 400 350 L 750 350" fill="none" stroke="#f59e0b" strokeWidth="8" strokeOpacity="0.2" strokeLinecap="round" />
+              <path d="M 750 350 C 820 350, 850 290, 900 290" fill="none" stroke="#f59e0b" strokeWidth="7" strokeOpacity="0.2" />
 
               {/* T4 CONDUIT (Skips G2 & G3) */}
-              <path d="M 220 290 C 290 470, 340 470, 400 470 L 750 470" fill="none" stroke="#c084fc" strokeWidth="8" strokeOpacity="0.2" strokeLinecap="round" />
-              <path d="M 750 470 C 820 470, 850 290, 900 290" fill="none" stroke="#c084fc" strokeWidth="8" strokeOpacity="0.2" />
-
-              {/* G4 Shelved Exit */}
-              <path d="M 750 290 C 780 450, 800 570, 830 570" fill="none" stroke="#ef4444" strokeWidth="3" strokeDasharray="4 4" strokeOpacity="0.5" />
+              <path d="M 220 290 C 290 470, 340 470, 400 470 L 750 470" fill="none" stroke="#c084fc" strokeWidth="7" strokeOpacity="0.2" strokeLinecap="round" />
+              <path d="M 750 470 C 820 470, 850 290, 900 290" fill="none" stroke="#c084fc" strokeWidth="7" strokeOpacity="0.2" />
 
               {/* MVP Build to Gate G5 */}
-              <path d="M 900 290 L 1030 290" fill="none" stroke="#10b981" strokeWidth="12" strokeOpacity="0.25" strokeLinecap="round" />
+              <path d="M 900 290 L 1030 290" fill="none" stroke="#10b981" strokeWidth="10" strokeOpacity="0.25" strokeLinecap="round" />
 
-              {/* Post-MVP Promotion Curve at G5 */}
-              <path d="M 1030 290 C 1060 210, 1100 210, 1140 210" fill="none" stroke="#818cf8" strokeWidth="4" strokeDasharray="4 4" strokeOpacity="0.9" />
+              {/* Clean solid curve for promoted solutions */}
+              <path d="M 1030 290 C 1060 210, 1100 210, 1140 210" fill="none" stroke="#818cf8" strokeWidth="3" strokeOpacity="0.35" />
 
               {/* Path to RUN */}
               <path d="M 1030 290 L 1140 290" fill="none" stroke="#38bdf8" strokeWidth="10" strokeOpacity="0.25" />
-
-              {/* Return Loop */}
-              <path d="M 1140 270 C 950 25, 600 25, 400 70" fill="none" stroke="#f59e0b" strokeWidth="2.5" strokeDasharray="6 6" strokeOpacity="0.8" />
 
               {/* --- GATING NODES & LABELS --- */}
               {/* SOURCE */}
@@ -1879,8 +1798,8 @@ export const PipelineFlowSimulator: React.FC = () => {
                 <text x="0" y="-7" textAnchor="middle" fill="#94a3b8" fontSize="10" fontWeight="bold">
                   SOURCE
                 </text>
-                <text x="0" y="9" textAnchor="middle" fill="#ffffff" fontSize="12" fontWeight="900">
-                  {assumptions.incomingPerWeek}
+                <text x="0" y="9" textAnchor="middle" fill="#ffffff" fontSize="13" fontWeight="900">
+                  {Math.round(assumptions.incomingPerWeek)}
                 </text>
                 <text x="0" y="21" textAnchor="middle" fill="#34d399" fontSize="8" fontWeight="bold">
                   UC / burst
@@ -1898,14 +1817,6 @@ export const PipelineFlowSimulator: React.FC = () => {
                 </text>
                 <text x="0" y="18" textAnchor="middle" fill="#94a3b8" fontSize="8">
                   {assumptions.acceptanceRateG1}% Pass
-                </text>
-              </g>
-
-              {/* G1 Dropped Tag */}
-              <g transform="translate(220, 395)">
-                <rect x="-45" y="-9" width="90" height="18" rx="4" fill="#450a0a" stroke="#ef4444" strokeWidth="1" />
-                <text x="0" y="3.5" textAnchor="middle" fill="#fca5a5" fontSize="7.5" fontWeight="bold">
-                  ✕ Rejected ({100 - assumptions.acceptanceRateG1}%)
                 </text>
               </g>
 
@@ -1932,18 +1843,18 @@ export const PipelineFlowSimulator: React.FC = () => {
                   height="48"
                   rx="10"
                   fill="#0b1329"
-                  stroke={liveQueues.steerCo > 0 ? "#ef4444" : "#10b981"}
-                  strokeWidth={liveQueues.steerCo > 0 ? "3" : "2"}
+                  stroke={steerCoLiveCount > 0 ? "#ef4444" : "#10b981"}
+                  strokeWidth={steerCoLiveCount > 0 ? "3" : "2"}
                 />
-                {liveQueues.steerCo > 0 && (
+                {steerCoLiveCount > 0 && (
                   <g transform="translate(0, -32)">
                     <rect x="-65" y="-9" width="130" height="18" rx="5" fill="#ef4444" stroke="#ffffff" strokeWidth="1" />
                     <text x="0" y="3.5" textAnchor="middle" fill="#ffffff" fontSize="8" fontWeight="900">
-                      🚨 STEERCO QUEUE: {liveQueues.steerCo} in line
+                      🚨 STEERCO QUEUE: {steerCoLiveCount} in line
                     </text>
                   </g>
                 )}
-                <text x="0" y="-7" textAnchor="middle" fill={liveQueues.steerCo > 0 ? "#f87171" : "#10b981"} fontSize="9" fontWeight="bold">
+                <text x="0" y="-7" textAnchor="middle" fill={steerCoLiveCount > 0 ? "#f87171" : "#10b981"} fontSize="9" fontWeight="bold">
                   G3 · Priority
                 </text>
                 <text x="0" y="5" textAnchor="middle" fill="#ffffff" fontSize="8.5" fontWeight="bold">
@@ -1991,14 +1902,14 @@ export const PipelineFlowSimulator: React.FC = () => {
                   height="48"
                   rx="10"
                   fill="#0b1329"
-                  stroke={liveQueues.board > 0 ? "#f59e0b" : "#38bdf8"}
+                  stroke={boardLiveCount > 0 ? "#f59e0b" : "#38bdf8"}
                   strokeWidth="2"
                 />
-                {liveQueues.board > 0 && (
+                {boardLiveCount > 0 && (
                   <g transform="translate(0, -32)">
                     <rect x="-60" y="-9" width="120" height="18" rx="5" fill="#f59e0b" stroke="#000000" strokeWidth="1" />
                     <text x="0" y="3.5" textAnchor="middle" fill="#000000" fontSize="8" fontWeight="900">
-                      ⚠️ BOARD QUEUE: {liveQueues.board} in line
+                      ⚠️ BOARD QUEUE: {boardLiveCount} in line
                     </text>
                   </g>
                 )}
@@ -2063,14 +1974,6 @@ export const PipelineFlowSimulator: React.FC = () => {
                 </text>
               </g>
 
-              {/* SHELVED / DROPPED AT G4 BADGE */}
-              <g transform="translate(830, 585)">
-                <rect x="-55" y="-10" width="110" height="20" rx="5" fill="#450a0a" stroke="#ef4444" strokeWidth="1" />
-                <text x="0" y="3.5" textAnchor="middle" fill="#fca5a5" fontSize="8" fontWeight="bold">
-                  ✕ Shelved: {100 - assumptions.g4PassRate}% ({flowCalculations.droppedAtG4PerWeek.toFixed(1)}/wk)
-                </text>
-              </g>
-
               {/* MVP BUILD CONVERGENCE */}
               <g transform="translate(900, 290)">
                 <circle r="34" fill="#0b1329" stroke="#10b981" strokeWidth="2.5" />
@@ -2120,17 +2023,9 @@ export const PipelineFlowSimulator: React.FC = () => {
                   Live Operations
                 </text>
               </g>
-
-              {/* MAJOR MODIFICATION RETURN PILL */}
-              <g transform="translate(780, 24)">
-                <rect x="-130" y="-12" width="260" height="24" rx="8" fill="#0b1329" stroke="#f59e0b" strokeWidth="1.5" />
-                <text x="0" y="4" textAnchor="middle" fill="#f59e0b" fontSize="9.5" fontWeight="bold">
-                  ↺ Major Modification Return ({assumptions.returnFromRunRate}% · {Math.round(flowCalculations.returningFromRunPerWeek * 4.33 * 10) / 10} UC/mo)
-                </text>
-              </g>
             </svg>
 
-            {/* OVERLAY HTML5 CANVAS FOR 60FPS BURST OF BALLS */}
+            {/* OVERLAY HTML5 CANVAS FOR 60FPS BURST OF BALLS & STACKED QUEUES */}
             <canvas
               ref={canvasRef}
               width={1200}
@@ -2280,7 +2175,7 @@ export const PipelineFlowSimulator: React.FC = () => {
                   Current Queue Backlog
                 </span>
                 <span className="text-lg font-black text-rose-700">
-                  {liveQueues.steerCo > 0 ? liveQueues.steerCo : flowCalculations.primaryProblemMeeting.queue}{" "}
+                  {steerCoLiveCount > 0 ? steerCoLiveCount : flowCalculations.primaryProblemMeeting.queue}{" "}
                   <span className="text-xs font-semibold">UCs waiting</span>
                 </span>
                 <span className="text-[10px] text-gray-500 block mt-0.5">
@@ -2353,9 +2248,9 @@ export const PipelineFlowSimulator: React.FC = () => {
               {/* 1. Transformation SteerCo */}
               <tr
                 className={`${
-                  liveQueues.steerCo > 2
+                  steerCoLiveCount > 2
                     ? "bg-rose-50/70"
-                    : liveQueues.steerCo > 0
+                    : steerCoLiveCount > 0
                     ? "bg-amber-50/60"
                     : "hover:bg-gray-50"
                 }`}
@@ -2383,7 +2278,7 @@ export const PipelineFlowSimulator: React.FC = () => {
                   {flowCalculations.steerCo.demandPerWeek.toFixed(2)} UC / wk
                 </td>
                 <td className="py-3.5 px-3 font-mono font-bold text-gray-900">
-                  {liveQueues.steerCo > 0 ? liveQueues.steerCo : flowCalculations.steerCo.queue} UCs in line
+                  {steerCoLiveCount > 0 ? steerCoLiveCount : flowCalculations.steerCo.queue} UCs in line
                 </td>
                 <td className="py-3.5 px-3 font-mono font-bold">
                   {flowCalculations.steerCo.waitWeeks} weeks
@@ -2392,11 +2287,11 @@ export const PipelineFlowSimulator: React.FC = () => {
                   {flowCalculations.steerCo.cyclesDelay} cycles
                 </td>
                 <td className="py-3.5 px-4">
-                  {liveQueues.steerCo > 2 ? (
+                  {steerCoLiveCount > 2 ? (
                     <span className="px-2.5 py-1 rounded-md bg-rose-600 text-white font-bold text-[10px] flex items-center gap-1 w-fit shadow-sm">
                       <AlertTriangle className="w-3 h-3 text-white" /> 🚨 Severe Bottleneck (&gt;2 meetings)
                     </span>
-                  ) : liveQueues.steerCo > 0 ? (
+                  ) : steerCoLiveCount > 0 ? (
                     <span className="px-2.5 py-1 rounded-md bg-amber-500 text-amber-950 font-bold text-[10px] flex items-center gap-1 w-fit shadow-sm">
                       <AlertTriangle className="w-3 h-3" /> ⚠️ Bottleneck (&gt;1 meeting)
                     </span>
@@ -2411,9 +2306,9 @@ export const PipelineFlowSimulator: React.FC = () => {
               {/* 2. AI Portfolio Board */}
               <tr
                 className={`${
-                  liveQueues.board > 2
+                  boardLiveCount > 2
                     ? "bg-rose-50/70"
-                    : liveQueues.board > 0
+                    : boardLiveCount > 0
                     ? "bg-amber-50/60"
                     : "hover:bg-gray-50"
                 }`}
@@ -2441,7 +2336,7 @@ export const PipelineFlowSimulator: React.FC = () => {
                   {flowCalculations.portfolioBoard.demandPerWeek.toFixed(2)} UC / wk
                 </td>
                 <td className="py-3.5 px-3 font-mono font-bold text-gray-900">
-                  {liveQueues.board > 0 ? liveQueues.board : flowCalculations.portfolioBoard.queue} UCs in line
+                  {boardLiveCount > 0 ? boardLiveCount : flowCalculations.portfolioBoard.queue} UCs in line
                 </td>
                 <td className="py-3.5 px-3 font-mono font-bold">
                   {flowCalculations.portfolioBoard.waitWeeks} weeks
@@ -2450,11 +2345,11 @@ export const PipelineFlowSimulator: React.FC = () => {
                   {flowCalculations.portfolioBoard.cyclesDelay} cycles
                 </td>
                 <td className="py-3.5 px-4">
-                  {liveQueues.board > 2 ? (
+                  {boardLiveCount > 2 ? (
                     <span className="px-2.5 py-1 rounded-md bg-rose-600 text-white font-bold text-[10px] flex items-center gap-1 w-fit shadow-sm">
                       <AlertTriangle className="w-3 h-3 text-white" /> 🚨 Severe Bottleneck (&gt;2 meetings)
                     </span>
-                  ) : liveQueues.board > 0 ? (
+                  ) : boardLiveCount > 0 ? (
                     <span className="px-2.5 py-1 rounded-md bg-amber-500 text-amber-950 font-bold text-[10px] flex items-center gap-1 w-fit shadow-sm">
                       <AlertTriangle className="w-3 h-3" /> ⚠️ Bottleneck (&gt;1 meeting)
                     </span>
