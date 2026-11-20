@@ -18,10 +18,27 @@ import {
   Play,
   Pause,
   FastForward,
+  Calendar,
+  Plus,
+  Trash2,
+  Users,
+  Check,
 } from "lucide-react";
 
 // --- Types & Interfaces ---
 export type ScenarioId = "low" | "medium" | "high" | "custom";
+
+export interface CustomMeeting {
+  id: string;
+  name: string;
+  chair: string;
+  targetTier: "T1" | "T2" | "T3" | "T4" | "ALL";
+  cadence: "weekly" | "fortnightly" | "monthly";
+  cadenceWeeks: number;
+  slotCapacity: number; // UC treated per meeting
+  active: boolean;
+  notes?: string;
+}
 
 export interface SimulationAssumptions {
   incomingPerWeek: number; // Exact integer count per burst
@@ -35,10 +52,13 @@ export interface SimulationAssumptions {
   returnFromRunRate: number; // % of run use cases returning for major modification
   activeInRunCount: number;
 
-  // Committee Capacities (review slots per meeting)
-  steerCoCapacity: number; // monthly (every 4 weeks)
-  portfolioBoardCapacity: number; // fortnightly (every 2 weeks)
-  ddaCapacity: number; // weekly (every 1 week)
+  // Committee Capacities & Review Cadences (tweakable live)
+  steerCoCapacity: number; // review slots per meeting
+  steerCoCadenceWeeks: number; // 4 = Monthly, 2 = Fortnightly, 1 = Weekly
+  portfolioBoardCapacity: number; // review slots per meeting
+  portfolioBoardCadenceWeeks: number; // 2 = Fortnightly, 4 = Monthly, 1 = Weekly
+  ddaCapacity: number; // ADR review slots per meeting
+  ddaCadenceWeeks: number; // 1 = Weekly, 2 = Fortnightly
 
   // Estimated Days to pass each gate (base assumptions)
   g1LeadDays: number;
@@ -75,12 +95,15 @@ const PRESET_SCENARIOS: Record<
       t1Split: 15,
       t2Split: 35,
       t3Split: 35,
-      selfServeSplit: 15, // 15 + 35 + 35 + 15 = 100%
+      selfServeSplit: 15,
       returnFromRunRate: 8,
       activeInRunCount: 16,
       steerCoCapacity: 3,
+      steerCoCadenceWeeks: 4, // Monthly
       portfolioBoardCapacity: 6,
+      portfolioBoardCadenceWeeks: 2, // Fortnightly
       ddaCapacity: 6,
+      ddaCadenceWeeks: 1, // Weekly
       g1LeadDays: 1,
       g2T1LeadDays: 14,
       g2T2LeadDays: 10,
@@ -105,12 +128,15 @@ const PRESET_SCENARIOS: Record<
       t1Split: 20,
       t2Split: 35,
       t3Split: 30,
-      selfServeSplit: 15, // 20 + 35 + 30 + 15 = 100%
+      selfServeSplit: 15,
       returnFromRunRate: 12,
       activeInRunCount: 24,
       steerCoCapacity: 3,
+      steerCoCadenceWeeks: 4, // Monthly
       portfolioBoardCapacity: 6,
+      portfolioBoardCadenceWeeks: 2, // Fortnightly
       ddaCapacity: 6,
+      ddaCadenceWeeks: 1, // Weekly
       g1LeadDays: 1,
       g2T1LeadDays: 21,
       g2T2LeadDays: 14,
@@ -135,12 +161,15 @@ const PRESET_SCENARIOS: Record<
       t1Split: 25,
       t2Split: 35,
       t3Split: 25,
-      selfServeSplit: 15, // 25 + 35 + 25 + 15 = 100%
+      selfServeSplit: 15,
       returnFromRunRate: 15,
       activeInRunCount: 32,
       steerCoCapacity: 3,
+      steerCoCadenceWeeks: 4, // Monthly
       portfolioBoardCapacity: 7,
+      portfolioBoardCadenceWeeks: 2, // Fortnightly
       ddaCapacity: 7,
+      ddaCadenceWeeks: 1, // Weekly
       g1LeadDays: 2,
       g2T1LeadDays: 35,
       g2T2LeadDays: 21,
@@ -165,13 +194,13 @@ interface Ball {
   y: number;
   radius: number;
   pathKey: string;
-  distance: number; // distance along SVG path in px
-  lateralOffset: number; // spread across pipe
-  longitudinalOffset: number; // spread along burst convoy
+  distance: number;
+  lateralOffset: number;
+  longitudinalOffset: number;
   speed: number;
   passG1: boolean;
   passG4: boolean;
-  isPromoted: boolean; // For T3/T4 after MVP build at G5
+  isPromoted: boolean;
   state: "MOVING" | "QUEUED_STEERCO" | "QUEUED_BOARD" | "COMPLETED";
   queueIndex?: number;
 }
@@ -185,6 +214,15 @@ export const PipelineFlowSimulator: React.FC = () => {
 
   // UI accordion toggles
   const [showAdvancedSettings, setShowAdvancedSettings] = useState(false);
+
+  // Custom Extra Meetings State
+  const [customMeetings, setCustomMeetings] = useState<CustomMeeting[]>([]);
+  const [showAddMeetingForm, setShowAddMeetingForm] = useState(false);
+  const [newMeetingName, setNewMeetingName] = useState("");
+  const [newMeetingChair, setNewMeetingChair] = useState("");
+  const [newMeetingTier, setNewMeetingTier] = useState<"T1" | "T2" | "T3" | "T4" | "ALL">("T1");
+  const [newMeetingCadence, setNewMeetingCadence] = useState<"weekly" | "fortnightly" | "monthly">("fortnightly");
+  const [newMeetingCapacity, setNewMeetingCapacity] = useState(3);
 
   // Simulation controls state
   const [isPlaying, setIsPlaying] = useState(true);
@@ -227,10 +265,14 @@ export const PipelineFlowSimulator: React.FC = () => {
     if (t1BottleneckPathRef.current) {
       t1BottleneckPathRef.current.setAttribute("stroke", "#10b981");
       t1BottleneckPathRef.current.setAttribute("stroke-width", "8");
+      t1BottleneckPathRef.current.setAttribute("stroke-opacity", "0.4");
+      t1BottleneckPathRef.current.removeAttribute("filter");
     }
     if (t2BottleneckPathRef.current) {
       t2BottleneckPathRef.current.setAttribute("stroke", "#38bdf8");
       t2BottleneckPathRef.current.setAttribute("stroke-width", "8");
+      t2BottleneckPathRef.current.setAttribute("stroke-opacity", "0.4");
+      t2BottleneckPathRef.current.removeAttribute("filter");
     }
   }, []);
 
@@ -253,6 +295,45 @@ export const PipelineFlowSimulator: React.FC = () => {
       [key]: val,
     }));
     setSelectedScenario("custom");
+    resetSimulation();
+  };
+
+  // Add a new custom meeting
+  const handleAddCustomMeeting = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newMeetingName.trim()) return;
+
+    let cadenceWeeks = 4;
+    if (newMeetingCadence === "weekly") cadenceWeeks = 1;
+    if (newMeetingCadence === "fortnightly") cadenceWeeks = 2;
+
+    const newM: CustomMeeting = {
+      id: `custom-meeting-${Date.now()}`,
+      name: newMeetingName.trim(),
+      chair: newMeetingChair.trim() || "Stream Lead & Sponsor",
+      targetTier: newMeetingTier,
+      cadence: newMeetingCadence,
+      cadenceWeeks,
+      slotCapacity: Number(newMeetingCapacity) || 3,
+      active: true,
+    };
+
+    setCustomMeetings((prev) => [...prev, newM]);
+    setNewMeetingName("");
+    setNewMeetingChair("");
+    setShowAddMeetingForm(false);
+    resetSimulation();
+  };
+
+  const handleToggleMeeting = (id: string) => {
+    setCustomMeetings((prev) =>
+      prev.map((m) => (m.id === id ? { ...m, active: !m.active } : m))
+    );
+    resetSimulation();
+  };
+
+  const handleDeleteMeeting = (id: string) => {
+    setCustomMeetings((prev) => prev.filter((m) => m.id !== id));
     resetSimulation();
   };
 
@@ -340,7 +421,7 @@ export const PipelineFlowSimulator: React.FC = () => {
     resetSimulation();
   };
 
-  // --- MATHEMATICAL FLOW CALCULATIONS ---
+  // --- MATHEMATICAL FLOW & BOTTLENECK ENGINE ---
   const flowCalculations = useMemo(() => {
     const {
       incomingPerWeek,
@@ -354,8 +435,11 @@ export const PipelineFlowSimulator: React.FC = () => {
       returnFromRunRate,
       activeInRunCount,
       steerCoCapacity,
+      steerCoCadenceWeeks,
       portfolioBoardCapacity,
+      portfolioBoardCadenceWeeks,
       ddaCapacity,
+      ddaCadenceWeeks,
     } = assumptions;
 
     const totalSplit = t1Split + t2Split + t3Split + selfServeSplit || 100;
@@ -391,65 +475,63 @@ export const PipelineFlowSimulator: React.FC = () => {
     const totalPromotedToT2PerWeek =
       (t3BuildWeekly + ssBuildWeekly) * (postMvpPromotionRate / 100);
 
-    const steerCoIntervalWeeks = 4; // Monthly
-    const portfolioBoardIntervalWeeks = 2; // Fortnightly
-    const ddaIntervalWeeks = 1; // Weekly
+    // Calculate extra throughput from active custom meetings
+    let extraT1WeeklyCapacity = 0;
+    let extraT2WeeklyCapacity = 0;
 
-    const steerCoArrivingPerCycle = t1WeeklyInitial * steerCoIntervalWeeks;
-    const steerCoExcessPerCycle = Math.max(
-      0,
-      steerCoArrivingPerCycle - steerCoCapacity
-    );
-    const steerCoQueue = Math.round(steerCoExcessPerCycle * 1.5 * 10) / 10;
+    customMeetings.filter((m) => m.active).forEach((m) => {
+      const weeklyContrib = m.slotCapacity / m.cadenceWeeks;
+      if (m.targetTier === "T1" || m.targetTier === "ALL") {
+        extraT1WeeklyCapacity += weeklyContrib;
+      }
+      if (m.targetTier === "T2" || m.targetTier === "ALL") {
+        extraT2WeeklyCapacity += weeklyContrib;
+      }
+    });
+
+    // 1. Transformation SteerCo (T1)
+    const steerCoIntervalWeeks = steerCoCadenceWeeks || 4;
+    const steerCoBaseWeeklyCap = steerCoCapacity / steerCoIntervalWeeks;
+    const steerCoTotalWeeklyCap = steerCoBaseWeeklyCap + extraT1WeeklyCapacity;
+    const steerCoNetDeficit = Math.max(0, t1WeeklyInitial - steerCoTotalWeeklyCap);
+
+    const steerCoQueue = Math.round(steerCoNetDeficit * steerCoIntervalWeeks * 1.5 * 10) / 10;
     const steerCoWaitWeeks =
       steerCoQueue > 0
-        ? Math.round(
-            (steerCoIntervalWeeks / 2 +
-              (steerCoQueue / steerCoCapacity) * steerCoIntervalWeeks) *
-              10
-          ) / 10
+        ? Math.round((steerCoIntervalWeeks / 2 + (steerCoQueue / (steerCoCapacity + extraT1WeeklyCapacity * steerCoIntervalWeeks)) * steerCoIntervalWeeks) * 10) / 10
         : Math.round((steerCoIntervalWeeks / 2) * 10) / 10;
-    const steerCoCyclesDelay =
-      Math.round((steerCoWaitWeeks / steerCoIntervalWeeks) * 10) / 10;
+    const steerCoCyclesDelay = Math.round((steerCoWaitWeeks / steerCoIntervalWeeks) * 10) / 10;
     const steerCoIsBottleneck = steerCoCyclesDelay > 1.0;
     const steerCoIsSevere = steerCoCyclesDelay > 2.0;
 
+    // 2. AI Portfolio Board (T2 + T3)
+    const portfolioBoardIntervalWeeks = portfolioBoardCadenceWeeks || 2;
     const portfolioBoardDemandPerWeek = t2WeeklyInitial + t3WeeklyInitial;
-    const portfolioBoardArrivingPerCycle =
-      portfolioBoardDemandPerWeek * portfolioBoardIntervalWeeks;
-    const portfolioBoardExcessPerCycle = Math.max(
-      0,
-      portfolioBoardArrivingPerCycle - portfolioBoardCapacity
-    );
-    const portfolioBoardQueue =
-      Math.round(portfolioBoardExcessPerCycle * 1.5 * 10) / 10;
+    const portfolioBoardBaseWeeklyCap = portfolioBoardCapacity / portfolioBoardIntervalWeeks;
+    const portfolioBoardTotalWeeklyCap = portfolioBoardBaseWeeklyCap + extraT2WeeklyCapacity;
+    const portfolioBoardNetDeficit = Math.max(0, portfolioBoardDemandPerWeek - portfolioBoardTotalWeeklyCap);
+
+    const portfolioBoardQueue = Math.round(portfolioBoardNetDeficit * portfolioBoardIntervalWeeks * 1.5 * 10) / 10;
     const portfolioBoardWaitWeeks =
       portfolioBoardQueue > 0
         ? Math.round(
             (portfolioBoardIntervalWeeks / 2 +
-              (portfolioBoardQueue / portfolioBoardCapacity) *
+              (portfolioBoardQueue / (portfolioBoardCapacity + extraT2WeeklyCapacity * portfolioBoardIntervalWeeks)) *
                 portfolioBoardIntervalWeeks) *
               10
           ) / 10
         : Math.round((portfolioBoardIntervalWeeks / 2) * 10) / 10;
-    const portfolioBoardCyclesDelay =
-      Math.round(
-        (portfolioBoardWaitWeeks / portfolioBoardIntervalWeeks) * 10
-      ) / 10;
+    const portfolioBoardCyclesDelay = Math.round((portfolioBoardWaitWeeks / portfolioBoardIntervalWeeks) * 10) / 10;
     const portfolioBoardIsBottleneck = portfolioBoardCyclesDelay > 1.0;
     const portfolioBoardIsSevere = portfolioBoardCyclesDelay > 2.0;
 
+    // 3. Digital Design Authority (DDA, Weekly)
+    const ddaIntervalWeeks = ddaCadenceWeeks || 1;
     const ddaDemandPerWeek = t1WeeklyInitial + t2WeeklyInitial * 0.7;
-    const ddaArrivingPerCycle = ddaDemandPerWeek * ddaIntervalWeeks;
-    const ddaExcessPerCycle = Math.max(0, ddaArrivingPerCycle - ddaCapacity);
-    const ddaQueue = Math.round(ddaExcessPerCycle * 10) / 10;
-    const ddaWaitWeeks =
-      ddaQueue > 0
-        ? Math.round(
-            (ddaIntervalWeeks / 2 + (ddaQueue / ddaCapacity) * ddaIntervalWeeks) *
-              10
-          ) / 10
-        : 0.5;
+    const ddaWeeklyCap = ddaCapacity / ddaIntervalWeeks;
+    const ddaNetDeficit = Math.max(0, ddaDemandPerWeek - ddaWeeklyCap);
+    const ddaQueue = Math.round(ddaNetDeficit * 10) / 10;
+    const ddaWaitWeeks = ddaQueue > 0 ? Math.round((ddaIntervalWeeks / 2 + (ddaQueue / ddaCapacity) * ddaIntervalWeeks) * 10) / 10 : 0.5;
     const ddaCyclesDelay = Math.round((ddaWaitWeeks / ddaIntervalWeeks) * 10) / 10;
     const ddaIsBottleneck = ddaCyclesDelay > 1.0;
     const ddaIsSevere = ddaCyclesDelay > 2.0;
@@ -479,10 +561,10 @@ export const PipelineFlowSimulator: React.FC = () => {
     if (steerCoCyclesDelay >= portfolioBoardCyclesDelay && steerCoCyclesDelay > 1.0) {
       primaryProblemMeeting = {
         name: "Transformation SteerCo",
-        interval: "Monthly (4 wks)",
+        interval: steerCoIntervalWeeks === 1 ? "Weekly (1 wk)" : steerCoIntervalWeeks === 2 ? "Fortnightly (2 wks)" : "Monthly (4 wks)",
         intervalWeeks: steerCoIntervalWeeks,
         slotCapacity: steerCoCapacity,
-        arrivingPerCycle: Math.round(steerCoArrivingPerCycle * 10) / 10,
+        arrivingPerCycle: Math.round(t1WeeklyInitial * steerCoIntervalWeeks * 10) / 10,
         queue: steerCoQueue,
         waitWeeks: steerCoWaitWeeks,
         cyclesDelay: steerCoCyclesDelay,
@@ -491,10 +573,10 @@ export const PipelineFlowSimulator: React.FC = () => {
     } else if (portfolioBoardCyclesDelay > 1.0) {
       primaryProblemMeeting = {
         name: "AI Portfolio Board",
-        interval: "Fortnightly (2 wks)",
+        interval: portfolioBoardIntervalWeeks === 1 ? "Weekly (1 wk)" : portfolioBoardIntervalWeeks === 2 ? "Fortnightly (2 wks)" : "Monthly (4 wks)",
         intervalWeeks: portfolioBoardIntervalWeeks,
         slotCapacity: portfolioBoardCapacity,
-        arrivingPerCycle: Math.round(portfolioBoardArrivingPerCycle * 10) / 10,
+        arrivingPerCycle: Math.round(portfolioBoardDemandPerWeek * portfolioBoardIntervalWeeks * 10) / 10,
         queue: portfolioBoardQueue,
         waitWeeks: portfolioBoardWaitWeeks,
         cyclesDelay: portfolioBoardCyclesDelay,
@@ -506,7 +588,7 @@ export const PipelineFlowSimulator: React.FC = () => {
         interval: "Weekly (1 wk)",
         intervalWeeks: ddaIntervalWeeks,
         slotCapacity: ddaCapacity,
-        arrivingPerCycle: Math.round(ddaArrivingPerCycle * 10) / 10,
+        arrivingPerCycle: Math.round(ddaDemandPerWeek * ddaIntervalWeeks * 10) / 10,
         queue: ddaQueue,
         waitWeeks: ddaWaitWeeks,
         cyclesDelay: ddaCyclesDelay,
@@ -566,12 +648,15 @@ export const PipelineFlowSimulator: React.FC = () => {
       t3LeadDays,
       ssLeadDays,
       primaryProblemMeeting,
+      extraT1WeeklyCapacity,
+      extraT2WeeklyCapacity,
 
       steerCo: {
         demandPerWeek: t1WeeklyInitial,
         capacityPerMeeting: steerCoCapacity,
         intervalWeeks: steerCoIntervalWeeks,
-        arrivingPerCycle: steerCoArrivingPerCycle,
+        weeklyCap: steerCoTotalWeeklyCap,
+        arrivingPerCycle: t1WeeklyInitial * steerCoIntervalWeeks,
         queue: steerCoQueue,
         waitWeeks: steerCoWaitWeeks,
         cyclesDelay: steerCoCyclesDelay,
@@ -582,7 +667,8 @@ export const PipelineFlowSimulator: React.FC = () => {
         demandPerWeek: portfolioBoardDemandPerWeek,
         capacityPerMeeting: portfolioBoardCapacity,
         intervalWeeks: portfolioBoardIntervalWeeks,
-        arrivingPerCycle: portfolioBoardArrivingPerCycle,
+        weeklyCap: portfolioBoardTotalWeeklyCap,
+        arrivingPerCycle: portfolioBoardDemandPerWeek * portfolioBoardIntervalWeeks,
         queue: portfolioBoardQueue,
         waitWeeks: portfolioBoardWaitWeeks,
         cyclesDelay: portfolioBoardCyclesDelay,
@@ -593,7 +679,8 @@ export const PipelineFlowSimulator: React.FC = () => {
         demandPerWeek: ddaDemandPerWeek,
         capacityPerMeeting: ddaCapacity,
         intervalWeeks: ddaIntervalWeeks,
-        arrivingPerCycle: ddaArrivingPerCycle,
+        weeklyCap: ddaWeeklyCap,
+        arrivingPerCycle: ddaDemandPerWeek * ddaIntervalWeeks,
         queue: ddaQueue,
         waitWeeks: ddaWaitWeeks,
         cyclesDelay: ddaCyclesDelay,
@@ -601,15 +688,13 @@ export const PipelineFlowSimulator: React.FC = () => {
         isSevere: ddaIsSevere,
       },
     };
-  }, [assumptions]);
+  }, [assumptions, customMeetings]);
 
   // SPAWNS THE EXACT SELECTED NUMBER OF BALLS ALL IN ONE BURST
   const spawnWeeklyBurst = useCallback(() => {
-    // EXACT count selected by the user
     const exactTotalCount = Math.max(1, Math.round(assumptions.incomingPerWeek));
     const newBalls: Ball[] = [];
 
-    // Distribute using Largest Remainder Method so sum matches exactTotalCount to the single integer!
     const rawCounts = [
       { tier: "T1" as const, count: (exactTotalCount * assumptions.t1Split) / 100 },
       { tier: "T2" as const, count: (exactTotalCount * assumptions.t2Split) / 100 },
@@ -660,7 +745,6 @@ export const PipelineFlowSimulator: React.FC = () => {
         pathKey = isPromoted ? "t4-promoted" : "t4-main";
       }
 
-      // Compact lateral and longitudinal spread for convoy
       const lateralOffset = ((idx % 3) - 1) * 4.5 + (Math.random() - 0.5) * 2;
       const longitudinalOffset = Math.floor(idx / 3) * -8 + (Math.random() - 0.5) * 2;
 
@@ -671,9 +755,9 @@ export const PipelineFlowSimulator: React.FC = () => {
         glowColor,
         x: 80,
         y: 290,
-        radius: 3.2, // Smaller balls so 2 can stack vertically in queue
+        radius: 3.2,
         pathKey,
-        distance: 0, // ALL SPAWN TOGETHER AT DISTANCE 0
+        distance: 0,
         lateralOffset,
         longitudinalOffset,
         speed: 105,
@@ -691,8 +775,8 @@ export const PipelineFlowSimulator: React.FC = () => {
   useEffect(() => {
     let animationFrameId: number;
     const WEEK_MS = 10000 / simSpeed;
-    const STEERCO_CYCLE_MS = 40000 / simSpeed; // Monthly meeting (4 weeks)
-    const BOARD_CYCLE_MS = 20000 / simSpeed; // Fortnightly meeting (2 weeks)
+    const STEERCO_CYCLE_MS = (assumptions.steerCoCadenceWeeks * 10000) / simSpeed;
+    const BOARD_CYCLE_MS = (assumptions.portfolioBoardCadenceWeeks * 10000) / simSpeed;
 
     if (ballsRef.current.length === 0) {
       spawnWeeklyBurst();
@@ -703,7 +787,6 @@ export const PipelineFlowSimulator: React.FC = () => {
       lastTimeRef.current = time;
 
       if (isPlaying) {
-        // --- 1. WEEKLY BURST CLOCK (10 SECONDS = 1 WEEK) ---
         burstTimerRef.current += dt;
         const remaining = Math.max(0, (WEEK_MS - burstTimerRef.current) / 1000);
         setSecondsUntilNextBurst(Math.round(remaining * 10) / 10);
@@ -711,18 +794,18 @@ export const PipelineFlowSimulator: React.FC = () => {
         if (burstTimerRef.current >= WEEK_MS) {
           burstTimerRef.current = 0;
           setSimulatedWeek((w) => w + 1);
-          spawnWeeklyBurst(); // Fire next burst of exact count!
+          spawnWeeklyBurst();
         }
 
-        // --- 2. COMITOLOGY MEETING CYCLES (RELEASES QUEUED BALLS) ---
         steerCoTimerRef.current += dt;
         if (steerCoTimerRef.current >= STEERCO_CYCLE_MS) {
           steerCoTimerRef.current = 0;
           let released = 0;
+          const allowedRelease = assumptions.steerCoCapacity + Math.round(flowCalculations.extraT1WeeklyCapacity * assumptions.steerCoCadenceWeeks);
           for (const b of ballsRef.current) {
-            if (b.state === "QUEUED_STEERCO" && released < assumptions.steerCoCapacity) {
+            if (b.state === "QUEUED_STEERCO" && released < allowedRelease) {
               b.state = "MOVING";
-              b.distance = 585; // Release past SteerCo node!
+              b.distance = 585;
               released++;
             }
           }
@@ -732,17 +815,17 @@ export const PipelineFlowSimulator: React.FC = () => {
         if (boardTimerRef.current >= BOARD_CYCLE_MS) {
           boardTimerRef.current = 0;
           let released = 0;
+          const allowedRelease = assumptions.portfolioBoardCapacity + Math.round(flowCalculations.extraT2WeeklyCapacity * assumptions.portfolioBoardCadenceWeeks);
           for (const b of ballsRef.current) {
-            if (b.state === "QUEUED_BOARD" && released < assumptions.portfolioBoardCapacity) {
+            if (b.state === "QUEUED_BOARD" && released < allowedRelease) {
               b.state = "MOVING";
-              b.distance = 585; // Release past Portfolio Board!
+              b.distance = 585;
               released++;
             }
           }
         }
       }
 
-      // --- 3. CANVAS 2D DRAWING & ACCURATE SVG PATH QUERYING ---
       const canvas = canvasRef.current;
       if (canvas) {
         const ctx = canvas.getContext("2d");
@@ -758,19 +841,19 @@ export const PipelineFlowSimulator: React.FC = () => {
               b.distance += (b.speed * dt * simSpeed) / 1000;
             }
 
-            // G1 REJECTION FILTER: DELETE BALL IMMEDIATELY AT G1 IF REJECTED!
+            // G1 REJECTION: DELETE BALL IMMEDIATELY
             if (b.distance >= 140 && !b.passG1) {
-              b.state = "COMPLETED"; // Instantly removed!
+              b.state = "COMPLETED";
               continue;
             }
 
-            // G4 APPROVAL FILTER: DELETE BALL IMMEDIATELY AT G4 IF REJECTED!
+            // G4 REJECTION: DELETE BALL IMMEDIATELY
             if (b.distance >= 720 && !b.passG4) {
-              b.state = "COMPLETED"; // Instantly removed!
+              b.state = "COMPLETED";
               continue;
             }
 
-            // BOTTLENECK QUEUE CHECKS IN FRONT OF G3 (x ~ 545, distance ~ 510px)
+            // BOTTLENECK QUEUE CHECKS
             if (b.tier === "T1" && b.state === "MOVING" && b.distance >= 510 && b.distance < 570) {
               if (flowCalculations.steerCo.isBottleneck) {
                 b.state = "QUEUED_STEERCO";
@@ -783,27 +866,24 @@ export const PipelineFlowSimulator: React.FC = () => {
               }
             }
 
-            // EXACT POSITION QUERYING
             const pathEl = pathRefs.current[b.pathKey];
             if (pathEl && b.state !== "COMPLETED") {
               const totalLen = pathEl.getTotalLength();
 
               if (b.state === "QUEUED_STEERCO") {
-                // STACK 2 ON TOP OF EACH OTHER IN A LINE!
+                // Stack 2 on top of each other
                 b.queueIndex = steerCoWaitingCount++;
                 const col = Math.floor(b.queueIndex / 2);
                 const row = b.queueIndex % 2;
                 b.x = 545 - col * 9;
                 b.y = row === 0 ? 85.5 : 94.5;
               } else if (b.state === "QUEUED_BOARD") {
-                // STACK 2 ON TOP OF EACH OTHER IN A LINE!
                 b.queueIndex = boardWaitingCount++;
                 const col = Math.floor(b.queueIndex / 2);
                 const row = b.queueIndex % 2;
                 b.x = 545 - col * 9;
                 b.y = row === 0 ? 205.5 : 214.5;
               } else {
-                // NORMAL MOVEMENT ALONG EXACT SVG PATH
                 const effectiveDist = Math.min(
                   totalLen,
                   Math.max(0, b.distance + b.longitudinalOffset)
@@ -825,23 +905,19 @@ export const PipelineFlowSimulator: React.FC = () => {
                 }
               }
 
-              // DRAW BALL ON CANVAS
               if (b.state !== "COMPLETED") {
                 ctx.save();
 
-                // Outer soft halo
                 ctx.beginPath();
                 ctx.arc(b.x, b.y, b.radius * 2, 0, Math.PI * 2);
                 ctx.fillStyle = b.glowColor;
                 ctx.fill();
 
-                // Core solid ball
                 ctx.beginPath();
                 ctx.arc(b.x, b.y, b.radius, 0, Math.PI * 2);
                 ctx.fillStyle = b.color;
                 ctx.fill();
 
-                // Promoted star/ring
                 if (b.isPromoted && b.distance > 800) {
                   ctx.beginPath();
                   ctx.arc(b.x, b.y, b.radius + 2.5, 0, Math.PI * 2);
@@ -858,48 +934,51 @@ export const PipelineFlowSimulator: React.FC = () => {
 
           ballsRef.current = activeBalls;
 
-          // --- 4. DYNAMIC PATH SWELLING & TURNING RED AS QUEUE ACCUMULATES ---
-          // T1 Bottleneck Path Update (Between G2 and G3, x=400 to x=580 at y=90)
+          // DYNAMIC CONDUIT UPDATE (G2 to G3)
           if (t1BottleneckPathRef.current) {
             if (steerCoWaitingCount === 0) {
               t1BottleneckPathRef.current.setAttribute("stroke", "#10b981");
               t1BottleneckPathRef.current.setAttribute("stroke-width", "8");
               t1BottleneckPathRef.current.setAttribute("stroke-opacity", "0.4");
+              t1BottleneckPathRef.current.removeAttribute("filter");
             } else if (steerCoWaitingCount <= 2) {
               t1BottleneckPathRef.current.setAttribute("stroke", "#f59e0b");
               t1BottleneckPathRef.current.setAttribute("stroke-width", "13");
-              t1BottleneckPathRef.current.setAttribute("stroke-opacity", "0.8");
+              t1BottleneckPathRef.current.setAttribute("stroke-opacity", "0.85");
+              t1BottleneckPathRef.current.setAttribute("filter", "url(#conduit-amber-glow)");
             } else {
-              t1BottleneckPathRef.current.setAttribute("stroke", "#ef4444"); // Glowing Red!
+              t1BottleneckPathRef.current.setAttribute("stroke", "#ef4444");
               t1BottleneckPathRef.current.setAttribute(
                 "stroke-width",
-                String(Math.min(24, 15 + steerCoWaitingCount * 1.5))
+                String(Math.min(26, 16 + steerCoWaitingCount * 1.5))
               );
-              t1BottleneckPathRef.current.setAttribute("stroke-opacity", "0.95");
+              t1BottleneckPathRef.current.setAttribute("stroke-opacity", "1");
+              t1BottleneckPathRef.current.setAttribute("filter", "url(#conduit-red-glow)");
             }
           }
 
-          // T2 Bottleneck Path Update (Between G2 and G3, x=400 to x=580 at y=210)
           if (t2BottleneckPathRef.current) {
             if (boardWaitingCount === 0) {
               t2BottleneckPathRef.current.setAttribute("stroke", "#38bdf8");
               t2BottleneckPathRef.current.setAttribute("stroke-width", "8");
               t2BottleneckPathRef.current.setAttribute("stroke-opacity", "0.4");
+              t2BottleneckPathRef.current.removeAttribute("filter");
             } else if (boardWaitingCount <= 2) {
               t2BottleneckPathRef.current.setAttribute("stroke", "#f59e0b");
               t2BottleneckPathRef.current.setAttribute("stroke-width", "13");
-              t2BottleneckPathRef.current.setAttribute("stroke-opacity", "0.8");
+              t2BottleneckPathRef.current.setAttribute("stroke-opacity", "0.85");
+              t2BottleneckPathRef.current.setAttribute("filter", "url(#conduit-amber-glow)");
             } else {
               t2BottleneckPathRef.current.setAttribute("stroke", "#ef4444");
               t2BottleneckPathRef.current.setAttribute(
                 "stroke-width",
-                String(Math.min(22, 14 + boardWaitingCount * 1.5))
+                String(Math.min(24, 15 + boardWaitingCount * 1.5))
               );
-              t2BottleneckPathRef.current.setAttribute("stroke-opacity", "0.95");
+              t2BottleneckPathRef.current.setAttribute("stroke-opacity", "1");
+              t2BottleneckPathRef.current.setAttribute("filter", "url(#conduit-red-glow)");
             }
           }
 
-          // Keep live counts synced for header HUD
           if (steerCoWaitingCount !== steerCoLiveCount) {
             setSteerCoLiveCount(steerCoWaitingCount);
           }
@@ -947,9 +1026,11 @@ export const PipelineFlowSimulator: React.FC = () => {
           </h1>
           <p className="text-sm text-white/80 max-w-2xl leading-relaxed">
             Every 10 seconds, exactly{" "}
-            <strong>{Math.round(assumptions.incomingPerWeek)} use cases</strong>{" "}
-            enter the pipeline in one burst. Lines start green, and dynamically
-            swell and turn red between G2 and G3 as queues build up.
+            <strong className="text-emerald-400">
+              {Math.round(assumptions.incomingPerWeek)} use cases
+            </strong>{" "}
+            enter the pipeline in one burst. Tweak meeting cadences, capacities,
+            and add extra governance sessions below to resolve bottlenecks.
           </p>
         </div>
 
@@ -1148,8 +1229,8 @@ export const PipelineFlowSimulator: React.FC = () => {
               1. Top Panel — Live Editable Assumptions
             </h2>
             <p className="text-xs text-gray-600 mt-0.5">
-              The exact number of balls selected here enters the pipeline in each
-              burst. All 4 tiers (T1–T4) always sum to exactly 100%.
+              The exact number of balls selected enters the pipeline in each burst.
+              All 4 tiers (T1–T4) always sum to exactly 100%.
             </p>
           </div>
           <div className="flex items-center gap-2">
@@ -1239,7 +1320,7 @@ export const PipelineFlowSimulator: React.FC = () => {
               <span>100% (Pass-all)</span>
             </div>
             <p className="text-[11px] text-gray-500 leading-snug">
-              Rejected use cases are <strong>immediately deleted</strong> on
+              Rejected use cases are <strong>deleted immediately</strong> on
               arrival at Gate G1.
             </p>
           </div>
@@ -1660,6 +1741,15 @@ export const PipelineFlowSimulator: React.FC = () => {
               className="w-full h-full select-none absolute inset-0 pointer-events-none"
               style={{ overflow: "visible" }}
             >
+              <defs>
+                <filter id="conduit-red-glow" x="-30%" y="-30%" width="160%" height="160%">
+                  <feDropShadow dx="0" dy="0" stdDeviation="5" floodColor="#ef4444" floodOpacity="0.85" />
+                </filter>
+                <filter id="conduit-amber-glow" x="-30%" y="-30%" width="160%" height="160%">
+                  <feDropShadow dx="0" dy="0" stdDeviation="4" floodColor="#f59e0b" floodOpacity="0.75" />
+                </filter>
+              </defs>
+
               {/* --- HIDDEN MASTER PATHS USED FOR ACCURATE BALL TRAJECTORY QUERYING --- */}
               <path
                 id="t1-main"
@@ -1737,7 +1827,6 @@ export const PipelineFlowSimulator: React.FC = () => {
               </text>
 
               {/* --- VISUAL CONDUIT PIPES (NO DOTTED LINES) --- */}
-              {/* Pipe: Source to G1 */}
               <path d="M 80 290 L 220 290" fill="none" stroke="#10b981" strokeWidth="10" strokeOpacity="0.25" strokeLinecap="round" />
 
               {/* T1 CONDUIT SEGMENTS */}
@@ -1830,11 +1919,11 @@ export const PipelineFlowSimulator: React.FC = () => {
                   ADR &amp; Finance
                 </text>
                 <text x="0" y="16" textAnchor="middle" fill="#94a3b8" fontSize="7">
-                  DDA (Weekly)
+                  DDA ({assumptions.ddaCadenceWeeks === 1 ? "Weekly" : "Fortnightly"})
                 </text>
               </g>
 
-              {/* T1 - Gate G3 Priority (SteerCo Monthly) */}
+              {/* T1 - Gate G3 Priority (SteerCo) */}
               <g transform="translate(580, 90)">
                 <rect
                   x="-46"
@@ -1861,7 +1950,7 @@ export const PipelineFlowSimulator: React.FC = () => {
                   60% Hub Pool
                 </text>
                 <text x="0" y="16" textAnchor="middle" fill="#fbbf24" fontSize="7.5" fontWeight="bold">
-                  SteerCo (Monthly)
+                  SteerCo ({assumptions.steerCoCadenceWeeks === 1 ? "Weekly" : assumptions.steerCoCadenceWeeks === 2 ? "Fortnightly" : "Monthly"})
                 </text>
               </g>
 
@@ -1889,7 +1978,7 @@ export const PipelineFlowSimulator: React.FC = () => {
                   Platform Fit
                 </text>
                 <text x="0" y="16" textAnchor="middle" fill="#94a3b8" fontSize="7">
-                  DDA (Weekly)
+                  DDA ({assumptions.ddaCadenceWeeks === 1 ? "Weekly" : "Fortnightly"})
                 </text>
               </g>
 
@@ -1920,7 +2009,7 @@ export const PipelineFlowSimulator: React.FC = () => {
                   Shared Squad
                 </text>
                 <text x="0" y="16" textAnchor="middle" fill="#94a3b8" fontSize="7">
-                  Portfolio Board
+                  Board ({assumptions.portfolioBoardCadenceWeeks === 1 ? "Weekly" : assumptions.portfolioBoardCadenceWeeks === 2 ? "Fortnightly" : "Monthly"})
                 </text>
               </g>
 
@@ -2042,7 +2131,7 @@ export const PipelineFlowSimulator: React.FC = () => {
             <div>
               <span className="font-bold text-white block">T1 · Transform Lane</span>
               <span className="text-[11px] text-gray-400">
-                G1 $\rightarrow$ G2 $\rightarrow$ G3 $\rightarrow$ G4 · SteerCo Reviews
+                G1 → G2 → G3 → G4 · SteerCo Reviews
               </span>
             </div>
           </div>
@@ -2052,7 +2141,7 @@ export const PipelineFlowSimulator: React.FC = () => {
             <div>
               <span className="font-bold text-white block">T2 · Scale Lane</span>
               <span className="text-[11px] text-gray-400">
-                G1 $\rightarrow$ G2 $\rightarrow$ G3 $\rightarrow$ G4 + Promoted T3/T4
+                G1 → G2 → G3 → G4 + Promoted T3/T4
               </span>
             </div>
           </div>
@@ -2062,7 +2151,7 @@ export const PipelineFlowSimulator: React.FC = () => {
             <div>
               <span className="font-bold text-white block">T3 · Fast Lane</span>
               <span className="text-[11px] text-gray-400">
-                Direct G4 $\rightarrow$ MVP $\rightarrow$ G5 Promotion
+                Direct G4 → MVP → G5 Promotion
               </span>
             </div>
           </div>
@@ -2072,7 +2161,7 @@ export const PipelineFlowSimulator: React.FC = () => {
             <div>
               <span className="font-bold text-white block">T4 · Self-Service AI</span>
               <span className="text-[11px] text-gray-400">
-                Direct G4 $\rightarrow$ Catalog Tool $\rightarrow$ G5 Promotion
+                Direct G4 → Catalog Tool → G5 Promotion
               </span>
             </div>
           </div>
@@ -2199,13 +2288,9 @@ export const PipelineFlowSimulator: React.FC = () => {
             <p className="text-xs text-gray-800 leading-relaxed pt-1">
               <strong>Why this is a problem:</strong> Initiatives are blocked at{" "}
               <strong>{flowCalculations.primaryProblemMeeting.name}</strong>{" "}
-              waiting for agenda time rather than engineering capacity. Each
-              initiative waits across{" "}
-              <strong>
-                {flowCalculations.primaryProblemMeeting.cyclesDelay} full
-                meeting cycles
-              </strong>{" "}
-              before receiving a decision.
+              waiting for agenda time rather than engineering capacity. Tweak
+              its cadence or capacity in Section 4 below to resolve the
+              bottleneck.
             </p>
           </div>
         ) : (
@@ -2217,9 +2302,8 @@ export const PipelineFlowSimulator: React.FC = () => {
                   Zero Comitology Bottlenecks Detected
                 </span>
                 <span className="text-gray-600">
-                  All governing forums (SteerCo, Portfolio Board, DDA) have
-                  sufficient slot capacity to review incoming initiatives within
-                  1 meeting cycle.
+                  All governing forums have sufficient slot capacity to review
+                  incoming initiatives within 1 meeting cycle.
                 </span>
               </div>
             </div>
@@ -2228,239 +2312,593 @@ export const PipelineFlowSimulator: React.FC = () => {
             </span>
           </div>
         )}
+      </div>
 
-        {/* ALL FORUMS COMPARATIVE TABLE */}
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs text-gray-700">
-            <thead className="bg-gray-50 border-b border-gray-200 text-gray-600 font-bold uppercase tracking-wider text-[11px]">
-              <tr>
-                <th className="py-3 px-4">Governing Forum</th>
-                <th className="py-3 px-3">Cadence</th>
-                <th className="py-3 px-3">Slot Capacity</th>
-                <th className="py-3 px-3">Arriving Demand</th>
-                <th className="py-3 px-3">Queue Backlog</th>
-                <th className="py-3 px-3">Est. Wait Time</th>
-                <th className="py-3 px-3">Meeting Delays</th>
-                <th className="py-3 px-4">Bottleneck Status</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-100 font-medium">
-              {/* 1. Transformation SteerCo */}
-              <tr
-                className={`${
-                  steerCoLiveCount > 2
-                    ? "bg-rose-50/70"
-                    : steerCoLiveCount > 0
-                    ? "bg-amber-50/60"
-                    : "hover:bg-gray-50"
-                }`}
-              >
-                <td className="py-3.5 px-4 font-bold text-gray-900">
-                  <div className="flex items-center gap-2">
-                    <span className="w-2.5 h-2.5 rounded-full bg-emerald-700 shrink-0" />
-                    <div>
-                      <div>Transformation SteerCo</div>
-                      <div className="text-[10px] text-gray-500 font-normal">
-                        Chaired by TO Lead &amp; ExCo Stream Sponsors · T1 Gating &amp; Funding
-                      </div>
-                    </div>
-                  </div>
-                </td>
-                <td className="py-3.5 px-3">
-                  <span className="px-2 py-0.5 rounded bg-gray-100 text-gray-800 font-mono font-bold text-[10px]">
-                    Monthly (4 wks)
-                  </span>
-                </td>
-                <td className="py-3.5 px-3 font-mono font-bold">
-                  {assumptions.steerCoCapacity} UC / meeting
-                </td>
-                <td className="py-3.5 px-3 font-mono">
-                  {flowCalculations.steerCo.demandPerWeek.toFixed(2)} UC / wk
-                </td>
-                <td className="py-3.5 px-3 font-mono font-bold text-gray-900">
-                  {steerCoLiveCount > 0 ? steerCoLiveCount : flowCalculations.steerCo.queue} UCs in line
-                </td>
-                <td className="py-3.5 px-3 font-mono font-bold">
-                  {flowCalculations.steerCo.waitWeeks} weeks
-                </td>
-                <td className="py-3.5 px-3 font-mono font-bold">
-                  {flowCalculations.steerCo.cyclesDelay} cycles
-                </td>
-                <td className="py-3.5 px-4">
-                  {steerCoLiveCount > 2 ? (
-                    <span className="px-2.5 py-1 rounded-md bg-rose-600 text-white font-bold text-[10px] flex items-center gap-1 w-fit shadow-sm">
-                      <AlertTriangle className="w-3 h-3 text-white" /> 🚨 Severe Bottleneck (&gt;2 meetings)
-                    </span>
-                  ) : steerCoLiveCount > 0 ? (
-                    <span className="px-2.5 py-1 rounded-md bg-amber-500 text-amber-950 font-bold text-[10px] flex items-center gap-1 w-fit shadow-sm">
-                      <AlertTriangle className="w-3 h-3" /> ⚠️ Bottleneck (&gt;1 meeting)
-                    </span>
-                  ) : (
-                    <span className="px-2.5 py-1 rounded-md bg-emerald-100 text-emerald-800 font-bold text-[10px] flex items-center gap-1 w-fit">
-                      <CheckCircle2 className="w-3 h-3 text-emerald-600" /> Healthy Flow (≤1 meeting)
-                    </span>
-                  )}
-                </td>
-              </tr>
+      {/* =========================================================================
+          SECTION 4: GOVERNANCE MEETING MANAGER & ASSUMPTIONS TWEAKER
+          (Tweak Cadences, Slot Capacities, and Add Extra / Extraordinary Meetings)
+      ========================================================================= */}
+      <div className="bg-white rounded-3xl p-6 sm:p-8 shadow-sm border border-gray-200 space-y-6">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-gray-200 pb-4">
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="px-2.5 py-0.5 rounded bg-emerald-100 text-emerald-800 text-[10px] font-bold uppercase tracking-wider font-mono">
+                Meeting Cadence &amp; Capacity Control
+              </span>
+              <h2 className="text-xl font-black text-gray-900 tracking-tight flex items-center gap-2">
+                <Calendar className="w-5 h-5 text-emerald-700" />
+                4. Governance Meeting Manager &amp; Capacity Assumptions
+              </h2>
+            </div>
+            <p className="text-xs text-gray-600 mt-1">
+              Directly adjust review cadences (Weekly, Fortnightly, Monthly) and
+              slot capacities for each committee, or add extra extraordinary
+              sessions to test how schedule adjustments dissolve queues.
+            </p>
+          </div>
 
-              {/* 2. AI Portfolio Board */}
-              <tr
-                className={`${
-                  boardLiveCount > 2
-                    ? "bg-rose-50/70"
-                    : boardLiveCount > 0
-                    ? "bg-amber-50/60"
-                    : "hover:bg-gray-50"
-                }`}
-              >
-                <td className="py-3.5 px-4 font-bold text-gray-900">
-                  <div className="flex items-center gap-2">
-                    <span className="w-2.5 h-2.5 rounded-full bg-blue-600 shrink-0" />
-                    <div>
-                      <div>AI Portfolio Board</div>
-                      <div className="text-[10px] text-gray-500 font-normal">
-                        Stream Leadership &amp; Hub Delegates · T2 Gating &amp; T3 SLA
-                      </div>
-                    </div>
-                  </div>
-                </td>
-                <td className="py-3.5 px-3">
-                  <span className="px-2 py-0.5 rounded bg-gray-100 text-gray-800 font-mono font-bold text-[10px]">
-                    Fortnightly (2 wks)
-                  </span>
-                </td>
-                <td className="py-3.5 px-3 font-mono font-bold">
-                  {assumptions.portfolioBoardCapacity} UC / meeting
-                </td>
-                <td className="py-3.5 px-3 font-mono">
-                  {flowCalculations.portfolioBoard.demandPerWeek.toFixed(2)} UC / wk
-                </td>
-                <td className="py-3.5 px-3 font-mono font-bold text-gray-900">
-                  {boardLiveCount > 0 ? boardLiveCount : flowCalculations.portfolioBoard.queue} UCs in line
-                </td>
-                <td className="py-3.5 px-3 font-mono font-bold">
-                  {flowCalculations.portfolioBoard.waitWeeks} weeks
-                </td>
-                <td className="py-3.5 px-3 font-mono font-bold">
-                  {flowCalculations.portfolioBoard.cyclesDelay} cycles
-                </td>
-                <td className="py-3.5 px-4">
-                  {boardLiveCount > 2 ? (
-                    <span className="px-2.5 py-1 rounded-md bg-rose-600 text-white font-bold text-[10px] flex items-center gap-1 w-fit shadow-sm">
-                      <AlertTriangle className="w-3 h-3 text-white" /> 🚨 Severe Bottleneck (&gt;2 meetings)
-                    </span>
-                  ) : boardLiveCount > 0 ? (
-                    <span className="px-2.5 py-1 rounded-md bg-amber-500 text-amber-950 font-bold text-[10px] flex items-center gap-1 w-fit shadow-sm">
-                      <AlertTriangle className="w-3 h-3" /> ⚠️ Bottleneck (&gt;1 meeting)
-                    </span>
-                  ) : (
-                    <span className="px-2.5 py-1 rounded-md bg-emerald-100 text-emerald-800 font-bold text-[10px] flex items-center gap-1 w-fit">
-                      <CheckCircle2 className="w-3 h-3 text-emerald-600" /> Healthy Flow (≤1 meeting)
-                    </span>
-                  )}
-                </td>
-              </tr>
-
-              {/* 3. Digital Design Authority (DDA) */}
-              <tr
-                className={`${
-                  flowCalculations.dda.isSevere
-                    ? "bg-rose-50/70"
-                    : flowCalculations.dda.isBottleneck
-                    ? "bg-amber-50/60"
-                    : "hover:bg-gray-50"
-                }`}
-              >
-                <td className="py-3.5 px-4 font-bold text-gray-900">
-                  <div className="flex items-center gap-2">
-                    <span className="w-2.5 h-2.5 rounded-full bg-purple-600 shrink-0" />
-                    <div>
-                      <div>Digital Design Authority (DDA)</div>
-                      <div className="text-[10px] text-gray-500 font-normal">
-                        Architecture, Cyber &amp; ORAI · Gate G2 ADRs for T1 &amp; T2
-                      </div>
-                    </div>
-                  </div>
-                </td>
-                <td className="py-3.5 px-3">
-                  <span className="px-2 py-0.5 rounded bg-gray-100 text-gray-800 font-mono font-bold text-[10px]">
-                    Weekly (1 wk)
-                  </span>
-                </td>
-                <td className="py-3.5 px-3 font-mono font-bold">
-                  {assumptions.ddaCapacity} ADRs / meeting
-                </td>
-                <td className="py-3.5 px-3 font-mono">
-                  {flowCalculations.dda.demandPerWeek.toFixed(2)} ADRs / wk
-                </td>
-                <td className="py-3.5 px-3 font-mono font-bold text-gray-900">
-                  {flowCalculations.dda.queue} ADRs in line
-                </td>
-                <td className="py-3.5 px-3 font-mono font-bold">
-                  {flowCalculations.dda.waitWeeks} weeks
-                </td>
-                <td className="py-3.5 px-3 font-mono font-bold">
-                  {flowCalculations.dda.cyclesDelay} cycles
-                </td>
-                <td className="py-3.5 px-4">
-                  {flowCalculations.dda.isSevere ? (
-                    <span className="px-2.5 py-1 rounded-md bg-rose-600 text-white font-bold text-[10px] flex items-center gap-1 w-fit shadow-sm">
-                      <AlertTriangle className="w-3 h-3 text-white" /> 🚨 Severe Bottleneck (&gt;2 meetings)
-                    </span>
-                  ) : flowCalculations.dda.isBottleneck ? (
-                    <span className="px-2.5 py-1 rounded-md bg-amber-500 text-amber-950 font-bold text-[10px] flex items-center gap-1 w-fit shadow-sm">
-                      <AlertTriangle className="w-3 h-3" /> ⚠️ Bottleneck (&gt;1 meeting)
-                    </span>
-                  ) : (
-                    <span className="px-2.5 py-1 rounded-md bg-emerald-100 text-emerald-800 font-bold text-[10px] flex items-center gap-1 w-fit">
-                      <CheckCircle2 className="w-3 h-3 text-emerald-600" /> Healthy Flow (≤1 meeting)
-                    </span>
-                  )}
-                </td>
-              </tr>
-            </tbody>
-          </table>
+          <button
+            type="button"
+            onClick={() => setShowAddMeetingForm(!showAddMeetingForm)}
+            className="px-4 py-2 rounded-xl bg-emerald-700 hover:bg-emerald-600 text-white text-xs font-bold transition-all flex items-center gap-2 shadow-sm shrink-0"
+          >
+            <Plus className="w-4 h-4" />
+            <span>Add Extra Governance Meeting</span>
+          </button>
         </div>
 
-        {/* MITIGATION & PLAYBOOK ACTIONS */}
-        <div className="p-5 rounded-2xl bg-amber-50/70 border border-amber-300 space-y-3">
-          <div className="flex items-center gap-2 text-xs font-bold text-amber-950 uppercase tracking-wider">
-            <Sparkles className="w-4 h-4 text-amber-600" />
-            Recommended Operating Model Mitigations for Current Scenario:
+        {/* INLINE FORM TO ADD EXTRA MEETING */}
+        {showAddMeetingForm && (
+          <form
+            onSubmit={handleAddCustomMeeting}
+            className="p-5 rounded-2xl bg-emerald-50/70 border-2 border-emerald-300 space-y-4 text-xs animate-in fade-in duration-200"
+          >
+            <div className="font-bold text-gray-900 flex items-center justify-between border-b border-emerald-200 pb-2">
+              <span className="flex items-center gap-2 text-emerald-950 font-black">
+                <Users className="w-4 h-4 text-emerald-700" />
+                Configure New Governance Meeting
+              </span>
+              <span className="text-[11px] text-gray-500">
+                Adds review capacity directly into the simulation pipeline
+              </span>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3.5">
+              <div>
+                <label className="block text-[11px] font-bold text-gray-700 mb-1">
+                  Meeting Name *
+                </label>
+                <input
+                  type="text"
+                  placeholder="e.g. SteerCo Extraordinary Session"
+                  value={newMeetingName}
+                  onChange={(e) => setNewMeetingName(e.target.value)}
+                  className="w-full px-3 py-2 rounded-xl border border-gray-300 bg-white text-xs focus:ring-2 focus:ring-emerald-500"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-bold text-gray-700 mb-1">
+                  Chaired By
+                </label>
+                <input
+                  type="text"
+                  placeholder="e.g. TO Lead &amp; Stream Sponsor"
+                  value={newMeetingChair}
+                  onChange={(e) => setNewMeetingChair(e.target.value)}
+                  className="w-full px-3 py-2 rounded-xl border border-gray-300 bg-white text-xs focus:ring-2 focus:ring-emerald-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-bold text-gray-700 mb-1">
+                  Target Tier Scope
+                </label>
+                <select
+                  value={newMeetingTier}
+                  onChange={(e) =>
+                    setNewMeetingTier(
+                      e.target.value as "T1" | "T2" | "T3" | "T4" | "ALL"
+                    )
+                  }
+                  className="w-full px-3 py-2 rounded-xl border border-gray-300 bg-white text-xs font-semibold focus:ring-2 focus:ring-emerald-500"
+                >
+                  <option value="T1">T1 · Transform Only</option>
+                  <option value="T2">T2 · Scale Only</option>
+                  <option value="T3">T3 · Fast Lane Only</option>
+                  <option value="T4">T4 · Self-Service Only</option>
+                  <option value="ALL">All Tiers (General Review)</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-bold text-gray-700 mb-1">
+                  Meeting Cadence
+                </label>
+                <select
+                  value={newMeetingCadence}
+                  onChange={(e) =>
+                    setNewMeetingCadence(
+                      e.target.value as "weekly" | "fortnightly" | "monthly"
+                    )
+                  }
+                  className="w-full px-3 py-2 rounded-xl border border-gray-300 bg-white text-xs font-semibold focus:ring-2 focus:ring-emerald-500"
+                >
+                  <option value="weekly">Weekly (Every 1 week)</option>
+                  <option value="fortnightly">Fortnightly (Every 2 weeks)</option>
+                  <option value="monthly">Monthly (Every 4 weeks)</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-bold text-gray-700 mb-1">
+                  UCs Reviewed / Meeting
+                </label>
+                <input
+                  type="number"
+                  min="1"
+                  max="15"
+                  value={newMeetingCapacity}
+                  onChange={(e) => setNewMeetingCapacity(Number(e.target.value))}
+                  className="w-full px-3 py-2 rounded-xl border border-gray-300 bg-white text-xs font-bold font-mono focus:ring-2 focus:ring-emerald-500"
+                />
+              </div>
+            </div>
+
+            <div className="flex items-center justify-end gap-2 pt-2">
+              <button
+                type="button"
+                onClick={() => setShowAddMeetingForm(false)}
+                className="px-3 py-1.5 rounded-lg border border-gray-300 text-gray-600 hover:bg-gray-100 font-semibold text-xs"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                className="px-4 py-1.5 rounded-lg bg-emerald-700 text-white font-bold text-xs hover:bg-emerald-600 flex items-center gap-1.5"
+              >
+                <Check className="w-3.5 h-3.5" />
+                <span>Save &amp; Activate Meeting</span>
+              </button>
+            </div>
+          </form>
+        )}
+
+        {/* CORE GOVERNANCE MEETINGS GRID */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+          {/* 1. TRANSFORMATION STEERCO */}
+          <div className="p-5 rounded-2xl bg-gray-50 border border-gray-200 flex flex-col justify-between space-y-4">
+            <div>
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-black text-emerald-900 flex items-center gap-1.5">
+                  <span className="w-2.5 h-2.5 rounded-full bg-emerald-700" />
+                  Transformation SteerCo
+                </span>
+                <span className="px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 text-[10px] font-bold font-mono">
+                  T1 Transform (&gt;€1M)
+                </span>
+              </div>
+              <p className="text-[11px] text-gray-500 mt-1">
+                Chaired by TO Lead &amp; ExCo Stream Sponsors. G2 Endorsement,
+                G3 Priority &amp; G4 Funding Release.
+              </p>
+            </div>
+
+            <div className="space-y-3 pt-1 text-xs">
+              {/* Cadence Selector */}
+              <div>
+                <label className="block text-[11px] font-bold text-gray-700 mb-1.5">
+                  Meeting Cadence:
+                </label>
+                <div className="grid grid-cols-3 gap-1.5">
+                  <button
+                    type="button"
+                    onClick={() => updateAssumption("steerCoCadenceWeeks", 1)}
+                    className={`py-1.5 px-2 rounded-lg text-[10px] font-bold border transition-all ${
+                      assumptions.steerCoCadenceWeeks === 1
+                        ? "bg-emerald-700 text-white border-emerald-800 shadow-sm"
+                        : "bg-white text-gray-700 border-gray-200 hover:bg-gray-100"
+                    }`}
+                  >
+                    Weekly (1w)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => updateAssumption("steerCoCadenceWeeks", 2)}
+                    className={`py-1.5 px-2 rounded-lg text-[10px] font-bold border transition-all ${
+                      assumptions.steerCoCadenceWeeks === 2
+                        ? "bg-emerald-700 text-white border-emerald-800 shadow-sm"
+                        : "bg-white text-gray-700 border-gray-200 hover:bg-gray-100"
+                    }`}
+                  >
+                    Fortnightly (2w)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => updateAssumption("steerCoCadenceWeeks", 4)}
+                    className={`py-1.5 px-2 rounded-lg text-[10px] font-bold border transition-all ${
+                      assumptions.steerCoCadenceWeeks === 4
+                        ? "bg-emerald-700 text-white border-emerald-800 shadow-sm"
+                        : "bg-white text-gray-700 border-gray-200 hover:bg-gray-100"
+                    }`}
+                  >
+                    Monthly (4w)
+                  </button>
+                </div>
+              </div>
+
+              {/* Slot Capacity Slider */}
+              <div className="space-y-1">
+                <div className="flex justify-between text-[11px]">
+                  <span className="font-bold text-gray-700">
+                    Slot Capacity / Meeting:
+                  </span>
+                  <span className="font-mono font-black text-emerald-800">
+                    {assumptions.steerCoCapacity} UCs / meeting
+                  </span>
+                </div>
+                <input
+                  type="range"
+                  min="1"
+                  max="10"
+                  step="1"
+                  value={assumptions.steerCoCapacity}
+                  onChange={(e) =>
+                    updateAssumption("steerCoCapacity", Number(e.target.value))
+                  }
+                  className="w-full accent-emerald-700 cursor-pointer"
+                />
+              </div>
+
+              {/* Live Throughput Metrics */}
+              <div className="p-3 rounded-xl bg-white border border-gray-200 text-[11px] space-y-1">
+                <div className="flex justify-between">
+                  <span className="text-gray-500">Effective Throughput:</span>
+                  <span className="font-mono font-bold text-gray-900">
+                    {flowCalculations.steerCo.weeklyCap.toFixed(2)} UC / week
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-500">Arriving T1 Demand:</span>
+                  <span className="font-mono font-bold text-gray-900">
+                    {flowCalculations.steerCo.demandPerWeek.toFixed(2)} UC / week
+                  </span>
+                </div>
+                <div className="flex justify-between pt-1 border-t border-gray-100">
+                  <span className="text-gray-500">Agenda Status:</span>
+                  <span
+                    className={`font-bold ${
+                      flowCalculations.steerCo.isBottleneck
+                        ? "text-rose-600"
+                        : "text-emerald-700"
+                    }`}
+                  >
+                    {flowCalculations.steerCo.isBottleneck
+                      ? `Deficit (-${(flowCalculations.steerCo.demandPerWeek - flowCalculations.steerCo.weeklyCap).toFixed(2)}/wk)`
+                      : "Surplus Capacity ✓"}
+                  </span>
+                </div>
+              </div>
+            </div>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs">
-            <div className="p-3 rounded-xl bg-white border border-amber-200 space-y-1">
-              <span className="font-bold text-gray-900 block">
-                1. SteerCo Extraordinary Sessions
-              </span>
-              <p className="text-gray-600 leading-snug">
-                If SteerCo waiting time exceeds 4 weeks, shift from Monthly to
-                Fortnightly cadences or expand slot capacity from 3 to 5 use
-                cases per meeting.
+
+          {/* 2. AI PORTFOLIO BOARD */}
+          <div className="p-5 rounded-2xl bg-gray-50 border border-gray-200 flex flex-col justify-between space-y-4">
+            <div>
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-black text-blue-900 flex items-center gap-1.5">
+                  <span className="w-2.5 h-2.5 rounded-full bg-blue-600" />
+                  AI Portfolio Board
+                </span>
+                <span className="px-2 py-0.5 rounded bg-blue-100 text-blue-800 text-[10px] font-bold font-mono">
+                  T2 Scale &amp; T3 SLA
+                </span>
+              </div>
+              <p className="text-[11px] text-gray-500 mt-1">
+                Stream Leadership &amp; Hub Delegates. G2 Platform fit, G3 Shared
+                Squad &amp; T3 10-Day SLA sign-off.
               </p>
             </div>
-            <div className="p-3 rounded-xl bg-white border border-amber-200 space-y-1">
-              <span className="font-bold text-gray-900 block">
-                2. Gate G2 Delegation to Stream Leads
-              </span>
-              <p className="text-gray-600 leading-snug">
-                Delegate Gate G2 business problem endorsement fully to Stream
-                Leads, reserving SteerCo agenda exclusively for G3 Priority &amp;
-                G4 Budget Tranches.
+
+            <div className="space-y-3 pt-1 text-xs">
+              {/* Cadence Selector */}
+              <div>
+                <label className="block text-[11px] font-bold text-gray-700 mb-1.5">
+                  Meeting Cadence:
+                </label>
+                <div className="grid grid-cols-3 gap-1.5">
+                  <button
+                    type="button"
+                    onClick={() =>
+                      updateAssumption("portfolioBoardCadenceWeeks", 1)
+                    }
+                    className={`py-1.5 px-2 rounded-lg text-[10px] font-bold border transition-all ${
+                      assumptions.portfolioBoardCadenceWeeks === 1
+                        ? "bg-blue-600 text-white border-blue-700 shadow-sm"
+                        : "bg-white text-gray-700 border-gray-200 hover:bg-gray-100"
+                    }`}
+                  >
+                    Weekly (1w)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      updateAssumption("portfolioBoardCadenceWeeks", 2)
+                    }
+                    className={`py-1.5 px-2 rounded-lg text-[10px] font-bold border transition-all ${
+                      assumptions.portfolioBoardCadenceWeeks === 2
+                        ? "bg-blue-600 text-white border-blue-700 shadow-sm"
+                        : "bg-white text-gray-700 border-gray-200 hover:bg-gray-100"
+                    }`}
+                  >
+                    Fortnightly (2w)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      updateAssumption("portfolioBoardCadenceWeeks", 4)
+                    }
+                    className={`py-1.5 px-2 rounded-lg text-[10px] font-bold border transition-all ${
+                      assumptions.portfolioBoardCadenceWeeks === 4
+                        ? "bg-blue-600 text-white border-blue-700 shadow-sm"
+                        : "bg-white text-gray-700 border-gray-200 hover:bg-gray-100"
+                    }`}
+                  >
+                    Monthly (4w)
+                  </button>
+                </div>
+              </div>
+
+              {/* Slot Capacity Slider */}
+              <div className="space-y-1">
+                <div className="flex justify-between text-[11px]">
+                  <span className="font-bold text-gray-700">
+                    Slot Capacity / Meeting:
+                  </span>
+                  <span className="font-mono font-black text-blue-800">
+                    {assumptions.portfolioBoardCapacity} UCs / meeting
+                  </span>
+                </div>
+                <input
+                  type="range"
+                  min="2"
+                  max="15"
+                  step="1"
+                  value={assumptions.portfolioBoardCapacity}
+                  onChange={(e) =>
+                    updateAssumption(
+                      "portfolioBoardCapacity",
+                      Number(e.target.value)
+                    )
+                  }
+                  className="w-full accent-blue-600 cursor-pointer"
+                />
+              </div>
+
+              {/* Live Throughput Metrics */}
+              <div className="p-3 rounded-xl bg-white border border-gray-200 text-[11px] space-y-1">
+                <div className="flex justify-between">
+                  <span className="text-gray-500">Effective Throughput:</span>
+                  <span className="font-mono font-bold text-gray-900">
+                    {flowCalculations.portfolioBoard.weeklyCap.toFixed(2)} UC / week
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-500">Arriving T2+T3 Demand:</span>
+                  <span className="font-mono font-bold text-gray-900">
+                    {flowCalculations.portfolioBoard.demandPerWeek.toFixed(2)} UC / week
+                  </span>
+                </div>
+                <div className="flex justify-between pt-1 border-t border-gray-100">
+                  <span className="text-gray-500">Agenda Status:</span>
+                  <span
+                    className={`font-bold ${
+                      flowCalculations.portfolioBoard.isBottleneck
+                        ? "text-amber-600"
+                        : "text-emerald-700"
+                    }`}
+                  >
+                    {flowCalculations.portfolioBoard.isBottleneck
+                      ? `Deficit (-${(flowCalculations.portfolioBoard.demandPerWeek - flowCalculations.portfolioBoard.weeklyCap).toFixed(2)}/wk)`
+                      : "Surplus Capacity ✓"}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* 3. DIGITAL DESIGN AUTHORITY (DDA) */}
+          <div className="p-5 rounded-2xl bg-gray-50 border border-gray-200 flex flex-col justify-between space-y-4">
+            <div>
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-black text-purple-900 flex items-center gap-1.5">
+                  <span className="w-2.5 h-2.5 rounded-full bg-purple-600" />
+                  Digital Design Authority (DDA)
+                </span>
+                <span className="px-2 py-0.5 rounded bg-purple-100 text-purple-800 text-[10px] font-bold font-mono">
+                  G2 Architecture &amp; Cyber
+                </span>
+              </div>
+              <p className="text-[11px] text-gray-500 mt-1">
+                Enterprise Architecture, Cyber &amp; ORAI. Reviews Architecture
+                Decision Records (ADRs) at Gate G2.
               </p>
             </div>
-            <div className="p-3 rounded-xl bg-white border border-amber-200 space-y-1">
-              <span className="font-bold text-gray-900 block">
-                3. Leverage T3 Fast Lane &amp; Post-MVP Scaling
-              </span>
-              <p className="text-gray-600 leading-snug">
-                Encourage business teams to test MVPs under T3 (skipping G2/G3),
-                then promote proven winners into T2 Scale at Gate G5 after MVP
-                evaluation.
-              </p>
+
+            <div className="space-y-3 pt-1 text-xs">
+              {/* Cadence Selector */}
+              <div>
+                <label className="block text-[11px] font-bold text-gray-700 mb-1.5">
+                  Meeting Cadence:
+                </label>
+                <div className="grid grid-cols-2 gap-1.5">
+                  <button
+                    type="button"
+                    onClick={() => updateAssumption("ddaCadenceWeeks", 1)}
+                    className={`py-1.5 px-2 rounded-lg text-[10px] font-bold border transition-all ${
+                      assumptions.ddaCadenceWeeks === 1
+                        ? "bg-purple-600 text-white border-purple-700 shadow-sm"
+                        : "bg-white text-gray-700 border-gray-200 hover:bg-gray-100"
+                    }`}
+                  >
+                    Weekly (1w)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => updateAssumption("ddaCadenceWeeks", 2)}
+                    className={`py-1.5 px-2 rounded-lg text-[10px] font-bold border transition-all ${
+                      assumptions.ddaCadenceWeeks === 2
+                        ? "bg-purple-600 text-white border-purple-700 shadow-sm"
+                        : "bg-white text-gray-700 border-gray-200 hover:bg-gray-100"
+                    }`}
+                  >
+                    Fortnightly (2w)
+                  </button>
+                </div>
+              </div>
+
+              {/* Slot Capacity Slider */}
+              <div className="space-y-1">
+                <div className="flex justify-between text-[11px]">
+                  <span className="font-bold text-gray-700">
+                    ADR Slots / Meeting:
+                  </span>
+                  <span className="font-mono font-black text-purple-800">
+                    {assumptions.ddaCapacity} ADRs / meeting
+                  </span>
+                </div>
+                <input
+                  type="range"
+                  min="2"
+                  max="15"
+                  step="1"
+                  value={assumptions.ddaCapacity}
+                  onChange={(e) =>
+                    updateAssumption("ddaCapacity", Number(e.target.value))
+                  }
+                  className="w-full accent-purple-600 cursor-pointer"
+                />
+              </div>
+
+              {/* Live Throughput Metrics */}
+              <div className="p-3 rounded-xl bg-white border border-gray-200 text-[11px] space-y-1">
+                <div className="flex justify-between">
+                  <span className="text-gray-500">Effective Capacity:</span>
+                  <span className="font-mono font-bold text-gray-900">
+                    {flowCalculations.dda.weeklyCap.toFixed(2)} ADR / week
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-500">Arriving ADR Demand:</span>
+                  <span className="font-mono font-bold text-gray-900">
+                    {flowCalculations.dda.demandPerWeek.toFixed(2)} ADR / week
+                  </span>
+                </div>
+                <div className="flex justify-between pt-1 border-t border-gray-100">
+                  <span className="text-gray-500">Agenda Status:</span>
+                  <span
+                    className={`font-bold ${
+                      flowCalculations.dda.isBottleneck
+                        ? "text-rose-600"
+                        : "text-emerald-700"
+                    }`}
+                  >
+                    {flowCalculations.dda.isBottleneck
+                      ? `Deficit (-${(flowCalculations.dda.demandPerWeek - flowCalculations.dda.weeklyCap).toFixed(2)}/wk)`
+                      : "Surplus Capacity ✓"}
+                  </span>
+                </div>
+              </div>
             </div>
           </div>
         </div>
+
+        {/* CUSTOM EXTRA MEETINGS (IF ANY ADDED) */}
+        {customMeetings.length > 0 && (
+          <div className="space-y-3 pt-3 border-t border-gray-200">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-black text-gray-900 uppercase tracking-wider flex items-center gap-1.5">
+                <Sparkles className="w-3.5 h-3.5 text-amber-600" />
+                Active Extra Governance Sessions ({customMeetings.length})
+              </span>
+              <span className="text-[11px] text-gray-500">
+                Extra throughput automatically credited to pipeline review capacity
+              </span>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {customMeetings.map((m) => {
+                const weeklyContribution = m.slotCapacity / m.cadenceWeeks;
+                return (
+                  <div
+                    key={m.id}
+                    className={`p-4 rounded-2xl border transition-all space-y-3 ${
+                      m.active
+                        ? "bg-amber-50/50 border-amber-300 ring-1 ring-amber-500/20"
+                        : "bg-gray-100 border-gray-300 opacity-60"
+                    }`}
+                  >
+                    <div className="flex items-start justify-between gap-2">
+                      <div>
+                        <div className="font-bold text-gray-900 text-xs">
+                          {m.name}
+                        </div>
+                        <div className="text-[10px] text-gray-500">{m.chair}</div>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <button
+                          type="button"
+                          onClick={() => handleToggleMeeting(m.id)}
+                          className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+                            m.active
+                              ? "bg-emerald-600 text-white"
+                              : "bg-gray-300 text-gray-700"
+                          }`}
+                        >
+                          {m.active ? "Active" : "Paused"}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteMeeting(m.id)}
+                          className="p-1 rounded text-gray-400 hover:text-rose-600 hover:bg-rose-50"
+                          title="Delete meeting"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-3 gap-2 text-[10px] bg-white p-2.5 rounded-xl border border-black/5">
+                      <div>
+                        <span className="text-gray-400 block font-medium">Scope</span>
+                        <span className="font-bold text-gray-800">
+                          {m.targetTier === "ALL" ? "All Tiers" : `${m.targetTier} Only`}
+                        </span>
+                      </div>
+                      <div>
+                        <span className="text-gray-400 block font-medium">Cadence</span>
+                        <span className="font-bold text-gray-800">
+                          {m.cadence === "weekly"
+                            ? "Weekly (1w)"
+                            : m.cadence === "fortnightly"
+                            ? "Fortnightly (2w)"
+                            : "Monthly (4w)"}
+                        </span>
+                      </div>
+                      <div>
+                        <span className="text-gray-400 block font-medium">Relief</span>
+                        <span className="font-bold text-emerald-700">
+                          +{weeklyContribution.toFixed(2)} UC/wk
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
