@@ -1040,12 +1040,12 @@ export const LifecycleView: React.FC<LifecycleViewProps> = ({
                 </span>
               </div>
 
-              {/* What it means (x, y, z) */}
+              {/* What it means (1, 2, 3) */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-2.5 text-xs">
                 <div className="p-3 rounded-lg bg-black/40 border border-emerald-400/30 space-y-1">
                   <div className="flex items-center gap-2">
                     <span className="w-5 h-5 rounded-full bg-amber-400 text-gray-950 font-black text-xs flex items-center justify-center shrink-0">
-                      x
+                      1
                     </span>
                     <span className="font-bold text-white text-xs">
                       Formally Registered in Enterprise Pipeline
@@ -1059,7 +1059,7 @@ export const LifecycleView: React.FC<LifecycleViewProps> = ({
                 <div className="p-3 rounded-lg bg-black/40 border border-emerald-400/30 space-y-1">
                   <div className="flex items-center gap-2">
                     <span className="w-5 h-5 rounded-full bg-emerald-400 text-gray-950 font-black text-xs flex items-center justify-center shrink-0">
-                      y
+                      2
                     </span>
                     <span className="font-bold text-white text-xs">
                       Resource Mobilization & Co-Building Squad
@@ -1073,7 +1073,7 @@ export const LifecycleView: React.FC<LifecycleViewProps> = ({
                 <div className="p-3 rounded-lg bg-black/40 border border-emerald-400/30 space-y-1">
                   <div className="flex items-center gap-2">
                     <span className="w-5 h-5 rounded-full bg-sky-400 text-gray-950 font-black text-xs flex items-center justify-center shrink-0">
-                      z
+                      3
                     </span>
                     <span className="font-bold text-white text-xs">
                       Locked Comitology Schedule
@@ -1615,9 +1615,16 @@ export const LifecycleView: React.FC<LifecycleViewProps> = ({
 
             {/* Dedicated Team at Disposition */}
             <div className="space-y-2">
-              <div className="text-xs font-bold uppercase tracking-wider text-gray-800 flex items-center gap-1.5">
-                <Users className="w-4 h-4 text-emerald-700" />
-                Team Put at the Disposition of this Use Case:
+              <div className="text-xs font-bold uppercase tracking-wider text-gray-800 flex items-center justify-between">
+                <span className="flex items-center gap-1.5">
+                  <Users className="w-4 h-4 text-emerald-700" />
+                  Team Put at the Disposition of this Use Case:
+                </span>
+                {currentCase.customTeam && currentCase.customTeam.length > 0 && (
+                  <span className="text-[10px] text-emerald-800 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full font-mono font-bold">
+                    Custom Squad ({currentCase.customTeam.length} Profiles)
+                  </span>
+                )}
               </div>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs">
                 {/* Data & AI */}
@@ -1627,15 +1634,34 @@ export const LifecycleView: React.FC<LifecycleViewProps> = ({
                     <span className="text-[10px] bg-blue-100 px-1.5 py-0.2 rounded">Engineering</span>
                   </div>
                   <div className="space-y-2">
-                    {MODE_DEEP_DIVES[currentCase.mode].teamDisposition.dataAndAiTeam.map((mem, i) => (
-                      <div key={i} className="text-[11px] leading-tight">
-                        <div className="font-bold text-gray-900 flex justify-between">
-                          <span>{mem.role}</span>
-                          <span className="text-blue-800 font-mono text-[10px]">{mem.allocation}</span>
+                    {currentCase.customTeam && currentCase.customTeam.length > 0 ? (
+                      currentCase.customTeam.filter((m) => m.pillar === "dataAndAi").length === 0 ? (
+                        <div className="text-[11px] text-gray-400 italic">No Data & AI profiles allocated</div>
+                      ) : (
+                        currentCase.customTeam
+                          .filter((m) => m.pillar === "dataAndAi")
+                          .map((mem) => (
+                            <div key={mem.id} className="text-[11px] leading-tight space-y-0.5">
+                              <div className="font-bold text-gray-900 flex justify-between">
+                                <span>{mem.role}</span>
+                                <span className="text-blue-800 font-mono text-[10px]">{mem.fte} FTE</span>
+                              </div>
+                              <div className="text-[10px] text-blue-700 font-medium">⏱ {mem.duration}</div>
+                              {mem.responsibility && <div className="text-gray-500">{mem.responsibility}</div>}
+                            </div>
+                          ))
+                      )
+                    ) : (
+                      MODE_DEEP_DIVES[currentCase.mode].teamDisposition.dataAndAiTeam.map((mem, i) => (
+                        <div key={i} className="text-[11px] leading-tight">
+                          <div className="font-bold text-gray-900 flex justify-between">
+                            <span>{mem.role}</span>
+                            <span className="text-blue-800 font-mono text-[10px]">{mem.allocation}</span>
+                          </div>
+                          <div className="text-gray-500 mt-0.5">{mem.responsibility}</div>
                         </div>
-                        <div className="text-gray-500 mt-0.5">{mem.responsibility}</div>
-                      </div>
-                    ))}
+                      ))
+                    )}
                   </div>
                 </div>
 
@@ -1646,15 +1672,34 @@ export const LifecycleView: React.FC<LifecycleViewProps> = ({
                     <span className="text-[10px] bg-purple-100 px-1.5 py-0.2 rounded">Governance</span>
                   </div>
                   <div className="space-y-2">
-                    {MODE_DEEP_DIVES[currentCase.mode].teamDisposition.transformationOffice.map((mem, i) => (
-                      <div key={i} className="text-[11px] leading-tight">
-                        <div className="font-bold text-gray-900 flex justify-between">
-                          <span>{mem.role}</span>
-                          <span className="text-purple-800 font-mono text-[10px]">{mem.allocation}</span>
+                    {currentCase.customTeam && currentCase.customTeam.length > 0 ? (
+                      currentCase.customTeam.filter((m) => m.pillar === "transformationOffice").length === 0 ? (
+                        <div className="text-[11px] text-gray-400 italic">No TO profiles allocated</div>
+                      ) : (
+                        currentCase.customTeam
+                          .filter((m) => m.pillar === "transformationOffice")
+                          .map((mem) => (
+                            <div key={mem.id} className="text-[11px] leading-tight space-y-0.5">
+                              <div className="font-bold text-gray-900 flex justify-between">
+                                <span>{mem.role}</span>
+                                <span className="text-purple-800 font-mono text-[10px]">{mem.fte} FTE</span>
+                              </div>
+                              <div className="text-[10px] text-purple-700 font-medium">⏱ {mem.duration}</div>
+                              {mem.responsibility && <div className="text-gray-500">{mem.responsibility}</div>}
+                            </div>
+                          ))
+                      )
+                    ) : (
+                      MODE_DEEP_DIVES[currentCase.mode].teamDisposition.transformationOffice.map((mem, i) => (
+                        <div key={i} className="text-[11px] leading-tight">
+                          <div className="font-bold text-gray-900 flex justify-between">
+                            <span>{mem.role}</span>
+                            <span className="text-purple-800 font-mono text-[10px]">{mem.allocation}</span>
+                          </div>
+                          <div className="text-gray-500 mt-0.5">{mem.responsibility}</div>
                         </div>
-                        <div className="text-gray-500 mt-0.5">{mem.responsibility}</div>
-                      </div>
-                    ))}
+                      ))
+                    )}
                   </div>
                 </div>
 
@@ -1665,15 +1710,34 @@ export const LifecycleView: React.FC<LifecycleViewProps> = ({
                     <span className="text-[10px] bg-emerald-100 px-1.5 py-0.2 rounded">Domain PO</span>
                   </div>
                   <div className="space-y-2">
-                    {MODE_DEEP_DIVES[currentCase.mode].teamDisposition.businessFunction.map((mem, i) => (
-                      <div key={i} className="text-[11px] leading-tight">
-                        <div className="font-bold text-gray-900 flex justify-between">
-                          <span>{mem.role}</span>
-                          <span className="text-emerald-800 font-mono text-[10px]">{mem.allocation}</span>
+                    {currentCase.customTeam && currentCase.customTeam.length > 0 ? (
+                      currentCase.customTeam.filter((m) => m.pillar === "businessFunction").length === 0 ? (
+                        <div className="text-[11px] text-gray-400 italic">No Function profiles allocated</div>
+                      ) : (
+                        currentCase.customTeam
+                          .filter((m) => m.pillar === "businessFunction")
+                          .map((mem) => (
+                            <div key={mem.id} className="text-[11px] leading-tight space-y-0.5">
+                              <div className="font-bold text-gray-900 flex justify-between">
+                                <span>{mem.role}</span>
+                                <span className="text-emerald-800 font-mono text-[10px]">{mem.fte} FTE</span>
+                              </div>
+                              <div className="text-[10px] text-emerald-700 font-medium">⏱ {mem.duration}</div>
+                              {mem.responsibility && <div className="text-gray-500">{mem.responsibility}</div>}
+                            </div>
+                          ))
+                      )
+                    ) : (
+                      MODE_DEEP_DIVES[currentCase.mode].teamDisposition.businessFunction.map((mem, i) => (
+                        <div key={i} className="text-[11px] leading-tight">
+                          <div className="font-bold text-gray-900 flex justify-between">
+                            <span>{mem.role}</span>
+                            <span className="text-emerald-800 font-mono text-[10px]">{mem.allocation}</span>
+                          </div>
+                          <div className="text-gray-500 mt-0.5">{mem.responsibility}</div>
                         </div>
-                        <div className="text-gray-500 mt-0.5">{mem.responsibility}</div>
-                      </div>
-                    ))}
+                      ))
+                    )}
                   </div>
                 </div>
               </div>

@@ -31,6 +31,10 @@ import {
   Layers,
   Info,
   FileCheck,
+  Plus,
+  Trash2,
+  Calendar,
+  X,
 } from "lucide-react";
 import confetti from "canvas-confetti";
 import {
@@ -45,6 +49,7 @@ import {
   SelfServeRegistryEntry,
   GateDetail,
   GateId,
+  CustomTeamMember,
 } from "@/types";
 import {
   BIG_BETS,
@@ -53,6 +58,9 @@ import {
   INITIAL_GATES,
   MODE_DEEP_DIVES,
   TIER_DEEP_DIVES,
+  PREDETERMINED_PROFILES,
+  DURATION_OPTIONS,
+  PredeterminedProfile,
 } from "@/lib/constants";
 import { evaluateIntake } from "@/lib/decisionEngine";
 import { saveUseCase } from "@/lib/storage";
@@ -227,6 +235,142 @@ export const IntakeWizard: React.FC<IntakeWizardProps> = ({
     },
     functionHeadApprovalReceived: true,
   });
+
+  // Dynamic Squad Resourcing (starts empty per user requirement)
+  const [customTeamMembers, setCustomTeamMembers] = useState<CustomTeamMember[]>([]);
+  const [isAddProfileModalOpen, setIsAddProfileModalOpen] = useState(false);
+  const [profilePillar, setProfilePillar] = useState<"dataAndAi" | "transformationOffice" | "businessFunction">("dataAndAi");
+  const [selectedRoleName, setSelectedRoleName] = useState<string>("Forward Deployed Engineer (FDE)");
+  const [customRoleName, setCustomRoleName] = useState<string>("");
+  const [profileFte, setProfileFte] = useState<number>(1.0);
+  const [profileDuration, setProfileDuration] = useState<string>("8 weeks (MVP Build)");
+  const [customDuration, setCustomDuration] = useState<string>("");
+  const [profileResponsibility, setProfileResponsibility] = useState<string>(
+    "Architects and builds agent pipelines, LangChain chains, API connectors, and model prompting."
+  );
+
+  const openAddProfileModal = (pillar?: "dataAndAi" | "transformationOffice" | "businessFunction") => {
+    const targetPillar = pillar || "dataAndAi";
+    setProfilePillar(targetPillar);
+    const available = PREDETERMINED_PROFILES.filter((p) => p.pillar === targetPillar);
+    const firstRole = available[0] || PREDETERMINED_PROFILES[0];
+    setSelectedRoleName(firstRole.role);
+    setCustomRoleName("");
+    setProfileFte(firstRole.defaultFte);
+    setProfileDuration(firstRole.defaultDuration);
+    setCustomDuration("");
+    setProfileResponsibility(firstRole.defaultResponsibility);
+    setIsAddProfileModalOpen(true);
+  };
+
+  const handlePillarChange = (newPillar: "dataAndAi" | "transformationOffice" | "businessFunction") => {
+    setProfilePillar(newPillar);
+    const available = PREDETERMINED_PROFILES.filter((p) => p.pillar === newPillar);
+    const firstRole = available[0] || PREDETERMINED_PROFILES[0];
+    setSelectedRoleName(firstRole.role);
+    setCustomRoleName("");
+    setProfileFte(firstRole.defaultFte);
+    setProfileDuration(firstRole.defaultDuration);
+    setCustomDuration("");
+    setProfileResponsibility(firstRole.defaultResponsibility);
+  };
+
+  const handleRoleChange = (roleName: string) => {
+    setSelectedRoleName(roleName);
+    if (roleName === "CUSTOM") {
+      setCustomRoleName("");
+      setProfileResponsibility("Dedicated responsibility for this custom role.");
+    } else {
+      const match = PREDETERMINED_PROFILES.find((p) => p.role === roleName);
+      if (match) {
+        setProfileFte(match.defaultFte);
+        setProfileDuration(match.defaultDuration);
+        setProfileResponsibility(match.defaultResponsibility);
+      }
+    }
+  };
+
+  const handleAddProfileSubmit = (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    const finalRole = selectedRoleName === "CUSTOM" ? customRoleName.trim() : selectedRoleName;
+    if (!finalRole) return;
+    const finalDuration =
+      profileDuration === "Custom duration..." ? customDuration.trim() || "Duration TBD" : profileDuration;
+    const matchedProfile = PREDETERMINED_PROFILES.find((p) => p.role === finalRole);
+
+    const newMember: CustomTeamMember = {
+      id: `mem-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
+      pillar: profilePillar,
+      role: finalRole,
+      fte: profileFte,
+      duration: finalDuration,
+      responsibility: profileResponsibility,
+      profileType:
+        matchedProfile?.profileType ||
+        (profilePillar === "dataAndAi"
+          ? "Tech"
+          : profilePillar === "transformationOffice"
+          ? "Governance"
+          : "Business"),
+    };
+
+    setCustomTeamMembers((prev) => [...prev, newMember]);
+    setIsAddProfileModalOpen(false);
+  };
+
+  const handleRemoveProfile = (id: string) => {
+    setCustomTeamMembers((prev) => prev.filter((m) => m.id !== id));
+  };
+
+  const handleLoadModeBaseline = () => {
+    const deepDive = MODE_DEEP_DIVES[chosenMode]?.teamDisposition;
+    if (!deepDive) return;
+    const loaded: CustomTeamMember[] = [];
+    deepDive.dataAndAiTeam.forEach((mem, idx) => {
+      const fteMatch = mem.allocation.match(/([\d.]+)\s*FTE/i);
+      const fteVal = fteMatch ? parseFloat(fteMatch[1]) : 0.5;
+      loaded.push({
+        id: `mem-base-dai-${idx}-${Date.now()}`,
+        pillar: "dataAndAi",
+        role: mem.role,
+        fte: fteVal,
+        duration: "8 weeks (MVP Build)",
+        responsibility: mem.responsibility,
+        profileType: mem.profileType || "Tech",
+      });
+    });
+    deepDive.transformationOffice.forEach((mem, idx) => {
+      const fteMatch = mem.allocation.match(/([\d.]+)\s*FTE/i);
+      const fteVal = fteMatch ? parseFloat(fteMatch[1]) : 0.4;
+      loaded.push({
+        id: `mem-base-to-${idx}-${Date.now()}`,
+        pillar: "transformationOffice",
+        role: mem.role,
+        fte: fteVal,
+        duration: "6 months (Half-Year / Scale)",
+        responsibility: mem.responsibility,
+        profileType: mem.profileType || "Governance",
+      });
+    });
+    deepDive.businessFunction.forEach((mem, idx) => {
+      const fteMatch = mem.allocation.match(/([\d.]+)\s*FTE/i);
+      const fteVal = fteMatch ? parseFloat(fteMatch[1]) : 0.8;
+      loaded.push({
+        id: `mem-base-fn-${idx}-${Date.now()}`,
+        pillar: "businessFunction",
+        role: mem.role,
+        fte: fteVal,
+        duration: "6 months (Half-Year / Scale)",
+        responsibility: mem.responsibility,
+        profileType: mem.profileType || "Business",
+      });
+    });
+    setCustomTeamMembers(loaded);
+  };
+
+  const handleClearSquad = () => {
+    setCustomTeamMembers([]);
+  };
 
   // Real-time evaluation calculation
   const decision = evaluateIntake(answers);
@@ -674,6 +818,7 @@ export const IntakeWizard: React.FC<IntakeWizardProps> = ({
       status,
       intakeAnswers: answers,
       businessCase: businessCasePayload,
+      customTeam: customTeamMembers,
       gates,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
@@ -2174,12 +2319,12 @@ export const IntakeWizard: React.FC<IntakeWizardProps> = ({
               </span>
             </div>
 
-            {/* What it means (x, y, z) */}
+            {/* What it means (1, 2, 3) */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
               <div className="p-3.5 rounded-xl bg-white/10 border border-emerald-400/30 space-y-1.5">
                 <div className="flex items-center gap-2">
                   <span className="w-6 h-6 rounded-full bg-amber-400 text-gray-950 font-black text-xs flex items-center justify-center shrink-0">
-                    x
+                    1
                   </span>
                   <span className="font-bold text-white text-xs">
                     Formally Registered in Pipeline
@@ -2193,7 +2338,7 @@ export const IntakeWizard: React.FC<IntakeWizardProps> = ({
               <div className="p-3.5 rounded-xl bg-white/10 border border-emerald-400/30 space-y-1.5">
                 <div className="flex items-center gap-2">
                   <span className="w-6 h-6 rounded-full bg-emerald-400 text-gray-950 font-black text-xs flex items-center justify-center shrink-0">
-                    y
+                    2
                   </span>
                   <span className="font-bold text-white text-xs">
                     Co-Building Squad Mobilized
@@ -2207,7 +2352,7 @@ export const IntakeWizard: React.FC<IntakeWizardProps> = ({
               <div className="p-3.5 rounded-xl bg-white/10 border border-emerald-400/30 space-y-1.5">
                 <div className="flex items-center gap-2">
                   <span className="w-6 h-6 rounded-full bg-sky-400 text-gray-950 font-black text-xs flex items-center justify-center shrink-0">
-                    z
+                    3
                   </span>
                   <span className="font-bold text-white text-xs">
                     Locked Comitology Schedule
@@ -3509,102 +3654,529 @@ export const IntakeWizard: React.FC<IntakeWizardProps> = ({
               </div>
 
               {/* THE TEAM PUT AT THE DISPOSITION OF THE USE CASE */}
-              <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <h4 className="text-xs font-bold text-gray-900 uppercase tracking-wider flex items-center gap-2">
-                    <Users className="w-4 h-4 text-emerald-700" />
-                    Dedicated Team Put at the Disposition of the Use Case
-                  </h4>
-                  <span className="text-[11px] text-gray-500">
-                    3-Way Resourcing: Data & AI + TO + Function
-                  </span>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  {/* 1. DATA & AI TEAM */}
-                  <div className="p-4 rounded-xl bg-white border border-blue-200 shadow-2xs space-y-2.5">
-                    <div className="flex items-center justify-between border-b border-blue-100 pb-2">
-                      <div className="font-bold text-xs text-blue-900 uppercase tracking-wider flex items-center gap-1.5">
-                        <Cpu className="w-3.5 h-3.5 text-blue-700" />
-                        From Data & AI Hub
-                      </div>
-                      <span className="text-[10px] font-bold bg-blue-100 text-blue-800 px-1.5 py-0.5 rounded">
-                        Engineering
-                      </span>
-                    </div>
-                    <div className="space-y-2 text-xs">
-                      {MODE_DEEP_DIVES[chosenMode].teamDisposition.dataAndAiTeam.map((mem, i) => (
-                        <div key={i} className="p-2.5 rounded-lg bg-blue-50/50 border border-blue-100 space-y-1">
-                          <div className="flex items-center justify-between">
-                            <span className="font-bold text-gray-900">{mem.role}</span>
-                            <span className="text-[10px] font-mono font-bold text-blue-800 bg-white px-1.5 py-0.5 rounded border border-blue-200">
-                              {mem.allocation}
-                            </span>
-                          </div>
-                          <p className="text-[11px] text-gray-600 leading-snug">
-                            {mem.responsibility}
-                          </p>
-                        </div>
-                      ))}
-                    </div>
+              <div className="space-y-4">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-2 border-b border-gray-200">
+                  <div>
+                    <h4 className="text-xs font-bold text-gray-900 uppercase tracking-wider flex items-center gap-2">
+                      <Users className="w-4 h-4 text-emerald-700" />
+                      Dedicated Team Put at the Disposition of the Use Case
+                    </h4>
+                    <p className="text-[11px] text-gray-500 mt-0.5">
+                      No two use cases are the same. Tailor your squad by adding specific profiles, FTE allocation, and duration.
+                    </p>
                   </div>
-
-                  {/* 2. TRANSFORMATION OFFICE (TO) */}
-                  <div className="p-4 rounded-xl bg-white border border-purple-200 shadow-2xs space-y-2.5">
-                    <div className="flex items-center justify-between border-b border-purple-100 pb-2">
-                      <div className="font-bold text-xs text-purple-900 uppercase tracking-wider flex items-center gap-1.5">
-                        <Building className="w-3.5 h-3.5 text-purple-700" />
-                        From Transformation Office
-                      </div>
-                      <span className="text-[10px] font-bold bg-purple-100 text-purple-800 px-1.5 py-0.5 rounded">
-                        Change & Value
-                      </span>
-                    </div>
-                    <div className="space-y-2 text-xs">
-                      {MODE_DEEP_DIVES[chosenMode].teamDisposition.transformationOffice.map((mem, i) => (
-                        <div key={i} className="p-2.5 rounded-lg bg-purple-50/50 border border-purple-100 space-y-1">
-                          <div className="flex items-center justify-between">
-                            <span className="font-bold text-gray-900">{mem.role}</span>
-                            <span className="text-[10px] font-mono font-bold text-purple-800 bg-white px-1.5 py-0.5 rounded border border-purple-200">
-                              {mem.allocation}
-                            </span>
-                          </div>
-                          <p className="text-[11px] text-gray-600 leading-snug">
-                            {mem.responsibility}
-                          </p>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* 3. BUSINESS FUNCTION */}
-                  <div className="p-4 rounded-xl bg-white border border-emerald-200 shadow-2xs space-y-2.5">
-                    <div className="flex items-center justify-between border-b border-emerald-100 pb-2">
-                      <div className="font-bold text-xs text-emerald-900 uppercase tracking-wider flex items-center gap-1.5">
-                        <UserCheck className="w-3.5 h-3.5 text-emerald-700" />
-                        From Business Function
-                      </div>
-                      <span className="text-[10px] font-bold bg-emerald-100 text-emerald-800 px-1.5 py-0.5 rounded">
-                        Business PO
-                      </span>
-                    </div>
-                    <div className="space-y-2 text-xs">
-                      {MODE_DEEP_DIVES[chosenMode].teamDisposition.businessFunction.map((mem, i) => (
-                        <div key={i} className="p-2.5 rounded-lg bg-emerald-50/50 border border-emerald-100 space-y-1">
-                          <div className="flex items-center justify-between">
-                            <span className="font-bold text-gray-900">{mem.role}</span>
-                            <span className="text-[10px] font-mono font-bold text-emerald-800 bg-white px-1.5 py-0.5 rounded border border-emerald-200">
-                              {mem.allocation}
-                            </span>
-                          </div>
-                          <p className="text-[11px] text-gray-600 leading-snug">
-                            {mem.responsibility}
-                          </p>
-                        </div>
-                      ))}
-                    </div>
+                  <div className="flex flex-wrap items-center gap-2">
+                    {customTeamMembers.length > 0 && (
+                      <button
+                        type="button"
+                        onClick={handleClearSquad}
+                        className="text-[11px] text-gray-500 hover:text-red-600 px-2.5 py-1.5 rounded-lg border border-gray-200 hover:border-red-200 hover:bg-red-50/50 transition-colors"
+                      >
+                        Clear Squad
+                      </button>
+                    )}
+                    <button
+                      type="button"
+                      onClick={handleLoadModeBaseline}
+                      className="text-[11px] font-semibold text-emerald-800 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition-colors"
+                      title="Load recommended default profiles for this mode as baseline"
+                    >
+                      <Sparkles className="w-3.5 h-3.5 text-emerald-700" />
+                      Load Recommended Baseline
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => openAddProfileModal()}
+                      className="text-xs font-bold text-white bg-opella-forest hover:bg-opella-emerald px-3.5 py-1.5 rounded-lg flex items-center gap-1.5 shadow-xs transition-all hover:scale-[1.01]"
+                    >
+                      <Plus className="w-4 h-4" />
+                      Add Profile
+                    </button>
                   </div>
                 </div>
+
+                {/* 3-WAY RESOURCING COLUMNS */}
+                {(() => {
+                  const dataAiMembers = customTeamMembers.filter((m) => m.pillar === "dataAndAi");
+                  const toMembers = customTeamMembers.filter((m) => m.pillar === "transformationOffice");
+                  const functionMembers = customTeamMembers.filter((m) => m.pillar === "businessFunction");
+                  const totalFte = customTeamMembers.reduce((acc, m) => acc + (Number(m.fte) || 0), 0);
+                  const dataAiFte = dataAiMembers.reduce((acc, m) => acc + (Number(m.fte) || 0), 0);
+                  const toFte = toMembers.reduce((acc, m) => acc + (Number(m.fte) || 0), 0);
+                  const functionFte = functionMembers.reduce((acc, m) => acc + (Number(m.fte) || 0), 0);
+
+                  return (
+                    <div className="space-y-3">
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        {/* 1. DATA & AI TEAM */}
+                        <div className="p-4 rounded-xl bg-white border border-blue-200 shadow-2xs space-y-3 flex flex-col justify-between">
+                          <div className="space-y-3">
+                            <div className="flex items-center justify-between border-b border-blue-100 pb-2">
+                              <div className="font-bold text-xs text-blue-900 uppercase tracking-wider flex items-center gap-1.5">
+                                <Cpu className="w-3.5 h-3.5 text-blue-700" />
+                                From Data & AI Hub
+                              </div>
+                              <span className="text-[10px] font-bold bg-blue-100 text-blue-800 px-1.5 py-0.5 rounded">
+                                Engineering
+                              </span>
+                            </div>
+
+                            {dataAiMembers.length === 0 ? (
+                              <div className="py-8 px-4 rounded-xl border border-dashed border-blue-200 bg-blue-50/30 flex flex-col items-center justify-center text-center space-y-2">
+                                <div className="w-8 h-8 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center">
+                                  <Cpu className="w-4 h-4" />
+                                </div>
+                                <div className="text-xs font-bold text-blue-950">No Data & AI Profiles Added</div>
+                                <p className="text-[11px] text-blue-800/70 max-w-[210px] leading-snug">
+                                  Select technical builders (FDE, Data Architect, MLOps, Prompt Engineer) specifically needed.
+                                </p>
+                                <button
+                                  type="button"
+                                  onClick={() => openAddProfileModal("dataAndAi")}
+                                  className="mt-1 px-3 py-1.5 rounded-lg text-xs font-bold bg-white text-blue-700 border border-blue-300 hover:bg-blue-50 shadow-2xs flex items-center gap-1.5 transition-all"
+                                >
+                                  <Plus className="w-3.5 h-3.5" /> Add Profile
+                                </button>
+                              </div>
+                            ) : (
+                              <div className="space-y-2 text-xs">
+                                {dataAiMembers.map((mem) => (
+                                  <div
+                                    key={mem.id}
+                                    className="p-2.5 rounded-lg bg-blue-50/60 border border-blue-200 space-y-1.5 relative group"
+                                  >
+                                    <div className="flex items-start justify-between gap-2">
+                                      <span className="font-bold text-gray-900 leading-snug">{mem.role}</span>
+                                      <button
+                                        type="button"
+                                        onClick={() => handleRemoveProfile(mem.id)}
+                                        className="text-gray-400 hover:text-red-600 transition-colors p-0.5"
+                                        title="Remove profile"
+                                      >
+                                        <Trash2 className="w-3.5 h-3.5" />
+                                      </button>
+                                    </div>
+                                    <div className="flex flex-wrap items-center gap-1.5">
+                                      <span className="text-[10px] font-mono font-bold text-blue-900 bg-white px-1.5 py-0.5 rounded border border-blue-200">
+                                        {mem.fte} FTE
+                                      </span>
+                                      <span className="text-[10px] font-medium text-blue-800 bg-blue-100/70 px-1.5 py-0.5 rounded flex items-center gap-1">
+                                        <Clock className="w-3 h-3" />
+                                        {mem.duration}
+                                      </span>
+                                    </div>
+                                    {mem.responsibility && (
+                                      <p className="text-[11px] text-gray-600 leading-snug">
+                                        {mem.responsibility}
+                                      </p>
+                                    )}
+                                  </div>
+                                ))}
+                                <button
+                                  type="button"
+                                  onClick={() => openAddProfileModal("dataAndAi")}
+                                  className="w-full py-1.5 px-3 rounded-lg border border-dashed border-blue-300 text-blue-700 hover:bg-blue-50 text-[11px] font-semibold flex items-center justify-center gap-1 transition-all"
+                                >
+                                  <Plus className="w-3.5 h-3.5" /> Add Another Data & AI Profile
+                                </button>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* 2. TRANSFORMATION OFFICE (TO) */}
+                        <div className="p-4 rounded-xl bg-white border border-purple-200 shadow-2xs space-y-3 flex flex-col justify-between">
+                          <div className="space-y-3">
+                            <div className="flex items-center justify-between border-b border-purple-100 pb-2">
+                              <div className="font-bold text-xs text-purple-900 uppercase tracking-wider flex items-center gap-1.5">
+                                <Building className="w-3.5 h-3.5 text-purple-700" />
+                                From Transformation Office
+                              </div>
+                              <span className="text-[10px] font-bold bg-purple-100 text-purple-800 px-1.5 py-0.5 rounded">
+                                Change & Value
+                              </span>
+                            </div>
+
+                            {toMembers.length === 0 ? (
+                              <div className="py-8 px-4 rounded-xl border border-dashed border-purple-200 bg-purple-50/30 flex flex-col items-center justify-center text-center space-y-2">
+                                <div className="w-8 h-8 rounded-full bg-purple-100 text-purple-700 flex items-center justify-center">
+                                  <Building className="w-4 h-4" />
+                                </div>
+                                <div className="text-xs font-bold text-purple-950">No TO Profiles Added</div>
+                                <p className="text-[11px] text-purple-800/70 max-w-[210px] leading-snug">
+                                  Select change & value leaders (AI Catalyst, Change Specialist, Value Officer, ORAI LEX).
+                                </p>
+                                <button
+                                  type="button"
+                                  onClick={() => openAddProfileModal("transformationOffice")}
+                                  className="mt-1 px-3 py-1.5 rounded-lg text-xs font-bold bg-white text-purple-700 border border-purple-300 hover:bg-purple-50 shadow-2xs flex items-center gap-1.5 transition-all"
+                                >
+                                  <Plus className="w-3.5 h-3.5" /> Add Profile
+                                </button>
+                              </div>
+                            ) : (
+                              <div className="space-y-2 text-xs">
+                                {toMembers.map((mem) => (
+                                  <div
+                                    key={mem.id}
+                                    className="p-2.5 rounded-lg bg-purple-50/60 border border-purple-200 space-y-1.5 relative group"
+                                  >
+                                    <div className="flex items-start justify-between gap-2">
+                                      <span className="font-bold text-gray-900 leading-snug">{mem.role}</span>
+                                      <button
+                                        type="button"
+                                        onClick={() => handleRemoveProfile(mem.id)}
+                                        className="text-gray-400 hover:text-red-600 transition-colors p-0.5"
+                                        title="Remove profile"
+                                      >
+                                        <Trash2 className="w-3.5 h-3.5" />
+                                      </button>
+                                    </div>
+                                    <div className="flex flex-wrap items-center gap-1.5">
+                                      <span className="text-[10px] font-mono font-bold text-purple-900 bg-white px-1.5 py-0.5 rounded border border-purple-200">
+                                        {mem.fte} FTE
+                                      </span>
+                                      <span className="text-[10px] font-medium text-purple-800 bg-purple-100/70 px-1.5 py-0.5 rounded flex items-center gap-1">
+                                        <Clock className="w-3 h-3" />
+                                        {mem.duration}
+                                      </span>
+                                    </div>
+                                    {mem.responsibility && (
+                                      <p className="text-[11px] text-gray-600 leading-snug">
+                                        {mem.responsibility}
+                                      </p>
+                                    )}
+                                  </div>
+                                ))}
+                                <button
+                                  type="button"
+                                  onClick={() => openAddProfileModal("transformationOffice")}
+                                  className="w-full py-1.5 px-3 rounded-lg border border-dashed border-purple-300 text-purple-700 hover:bg-purple-50 text-[11px] font-semibold flex items-center justify-center gap-1 transition-all"
+                                >
+                                  <Plus className="w-3.5 h-3.5" /> Add Another TO Profile
+                                </button>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* 3. BUSINESS FUNCTION */}
+                        <div className="p-4 rounded-xl bg-white border border-emerald-200 shadow-2xs space-y-3 flex flex-col justify-between">
+                          <div className="space-y-3">
+                            <div className="flex items-center justify-between border-b border-emerald-100 pb-2">
+                              <div className="font-bold text-xs text-emerald-900 uppercase tracking-wider flex items-center gap-1.5">
+                                <UserCheck className="w-3.5 h-3.5 text-emerald-700" />
+                                From Business Function
+                              </div>
+                              <span className="text-[10px] font-bold bg-emerald-100 text-emerald-800 px-1.5 py-0.5 rounded">
+                                Business PO
+                              </span>
+                            </div>
+
+                            {functionMembers.length === 0 ? (
+                              <div className="py-8 px-4 rounded-xl border border-dashed border-emerald-200 bg-emerald-50/30 flex flex-col items-center justify-center text-center space-y-2">
+                                <div className="w-8 h-8 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center">
+                                  <UserCheck className="w-4 h-4" />
+                                </div>
+                                <div className="text-xs font-bold text-emerald-950">No Function Profiles Added</div>
+                                <p className="text-[11px] text-emerald-800/70 max-w-[210px] leading-snug">
+                                  Select business stakeholders (BO/PO, Digital PO, SMEs, SteerCo Sponsor, P&C).
+                                </p>
+                                <button
+                                  type="button"
+                                  onClick={() => openAddProfileModal("businessFunction")}
+                                  className="mt-1 px-3 py-1.5 rounded-lg text-xs font-bold bg-white text-emerald-700 border border-emerald-300 hover:bg-emerald-50 shadow-2xs flex items-center gap-1.5 transition-all"
+                                >
+                                  <Plus className="w-3.5 h-3.5" /> Add Profile
+                                </button>
+                              </div>
+                            ) : (
+                              <div className="space-y-2 text-xs">
+                                {functionMembers.map((mem) => (
+                                  <div
+                                    key={mem.id}
+                                    className="p-2.5 rounded-lg bg-emerald-50/60 border border-emerald-200 space-y-1.5 relative group"
+                                  >
+                                    <div className="flex items-start justify-between gap-2">
+                                      <span className="font-bold text-gray-900 leading-snug">{mem.role}</span>
+                                      <button
+                                        type="button"
+                                        onClick={() => handleRemoveProfile(mem.id)}
+                                        className="text-gray-400 hover:text-red-600 transition-colors p-0.5"
+                                        title="Remove profile"
+                                      >
+                                        <Trash2 className="w-3.5 h-3.5" />
+                                      </button>
+                                    </div>
+                                    <div className="flex flex-wrap items-center gap-1.5">
+                                      <span className="text-[10px] font-mono font-bold text-emerald-900 bg-white px-1.5 py-0.5 rounded border border-emerald-200">
+                                        {mem.fte} FTE
+                                      </span>
+                                      <span className="text-[10px] font-medium text-emerald-800 bg-emerald-100/70 px-1.5 py-0.5 rounded flex items-center gap-1">
+                                        <Clock className="w-3 h-3" />
+                                        {mem.duration}
+                                      </span>
+                                    </div>
+                                    {mem.responsibility && (
+                                      <p className="text-[11px] text-gray-600 leading-snug">
+                                        {mem.responsibility}
+                                      </p>
+                                    )}
+                                  </div>
+                                ))}
+                                <button
+                                  type="button"
+                                  onClick={() => openAddProfileModal("businessFunction")}
+                                  className="w-full py-1.5 px-3 rounded-lg border border-dashed border-emerald-300 text-emerald-700 hover:bg-emerald-50 text-[11px] font-semibold flex items-center justify-center gap-1 transition-all"
+                                >
+                                  <Plus className="w-3.5 h-3.5" /> Add Another Function Profile
+                                </button>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* LIVE RESOURCING METRICS STRIP */}
+                      <div className="p-3.5 rounded-xl bg-gray-50 border border-gray-200 flex flex-wrap items-center justify-between gap-3 text-xs">
+                        <div className="flex items-center gap-3">
+                          <div className="font-bold text-gray-900 flex items-center gap-1.5">
+                            <Users className="w-4 h-4 text-emerald-700" />
+                            <span>Total Squad: <strong className="font-mono text-emerald-800">{customTeamMembers.length} Profiles</strong></span>
+                          </div>
+                          <span className="text-gray-300">|</span>
+                          <div className="text-gray-700">
+                            Total Allocation: <strong className="font-mono text-gray-900">{totalFte.toFixed(1)} FTE</strong>
+                          </div>
+                        </div>
+
+                        <div className="flex flex-wrap items-center gap-2 text-[11px]">
+                          <span className="px-2 py-0.5 rounded bg-blue-50 text-blue-800 border border-blue-200 font-medium">
+                            Data & AI: <strong className="font-mono">{dataAiFte.toFixed(1)} FTE</strong>
+                          </span>
+                          <span className="px-2 py-0.5 rounded bg-purple-50 text-purple-800 border border-purple-200 font-medium">
+                            TO: <strong className="font-mono">{toFte.toFixed(1)} FTE</strong>
+                          </span>
+                          <span className="px-2 py-0.5 rounded bg-emerald-50 text-emerald-800 border border-emerald-200 font-medium">
+                            Function: <strong className="font-mono">{functionFte.toFixed(1)} FTE</strong>
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })()}
+              </div>
+            </div>
+          )}
+
+          {/* ADD PROFILE MODAL DIALOG */}
+          {isAddProfileModalOpen && (
+            <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
+              <div className="bg-white rounded-2xl shadow-2xl border border-gray-200 max-w-lg w-full p-6 space-y-4 animate-in fade-in zoom-in-95 duration-150 max-h-[90vh] overflow-y-auto">
+                {/* Header */}
+                <div className="flex items-center justify-between pb-3 border-b border-gray-100">
+                  <div>
+                    <h3 className="font-bold text-base text-gray-900 flex items-center gap-2">
+                      <Users className="w-5 h-5 text-emerald-700" />
+                      Add Profile to Squad
+                    </h3>
+                    <p className="text-xs text-gray-500 mt-0.5">
+                      Select profile role, FTE commitment, and resource time required.
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setIsAddProfileModalOpen(false)}
+                    className="p-1 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors"
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
+                </div>
+
+                {/* Form */}
+                <form onSubmit={handleAddProfileSubmit} className="space-y-4">
+                  {/* 1. Pillar Selection */}
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-gray-800 uppercase tracking-wider block">
+                      1. Organizational Pillar:
+                    </label>
+                    <div className="grid grid-cols-3 gap-2">
+                      <button
+                        type="button"
+                        onClick={() => handlePillarChange("dataAndAi")}
+                        className={`py-2 px-2.5 rounded-xl border text-xs font-bold flex flex-col items-center gap-1 transition-all ${
+                          profilePillar === "dataAndAi"
+                            ? "bg-blue-50 border-blue-500 text-blue-900 ring-2 ring-blue-500/20"
+                            : "bg-white border-gray-200 text-gray-600 hover:bg-gray-50"
+                        }`}
+                      >
+                        <Cpu className="w-4 h-4 text-blue-600" />
+                        <span className="text-[11px]">Data & AI Hub</span>
+                        <span className="text-[9px] font-normal text-blue-700">Engineering</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => handlePillarChange("transformationOffice")}
+                        className={`py-2 px-2.5 rounded-xl border text-xs font-bold flex flex-col items-center gap-1 transition-all ${
+                          profilePillar === "transformationOffice"
+                            ? "bg-purple-50 border-purple-500 text-purple-900 ring-2 ring-purple-500/20"
+                            : "bg-white border-gray-200 text-gray-600 hover:bg-gray-50"
+                        }`}
+                      >
+                        <Building className="w-4 h-4 text-purple-600" />
+                        <span className="text-[11px]">Transf. Office</span>
+                        <span className="text-[9px] font-normal text-purple-700">Change & Value</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => handlePillarChange("businessFunction")}
+                        className={`py-2 px-2.5 rounded-xl border text-xs font-bold flex flex-col items-center gap-1 transition-all ${
+                          profilePillar === "businessFunction"
+                            ? "bg-emerald-50 border-emerald-500 text-emerald-900 ring-2 ring-emerald-500/20"
+                            : "bg-white border-gray-200 text-gray-600 hover:bg-gray-50"
+                        }`}
+                      >
+                        <UserCheck className="w-4 h-4 text-emerald-600" />
+                        <span className="text-[11px]">Business Fn</span>
+                        <span className="text-[9px] font-normal text-emerald-700">Business PO</span>
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* 2. Predetermined Profile Dropdown */}
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-gray-800 uppercase tracking-wider block">
+                      2. Profile Role (from Opella Catalog):
+                    </label>
+                    <select
+                      value={selectedRoleName}
+                      onChange={(e) => handleRoleChange(e.target.value)}
+                      className="w-full text-xs font-medium border border-gray-300 rounded-lg p-2.5 bg-white text-gray-900 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                    >
+                      {PREDETERMINED_PROFILES.filter((p) => p.pillar === profilePillar).map((p) => (
+                        <option key={p.role} value={p.role}>
+                          {p.role} ({p.badge})
+                        </option>
+                      ))}
+                      <option value="CUSTOM">+ Other / Custom Role...</option>
+                    </select>
+
+                    {selectedRoleName === "CUSTOM" && (
+                      <div className="mt-2">
+                        <input
+                          type="text"
+                          placeholder="Enter custom role title..."
+                          value={customRoleName}
+                          onChange={(e) => setCustomRoleName(e.target.value)}
+                          className="w-full text-xs border border-amber-300 rounded-lg p-2.5 bg-amber-50/40 text-gray-900 focus:ring-2 focus:ring-amber-500"
+                          required
+                        />
+                      </div>
+                    )}
+                  </div>
+
+                  {/* 3. FTE Number & 4. Duration Needed Grid */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                    {/* FTE */}
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-bold text-gray-800 uppercase tracking-wider block">
+                        3. FTE Allocation Number:
+                      </label>
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="number"
+                          step="0.1"
+                          min="0.1"
+                          max="10.0"
+                          value={profileFte}
+                          onChange={(e) => setProfileFte(parseFloat(e.target.value) || 0.1)}
+                          className="w-24 text-sm font-mono font-bold border border-gray-300 rounded-lg p-2 text-center text-gray-900 focus:ring-2 focus:ring-emerald-500"
+                        />
+                        <span className="text-xs font-bold text-gray-500">FTE</span>
+                      </div>
+                      {/* Quick FTE Buttons */}
+                      <div className="flex flex-wrap gap-1 pt-1">
+                        {[0.2, 0.4, 0.5, 0.8, 1.0].map((val) => (
+                          <button
+                            key={val}
+                            type="button"
+                            onClick={() => setProfileFte(val)}
+                            className={`text-[10px] font-mono px-2 py-0.5 rounded border transition-colors ${
+                              profileFte === val
+                                ? "bg-emerald-700 text-white border-emerald-700"
+                                : "bg-gray-100 text-gray-700 border-gray-200 hover:bg-gray-200"
+                            }`}
+                          >
+                            {val}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Duration */}
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-bold text-gray-800 uppercase tracking-wider block">
+                        4. Resource Time Needed:
+                      </label>
+                      <select
+                        value={profileDuration}
+                        onChange={(e) => setProfileDuration(e.target.value)}
+                        className="w-full text-xs font-medium border border-gray-300 rounded-lg p-2.5 bg-white text-gray-900 focus:ring-2 focus:ring-emerald-500"
+                      >
+                        {DURATION_OPTIONS.map((opt) => (
+                          <option key={opt} value={opt}>
+                            {opt}
+                          </option>
+                        ))}
+                      </select>
+
+                      {profileDuration === "Custom duration..." && (
+                        <input
+                          type="text"
+                          placeholder="e.g. 10 weeks, End of Q3..."
+                          value={customDuration}
+                          onChange={(e) => setCustomDuration(e.target.value)}
+                          className="w-full text-xs border border-gray-300 rounded-lg p-2 bg-gray-50 text-gray-900 mt-1"
+                          required
+                        />
+                      )}
+                    </div>
+                  </div>
+
+                  {/* 5. Key Responsibility */}
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-gray-800 uppercase tracking-wider block">
+                      5. Key Deliverables & Responsibilities:
+                    </label>
+                    <textarea
+                      rows={2}
+                      value={profileResponsibility}
+                      onChange={(e) => setProfileResponsibility(e.target.value)}
+                      placeholder="Responsibilities for this initiative..."
+                      className="w-full text-xs border border-gray-300 rounded-lg p-2 text-gray-900 focus:ring-2 focus:ring-emerald-500"
+                    />
+                  </div>
+
+                  {/* Modal Actions */}
+                  <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-gray-100">
+                    <button
+                      type="button"
+                      onClick={() => setIsAddProfileModalOpen(false)}
+                      className="px-3.5 py-2 rounded-lg border border-gray-300 text-gray-700 text-xs font-semibold hover:bg-gray-50"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      className="px-4 py-2 rounded-lg bg-opella-forest hover:bg-opella-emerald text-white text-xs font-bold flex items-center gap-1.5 shadow-xs transition-all"
+                    >
+                      <Plus className="w-4 h-4" />
+                      Add Profile to Squad
+                    </button>
+                  </div>
+                </form>
               </div>
             </div>
           )}

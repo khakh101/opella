@@ -193,6 +193,222 @@ export const DELIVERY_MODES_INFO: Record<
   },
 };
 
+export const DURATION_OPTIONS = [
+  "4 weeks (Discovery / Framing)",
+  "6 weeks (Agile Sprint)",
+  "8 weeks (MVP Build)",
+  "3 months (Quarterly Sprint)",
+  "6 months (Half-Year / Scale)",
+  "12 months (Full Year / Run)",
+  "Custom duration...",
+];
+
+export interface PredeterminedProfile {
+  role: string;
+  pillar: "dataAndAi" | "transformationOffice" | "businessFunction";
+  pillarName: string;
+  badge: string;
+  profileType: "Tech" | "Business" | "Governance" | "Change";
+  defaultFte: number;
+  defaultDuration: string;
+  defaultResponsibility: string;
+}
+
+export const PREDETERMINED_PROFILES: PredeterminedProfile[] = [
+  // 1. Data & AI Hub (Engineering)
+  {
+    role: "Forward Deployed Engineer (FDE)",
+    pillar: "dataAndAi",
+    pillarName: "Data & AI Hub",
+    badge: "Engineering",
+    profileType: "Tech",
+    defaultFte: 1.0,
+    defaultDuration: "8 weeks (MVP Build)",
+    defaultResponsibility:
+      "Architects and builds agent pipelines, LangChain chains, API connectors, and model prompting.",
+  },
+  {
+    role: "Data & Semantic Architect",
+    pillar: "dataAndAi",
+    pillarName: "Data & AI Hub",
+    badge: "Engineering",
+    profileType: "Tech",
+    defaultFte: 0.5,
+    defaultDuration: "6 months (Half-Year / Scale)",
+    defaultResponsibility:
+      "Connects ERP/SAP data sources, builds Databricks delta lake ingestion, maps Opella IQ ontology.",
+  },
+  {
+    role: "AI / MLOps Engineer",
+    pillar: "dataAndAi",
+    pillarName: "Data & AI Hub",
+    badge: "Engineering",
+    profileType: "Tech",
+    defaultFte: 0.5,
+    defaultDuration: "3 months (Quarterly Sprint)",
+    defaultResponsibility:
+      "Manages Azure GenAI tenant security boundaries, token consumption caps, latency, and automated drift tests.",
+  },
+  {
+    role: "Data Steward / Governance Specialist",
+    pillar: "dataAndAi",
+    pillarName: "Data & AI Hub",
+    badge: "Engineering",
+    profileType: "Tech",
+    defaultFte: 0.3,
+    defaultDuration: "3 months (Quarterly Sprint)",
+    defaultResponsibility:
+      "Validates data catalogs, lineage, regulatory compliance, and ensures data cleanliness for agent inference.",
+  },
+  {
+    role: "Enterprise AI Architect",
+    pillar: "dataAndAi",
+    pillarName: "Data & AI Hub",
+    badge: "Engineering",
+    profileType: "Tech",
+    defaultFte: 0.2,
+    defaultDuration: "6 weeks (Agile Sprint)",
+    defaultResponsibility:
+      "Formalizes Digital Design Authority (DDA) Architecture Decision Records (ADRs) and enterprise platform fit.",
+  },
+  {
+    role: "Prompt Engineer / GenAI Specialist",
+    pillar: "dataAndAi",
+    pillarName: "Data & AI Hub",
+    badge: "Engineering",
+    profileType: "Tech",
+    defaultFte: 0.5,
+    defaultDuration: "6 weeks (Agile Sprint)",
+    defaultResponsibility:
+      "Refines system prompts, few-shot evaluations, safety guardrails, and model context optimizations.",
+  },
+
+  // 2. Transformation Office (Change & Value)
+  {
+    role: "AI Catalyst / Stream Lead",
+    pillar: "transformationOffice",
+    pillarName: "Transformation Office",
+    badge: "Change & Value",
+    profileType: "Governance",
+    defaultFte: 0.4,
+    defaultDuration: "6 months (Half-Year / Scale)",
+    defaultResponsibility:
+      "Orchestrates gate comitology (G1–G6), aligns with Butterfly core releases, and tracks milestone progress.",
+  },
+  {
+    role: "Change & Adoption Specialist",
+    pillar: "transformationOffice",
+    pillarName: "Transformation Office",
+    badge: "Change & Value",
+    profileType: "Change",
+    defaultFte: 0.5,
+    defaultDuration: "3 months (Quarterly Sprint)",
+    defaultResponsibility:
+      "Executes 5-Pillar Workforce Impact Scan, designs role evolution, and delivers user training clinics.",
+  },
+  {
+    role: "Value Officer / Value & Portfolio Lead",
+    pillar: "transformationOffice",
+    pillarName: "Transformation Office",
+    badge: "Change & Value",
+    profileType: "Governance",
+    defaultFte: 0.2,
+    defaultDuration: "12 months (Full Year / Run)",
+    defaultResponsibility:
+      "Validates financial baseline with Finance BP, reconciles P&L impact in Unified Value Ledger.",
+  },
+  {
+    role: "Transformation Office Lead (TO Lead)",
+    pillar: "transformationOffice",
+    pillarName: "Transformation Office",
+    badge: "Change & Value",
+    profileType: "Governance",
+    defaultFte: 0.2,
+    defaultDuration: "6 months (Half-Year / Scale)",
+    defaultResponsibility:
+      "Cross-stream portfolio synchronization, SteerCo escalation, and capacity allocation arbitration.",
+  },
+  {
+    role: "ORAI team (LEX / Ethics & Compliance)",
+    pillar: "transformationOffice",
+    pillarName: "Transformation Office",
+    badge: "Change & Value",
+    profileType: "Governance",
+    defaultFte: 0.2,
+    defaultDuration: "6 weeks (Agile Sprint)",
+    defaultResponsibility:
+      "Responsible AI risk screening (Tier 1 vs Tier 2/3), IP, copyright, and ethical validation.",
+  },
+  {
+    role: "Regional Adoption Relays",
+    pillar: "transformationOffice",
+    pillarName: "Transformation Office",
+    badge: "Change & Value",
+    profileType: "Change",
+    defaultFte: 0.3,
+    defaultDuration: "3 months (Quarterly Sprint)",
+    defaultResponsibility:
+      "Local operational change relays ensuring regional rollout, local language prompting, and user feedback.",
+  },
+
+  // 3. Business Function (Business PO)
+  {
+    role: "Accountable Business Owner (BO/PO)",
+    pillar: "businessFunction",
+    pillarName: "Business Function",
+    badge: "Business PO",
+    profileType: "Business",
+    defaultFte: 0.8,
+    defaultDuration: "6 months (Half-Year / Scale)",
+    defaultResponsibility:
+      "Full ownership of user stories, backlog priorities, acceptance criteria, and P&L value realization.",
+  },
+  {
+    role: "Digital Product Owner (Digital PO)",
+    pillar: "businessFunction",
+    pillarName: "Business Function",
+    badge: "Business PO",
+    profileType: "Business",
+    defaultFte: 0.5,
+    defaultDuration: "6 months (Half-Year / Scale)",
+    defaultResponsibility:
+      "Bridges business requirements with technical delivery teams, manages sprint backlog, and UI/UX reviews.",
+  },
+  {
+    role: "Subject Matter Experts (SMEs)",
+    pillar: "businessFunction",
+    pillarName: "Business Function",
+    badge: "Business PO",
+    profileType: "Business",
+    defaultFte: 0.5,
+    defaultDuration: "8 weeks (MVP Build)",
+    defaultResponsibility:
+      "Provide operational ground truth, review edge cases, and validate generated outputs against business rules.",
+  },
+  {
+    role: "Business Unit Sponsor / SteerCo Lead",
+    pillar: "businessFunction",
+    pillarName: "Business Function",
+    badge: "Business PO",
+    profileType: "Business",
+    defaultFte: 0.1,
+    defaultDuration: "12 months (Full Year / Run)",
+    defaultResponsibility:
+      "ExCo / BU Vice President providing executive sponsorship, unblocking cross-functional friction and funding.",
+  },
+  {
+    role: "People & Culture Counterpart (P&C)",
+    pillar: "businessFunction",
+    pillarName: "Business Function",
+    badge: "Business PO",
+    profileType: "Change",
+    defaultFte: 0.2,
+    defaultDuration: "3 months (Quarterly Sprint)",
+    defaultResponsibility:
+      "Reviews team organizational impact, employee engagement surveys, and workforce evolution agreements.",
+  },
+];
+
 export const MODE_DEEP_DIVES: Record<DeliveryMode, ModeDeepDive> = {
   "Mode 1": {
     mode: "Mode 1",

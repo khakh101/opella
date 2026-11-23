@@ -50,6 +50,16 @@ export interface SquadRole {
   profileType?: "Tech" | "Business" | "Governance" | "Change";
 }
 
+export interface CustomTeamMember {
+  id: string;
+  pillar: "dataAndAi" | "transformationOffice" | "businessFunction";
+  role: string;
+  fte: number;
+  duration: string;
+  responsibility?: string;
+  profileType?: "Tech" | "Business" | "Governance" | "Change";
+}
+
 export interface ThreeWayTeamDisposition {
   dataAndAiTeam: SquadRole[];
   transformationOffice: SquadRole[];
@@ -304,6 +314,7 @@ export interface UseCase {
   status: "DRAFT" | "FRAMING" | "BUILD_MVP" | "PRE_SCALE" | "SCALED" | "RUN" | "RETIRED" | "PAUSED";
   budget: number;
   roiEstimate: string;
+  customTeam?: CustomTeamMember[];
   createdAt: string;
   updatedAt: string;
 }
