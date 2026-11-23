@@ -1004,6 +1004,426 @@ export const OperatingModelMap: React.FC<OperatingModelMapProps> = ({
       </div>
 
       {/* ----------------------------------------------------------------- */}
+      {/* 4b. OFFICIAL ACTIVITIES & RACI BY DELIVERY MODE (SLIDES 4-9)     */}
+      {/* ----------------------------------------------------------------- */}
+      <div className="bg-white rounded-2xl p-6 sm:p-7 shadow-sm border border-opella-border space-y-5">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-gray-200 pb-4">
+          <div>
+            <div className="text-[11px] font-mono uppercase tracking-wider text-emerald-800 font-bold flex items-center gap-2">
+              <span>Opella Playbook RACI · Slides 4 to 9</span>
+              <span>·</span>
+              <span className="text-gray-500 font-semibold">47 Core Activities</span>
+            </div>
+            <h3 className="text-xl sm:text-2xl font-black text-gray-950 tracking-tight mt-0.5">
+              Activities & Role Interventions by Delivery Mode
+            </h3>
+            <p className="text-xs text-gray-600 mt-0.5">
+              Exact mapping of profiles, accountable teams, and delivery mode splits across Demand, Build, Run, and Transversal Governance.
+            </p>
+          </div>
+          <div className="flex items-center gap-2 text-xs">
+            <span className="px-2.5 py-1 rounded-md bg-purple-100 text-purple-900 font-bold border border-purple-200">
+              Function
+            </span>
+            <span className="px-2.5 py-1 rounded-md bg-orange-100 text-orange-900 font-bold border border-orange-200">
+              Transf. Office
+            </span>
+            <span className="px-2.5 py-1 rounded-md bg-teal-100 text-teal-900 font-bold border border-teal-200">
+              Data &amp; AI
+            </span>
+            <span className="px-2.5 py-1 rounded-md bg-pink-100 text-pink-900 font-bold border border-pink-200">
+              Value Officer / ORAI
+            </span>
+          </div>
+        </div>
+
+        {/* Scrollable RACI Table */}
+        <div className="overflow-x-auto rounded-xl border border-gray-200 shadow-xs">
+          <table className="w-full text-left text-xs border-collapse">
+            <thead>
+              <tr className="bg-emerald-950 text-white text-[11px] uppercase tracking-wider font-bold">
+                <th className="py-3 px-3.5 border-r border-emerald-900 w-36">Macro-Activity</th>
+                <th className="py-3 px-3.5 border-r border-emerald-900 min-w-[220px]">Activities</th>
+                <th className="py-3 px-3.5 border-r border-emerald-900 min-w-[180px]">Profile</th>
+                <th className="py-3 px-3.5 border-r border-emerald-900 w-48 text-center bg-emerald-900/90">
+                  Mode 1: Do it for me
+                  <span className="block text-[9px] font-normal text-emerald-200">Hub leads</span>
+                </th>
+                <th className="py-3 px-3.5 border-r border-emerald-900 w-52 text-center bg-blue-950/90">
+                  Mode 2: Do it with me
+                  <span className="block text-[9px] font-normal text-sky-200">Function leads, hub supports</span>
+                </th>
+                <th className="py-3 px-3.5 w-48 text-center bg-purple-950/90">
+                  Mode 3: Enable me
+                  <span className="block text-[9px] font-normal text-purple-200">Function autonomous</span>
+                </th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-200 bg-white text-gray-800 text-[11px]">
+              {/* DEMAND MANAGEMENT / FRAMING */}
+              <tr className="bg-emerald-50/40">
+                <td rowSpan={11} className="py-3 px-3.5 font-bold text-emerald-950 align-top border-r border-gray-200">
+                  Demand Management / Framing Phase
+                </td>
+                <td className="py-2.5 px-3.5 font-medium border-r border-gray-200">Collect &amp; qualify business needs</td>
+                <td className="py-2.5 px-3.5 text-gray-600 font-mono text-[10px] border-r border-gray-200">AI catalyst - BO/PO</td>
+                <td className="py-2.5 px-3 text-center border-r border-gray-200"><span className="px-2 py-0.5 rounded bg-purple-100 text-purple-900 font-bold">Function</span></td>
+                <td className="py-2.5 px-3 text-center border-r border-gray-200"><span className="px-2 py-0.5 rounded bg-purple-100 text-purple-900 font-bold">Function</span></td>
+                <td className="py-2.5 px-3 text-center"><span className="px-2 py-0.5 rounded bg-purple-100 text-purple-900 font-bold">Function</span></td>
+              </tr>
+              <tr>
+                <td className="py-2.5 px-3.5 font-medium border-r border-gray-200">Specify business needs into technical product (use case)</td>
+                <td className="py-2.5 px-3.5 text-gray-600 font-mono text-[10px] border-r border-gray-200">PO/BO - Digital PO - FDE</td>
+                <td className="py-2.5 px-3 text-center border-r border-gray-200"><span className="px-1.5 py-0.5 rounded bg-purple-100 text-purple-900 font-semibold mr-1">Function</span><span className="px-1.5 py-0.5 rounded bg-teal-100 text-teal-900 font-semibold">Data &amp; AI</span></td>
+                <td className="py-2.5 px-3 text-center border-r border-gray-200"><span className="px-1.5 py-0.5 rounded bg-purple-100 text-purple-900 font-semibold mr-1">Function</span><span className="px-1.5 py-0.5 rounded bg-teal-100 text-teal-900 font-semibold">Data &amp; AI</span></td>
+                <td className="py-2.5 px-3 text-center"><span className="px-1.5 py-0.5 rounded bg-purple-100 text-purple-900 font-semibold mr-1">Function</span><span className="px-1.5 py-0.5 rounded bg-teal-100 text-teal-900 font-semibold">Data &amp; AI</span></td>
+              </tr>
+              <tr>
+                <td className="py-2.5 px-3.5 font-medium border-r border-gray-200">Build UC business case &amp; assess post implementation measurement of success</td>
+                <td className="py-2.5 px-3.5 text-gray-600 font-mono text-[10px] border-r border-gray-200">PO/BO</td>
+                <td className="py-2.5 px-3 text-center border-r border-gray-200"><span className="px-2 py-0.5 rounded bg-purple-100 text-purple-900 font-bold">Function</span></td>
+                <td className="py-2.5 px-3 text-center border-r border-gray-200"><span className="px-2 py-0.5 rounded bg-purple-100 text-purple-900 font-bold">Function</span></td>
+                <td className="py-2.5 px-3 text-center"><span className="px-2 py-0.5 rounded bg-purple-100 text-purple-900 font-bold">Function</span></td>
+              </tr>
+              <tr>
+                <td className="py-2.5 px-3.5 font-medium border-r border-gray-200 text-pink-950 font-bold">Ensure the UC business case &amp; measure of success is carried out (accountable)</td>
+                <td className="py-2.5 px-3.5 text-pink-900 font-mono text-[10px] font-bold border-r border-gray-200">Value officer</td>
+                <td className="py-2.5 px-3 text-center border-r border-gray-200"><span className="px-2 py-0.5 rounded bg-pink-100 text-pink-900 font-bold">Value Officer</span></td>
+                <td className="py-2.5 px-3 text-center border-r border-gray-200"><span className="px-2 py-0.5 rounded bg-pink-100 text-pink-900 font-bold">Value Officer</span></td>
+                <td className="py-2.5 px-3 text-center"><span className="px-2 py-0.5 rounded bg-pink-100 text-pink-900 font-bold">Value Officer</span></td>
+              </tr>
+              <tr>
+                <td className="py-2.5 px-3.5 font-medium border-r border-gray-200">Assess use cases tech complexity</td>
+                <td className="py-2.5 px-3.5 text-gray-600 font-mono text-[10px] border-r border-gray-200">Data Eng / Architect</td>
+                <td className="py-2.5 px-3 text-center border-r border-gray-200"><span className="px-2 py-0.5 rounded bg-teal-100 text-teal-900 font-bold">Data &amp; AI</span></td>
+                <td className="py-2.5 px-3 text-center border-r border-gray-200"><span className="px-2 py-0.5 rounded bg-teal-100 text-teal-900 font-bold">Data &amp; AI</span></td>
+                <td className="py-2.5 px-3 text-center"><span className="px-1.5 py-0.5 rounded bg-purple-100 text-purple-900 font-semibold mr-1">Function</span><span className="px-1.5 py-0.5 rounded bg-teal-100 text-teal-900 font-semibold">Data &amp; AI</span></td>
+              </tr>
+              <tr>
+                <td className="py-2.5 px-3.5 font-medium border-r border-gray-200">Assess use cases legal feasibility</td>
+                <td className="py-2.5 px-3.5 text-gray-600 font-mono text-[10px] border-r border-gray-200">ORAI team</td>
+                <td className="py-2.5 px-3 text-center border-r border-gray-200"><span className="px-2 py-0.5 rounded bg-pink-100 text-pink-900 font-bold">ORAI team (LEX)</span></td>
+                <td className="py-2.5 px-3 text-center border-r border-gray-200"><span className="px-2 py-0.5 rounded bg-pink-100 text-pink-900 font-bold">ORAI team (LEX)</span></td>
+                <td className="py-2.5 px-3 text-center"><span className="px-2 py-0.5 rounded bg-pink-100 text-pink-900 font-bold">ORAI team (LEX)</span></td>
+              </tr>
+              <tr>
+                <td className="py-2.5 px-3.5 font-medium border-r border-gray-200">Assess data readiness &amp; data gov. prerequisites</td>
+                <td className="py-2.5 px-3.5 text-gray-600 font-mono text-[10px] border-r border-gray-200">Data Eng / Architect - Data Governance</td>
+                <td className="py-2.5 px-3 text-center border-r border-gray-200"><span className="px-2 py-0.5 rounded bg-teal-100 text-teal-900 font-bold">Data &amp; AI</span></td>
+                <td className="py-2.5 px-3 text-center border-r border-gray-200"><span className="px-2 py-0.5 rounded bg-teal-100 text-teal-900 font-bold">Data &amp; AI</span></td>
+                <td className="py-2.5 px-3 text-center"><span className="px-1.5 py-0.5 rounded bg-purple-100 text-purple-900 font-semibold mr-1">Function</span><span className="px-1.5 py-0.5 rounded bg-teal-100 text-teal-900 font-semibold">Data &amp; AI</span></td>
+              </tr>
+              <tr>
+                <td className="py-2.5 px-3.5 font-medium border-r border-gray-200">Prioritize use cases</td>
+                <td className="py-2.5 px-3.5 text-gray-600 font-mono text-[10px] border-r border-gray-200">TO lead / Data Eng / Architect / Business Sponsors</td>
+                <td className="py-2.5 px-3 text-center border-r border-gray-200"><span className="px-1.5 py-0.5 rounded bg-orange-100 text-orange-900 font-semibold mr-1">Transf. Office</span><span className="px-1.5 py-0.5 rounded bg-teal-100 text-teal-900 font-semibold">Data &amp; AI</span></td>
+                <td className="py-2.5 px-3 text-center border-r border-gray-200"><span className="px-1.5 py-0.5 rounded bg-orange-100 text-orange-900 font-semibold mr-1">Transf. Office</span><span className="px-1.5 py-0.5 rounded bg-teal-100 text-teal-900 font-semibold">Data &amp; AI</span></td>
+                <td className="py-2.5 px-3 text-center"><span className="px-1.5 py-0.5 rounded bg-orange-100 text-orange-900 font-semibold mr-1">Transf. Office</span><span className="px-1.5 py-0.5 rounded bg-teal-100 text-teal-900 font-semibold">Data &amp; AI</span></td>
+              </tr>
+              <tr>
+                <td className="py-2.5 px-3.5 font-medium border-r border-gray-200">Define use cases roadmap</td>
+                <td className="py-2.5 px-3.5 text-gray-600 font-mono text-[10px] border-r border-gray-200">TO lead / Data Eng / Architect</td>
+                <td className="py-2.5 px-3 text-center border-r border-gray-200"><span className="px-1.5 py-0.5 rounded bg-orange-100 text-orange-900 font-semibold mr-1">Transf. Office</span><span className="px-1.5 py-0.5 rounded bg-teal-100 text-teal-900 font-semibold">Data &amp; AI</span></td>
+                <td className="py-2.5 px-3 text-center border-r border-gray-200"><span className="px-1.5 py-0.5 rounded bg-orange-100 text-orange-900 font-semibold mr-1">Transf. Office</span><span className="px-1.5 py-0.5 rounded bg-teal-100 text-teal-900 font-semibold">Data &amp; AI</span></td>
+                <td className="py-2.5 px-3 text-center"><span className="px-1.5 py-0.5 rounded bg-orange-100 text-orange-900 font-semibold mr-1">Transf. Office</span><span className="px-1.5 py-0.5 rounded bg-teal-100 text-teal-900 font-semibold">Data &amp; AI</span></td>
+              </tr>
+              <tr>
+                <td className="py-2.5 px-3.5 font-medium border-r border-gray-200">Define acceptance criteria &amp; definitions of done</td>
+                <td className="py-2.5 px-3.5 text-gray-600 font-mono text-[10px] border-r border-gray-200">BO/PO</td>
+                <td className="py-2.5 px-3 text-center border-r border-gray-200"><span className="px-2 py-0.5 rounded bg-purple-100 text-purple-900 font-bold">Function</span></td>
+                <td className="py-2.5 px-3 text-center border-r border-gray-200"><span className="px-2 py-0.5 rounded bg-purple-100 text-purple-900 font-bold">Function</span></td>
+                <td className="py-2.5 px-3 text-center"><span className="px-2 py-0.5 rounded bg-purple-100 text-purple-900 font-bold">Function</span></td>
+              </tr>
+              <tr>
+                <td className="py-2.5 px-3.5 font-medium border-r border-gray-200">Estimate cost &amp; resources needed and select model</td>
+                <td className="py-2.5 px-3.5 text-gray-600 font-mono text-[10px] border-r border-gray-200">Data Eng / Architect</td>
+                <td className="py-2.5 px-3 text-center border-r border-gray-200"><span className="px-2 py-0.5 rounded bg-teal-100 text-teal-900 font-bold">Data &amp; AI</span></td>
+                <td className="py-2.5 px-3 text-center border-r border-gray-200"><span className="px-2 py-0.5 rounded bg-teal-100 text-teal-900 font-bold">Data &amp; AI</span></td>
+                <td className="py-2.5 px-3 text-center"><span className="px-1.5 py-0.5 rounded bg-purple-100 text-purple-900 font-semibold mr-1">Function</span><span className="px-1.5 py-0.5 rounded bg-teal-100 text-teal-900 font-semibold">Data &amp; AI</span></td>
+              </tr>
+
+              {/* DELIVERY (BUILD) */}
+              <tr className="bg-blue-50/40">
+                <td rowSpan={3} className="py-3 px-3.5 font-bold text-blue-950 align-top border-r border-gray-200">
+                  Delivery (build)
+                </td>
+                <td className="py-2.5 px-3.5 font-medium border-r border-gray-200">Develop the use case (algorithms, AI dashboard, agents...)</td>
+                <td className="py-2.5 px-3.5 text-gray-600 font-mono text-[10px] border-r border-gray-200">AI engineer - Data Scientist - AI builder - FDE - Business Analytics</td>
+                <td className="py-2.5 px-3 text-center border-r border-gray-200"><span className="px-2 py-0.5 rounded bg-teal-100 text-teal-900 font-bold">Data &amp; AI</span></td>
+                <td className="py-2.5 px-3 text-center border-r border-gray-200"><span className="px-1.5 py-0.5 rounded bg-purple-100 text-purple-900 font-semibold mr-1">Function</span><span className="px-1.5 py-0.5 rounded bg-teal-100 text-teal-900 font-semibold">Data &amp; AI</span></td>
+                <td className="py-2.5 px-3 text-center"><span className="px-2 py-0.5 rounded bg-purple-100 text-purple-900 font-bold">Function</span></td>
+              </tr>
+              <tr>
+                <td className="py-2.5 px-3.5 font-medium border-r border-gray-200">Quality, functional &amp; performance tests based on DoD and acceptance criteria</td>
+                <td className="py-2.5 px-3.5 text-gray-600 font-mono text-[10px] border-r border-gray-200">AI engineer - Data Scientist - AI builder</td>
+                <td className="py-2.5 px-3 text-center border-r border-gray-200"><span className="px-2 py-0.5 rounded bg-teal-100 text-teal-900 font-bold">Data &amp; AI</span></td>
+                <td className="py-2.5 px-3 text-center border-r border-gray-200"><span className="px-1.5 py-0.5 rounded bg-purple-100 text-purple-900 font-semibold mr-1">Function</span><span className="px-1.5 py-0.5 rounded bg-teal-100 text-teal-900 font-semibold">Data &amp; AI</span></td>
+                <td className="py-2.5 px-3 text-center"><span className="px-2 py-0.5 rounded bg-purple-100 text-purple-900 font-bold">Function</span></td>
+              </tr>
+              <tr>
+                <td className="py-2.5 px-3.5 font-medium border-r border-gray-200">Validate that use cases meet business expectations (UAT)</td>
+                <td className="py-2.5 px-3.5 text-gray-600 font-mono text-[10px] border-r border-gray-200">PO/BO - Digital PO - Business testers - FDE</td>
+                <td className="py-2.5 px-3 text-center border-r border-gray-200"><span className="px-1.5 py-0.5 rounded bg-purple-100 text-purple-900 font-semibold mr-1">Function</span><span className="px-1.5 py-0.5 rounded bg-teal-100 text-teal-900 font-semibold">Data &amp; AI</span></td>
+                <td className="py-2.5 px-3 text-center border-r border-gray-200"><span className="px-1.5 py-0.5 rounded bg-purple-100 text-purple-900 font-semibold mr-1">Function</span><span className="px-1.5 py-0.5 rounded bg-teal-100 text-teal-900 font-semibold">Data &amp; AI</span></td>
+                <td className="py-2.5 px-3 text-center"><span className="px-2 py-0.5 rounded bg-purple-100 text-purple-900 font-bold">Function</span></td>
+              </tr>
+
+              {/* RUN AND SCALE (RUN) */}
+              <tr className="bg-amber-50/40">
+                <td rowSpan={3} className="py-3 px-3.5 font-bold text-amber-950 align-top border-r border-gray-200">
+                  Run and scale (run)
+                </td>
+                <td className="py-2.5 px-3.5 font-medium border-r border-gray-200">Own the run and the run cost (tokens included) in the function P&amp;L</td>
+                <td className="py-2.5 px-3.5 text-gray-600 font-mono text-[10px] border-r border-gray-200">PO/BO - Digital PO</td>
+                <td className="py-2.5 px-3 text-center border-r border-gray-200"><span className="px-1.5 py-0.5 rounded bg-purple-100 text-purple-900 font-semibold mr-1">Function</span><span className="px-1.5 py-0.5 rounded bg-teal-100 text-teal-900 font-semibold">Data &amp; AI</span></td>
+                <td className="py-2.5 px-3 text-center border-r border-gray-200"><span className="px-1.5 py-0.5 rounded bg-purple-100 text-purple-900 font-semibold mr-1">Function</span><span className="px-1.5 py-0.5 rounded bg-teal-100 text-teal-900 font-semibold">Data &amp; AI</span></td>
+                <td className="py-2.5 px-3 text-center"><span className="px-2 py-0.5 rounded bg-purple-100 text-purple-900 font-bold">Function</span></td>
+              </tr>
+              <tr>
+                <td className="py-2.5 px-3.5 font-medium border-r border-gray-200">Adapt the use case according to new business requirements or technical bugs</td>
+                <td className="py-2.5 px-3.5 text-gray-600 font-mono text-[10px] border-r border-gray-200">AI engineer - Data Eng. - Architect - AI builders - Business Analytics</td>
+                <td className="py-2.5 px-3 text-center border-r border-gray-200"><span className="px-2 py-0.5 rounded bg-teal-100 text-teal-900 font-bold">Data &amp; AI</span></td>
+                <td className="py-2.5 px-3 text-center border-r border-gray-200"><span className="px-1.5 py-0.5 rounded bg-purple-100 text-purple-900 font-semibold mr-1">Function</span><span className="px-1.5 py-0.5 rounded bg-teal-100 text-teal-900 font-semibold">Data &amp; AI</span></td>
+                <td className="py-2.5 px-3 text-center"><span className="px-2 py-0.5 rounded bg-purple-100 text-purple-900 font-bold">Function</span></td>
+              </tr>
+              <tr>
+                <td className="py-2.5 px-3.5 font-medium border-r border-gray-200">Monitor Adoption and costs</td>
+                <td className="py-2.5 px-3.5 text-gray-600 font-mono text-[10px] border-r border-gray-200">Adoption Lead / Regional adoption relays / Value Officer</td>
+                <td className="py-2.5 px-3 text-center border-r border-gray-200"><span className="px-1.5 py-0.5 rounded bg-orange-100 text-orange-900 font-semibold mr-1">Transf. Office</span><span className="px-1.5 py-0.5 rounded bg-pink-100 text-pink-900 font-semibold">Value Officer</span></td>
+                <td className="py-2.5 px-3 text-center border-r border-gray-200"><span className="px-1.5 py-0.5 rounded bg-orange-100 text-orange-900 font-semibold mr-1">Transf. Office</span><span className="px-1.5 py-0.5 rounded bg-pink-100 text-pink-900 font-semibold">Value Officer</span></td>
+                <td className="py-2.5 px-3 text-center"><span className="px-1.5 py-0.5 rounded bg-orange-100 text-orange-900 font-semibold mr-1">Transf. Office</span><span className="px-1.5 py-0.5 rounded bg-pink-100 text-pink-900 font-semibold">Value Officer</span></td>
+              </tr>
+
+              {/* DATA MODELING & INTEGRATION */}
+              <tr className="bg-teal-50/40">
+                <td rowSpan={9} className="py-3 px-3.5 font-bold text-teal-950 align-top border-r border-gray-200">
+                  Data Modeling &amp; Source Integration
+                </td>
+                <td className="py-2.5 px-3.5 font-medium border-r border-gray-200">Discover &amp; profile data sources</td>
+                <td className="py-2.5 px-3.5 text-gray-600 font-mono text-[10px] border-r border-gray-200">Data Engineer / Architect / AI builder</td>
+                <td className="py-2.5 px-3 text-center border-r border-gray-200"><span className="px-2 py-0.5 rounded bg-teal-100 text-teal-900 font-bold">Data &amp; AI</span></td>
+                <td className="py-2.5 px-3 text-center border-r border-gray-200"><span className="px-2 py-0.5 rounded bg-teal-100 text-teal-900 font-bold">Data &amp; AI</span></td>
+                <td className="py-2.5 px-3 text-center"><span className="px-2 py-0.5 rounded bg-purple-100 text-purple-900 font-bold">Function</span></td>
+              </tr>
+              <tr>
+                <td className="py-2.5 px-3.5 font-medium border-r border-gray-200">Frame logical data models according to business needs</td>
+                <td className="py-2.5 px-3.5 text-gray-600 font-mono text-[10px] border-r border-gray-200">Data steward - Data Eng. Architect</td>
+                <td className="py-2.5 px-3 text-center border-r border-gray-200"><span className="px-1.5 py-0.5 rounded bg-teal-100 text-teal-900 font-semibold mr-1">Data &amp; AI</span><span className="px-1.5 py-0.5 rounded bg-purple-100 text-purple-900 font-semibold">Function</span></td>
+                <td className="py-2.5 px-3 text-center border-r border-gray-200"><span className="px-1.5 py-0.5 rounded bg-teal-100 text-teal-900 font-semibold mr-1">Data &amp; AI</span><span className="px-1.5 py-0.5 rounded bg-purple-100 text-purple-900 font-semibold">Function</span></td>
+                <td className="py-2.5 px-3 text-center"><span className="px-2 py-0.5 rounded bg-purple-100 text-purple-900 font-bold">Function</span></td>
+              </tr>
+              <tr>
+                <td className="py-2.5 px-3.5 font-medium border-r border-gray-200">Design logical data models</td>
+                <td className="py-2.5 px-3.5 text-gray-600 font-mono text-[10px] border-r border-gray-200">Data Architect - AI builder</td>
+                <td className="py-2.5 px-3 text-center border-r border-gray-200"><span className="px-2 py-0.5 rounded bg-teal-100 text-teal-900 font-bold">Data &amp; AI</span></td>
+                <td className="py-2.5 px-3 text-center border-r border-gray-200"><span className="px-1.5 py-0.5 rounded bg-teal-100 text-teal-900 font-semibold mr-1">Data &amp; AI</span><span className="px-1.5 py-0.5 rounded bg-purple-100 text-purple-900 font-semibold">Function</span></td>
+                <td className="py-2.5 px-3 text-center"><span className="px-2 py-0.5 rounded bg-purple-100 text-purple-900 font-bold">Function</span></td>
+              </tr>
+              <tr>
+                <td className="py-2.5 px-3.5 font-medium border-r border-gray-200">Clean, organise &amp; build re-usable data products (raw to bronze, silver and gold)</td>
+                <td className="py-2.5 px-3.5 text-gray-600 font-mono text-[10px] border-r border-gray-200">Data Engineer - AI builder</td>
+                <td className="py-2.5 px-3 text-center border-r border-gray-200"><span className="px-2 py-0.5 rounded bg-teal-100 text-teal-900 font-bold">Data &amp; AI</span></td>
+                <td className="py-2.5 px-3 text-center border-r border-gray-200"><span className="px-1.5 py-0.5 rounded bg-teal-100 text-teal-900 font-semibold mr-1">Data &amp; AI</span><span className="px-1.5 py-0.5 rounded bg-purple-100 text-purple-900 font-semibold">Function</span></td>
+                <td className="py-2.5 px-3 text-center"><span className="px-2 py-0.5 rounded bg-purple-100 text-purple-900 font-bold">Function</span></td>
+              </tr>
+              <tr>
+                <td className="py-2.5 px-3.5 font-medium border-r border-gray-200">Document data into data catalog (data domain taxonomy, data sources, KPIs definitions)</td>
+                <td className="py-2.5 px-3.5 text-gray-600 font-mono text-[10px] border-r border-gray-200">Data Eng. / Architect / Data steward</td>
+                <td className="py-2.5 px-3 text-center border-r border-gray-200"><span className="px-2 py-0.5 rounded bg-teal-100 text-teal-900 font-bold">Data &amp; AI</span></td>
+                <td className="py-2.5 px-3 text-center border-r border-gray-200"><span className="px-1.5 py-0.5 rounded bg-teal-100 text-teal-900 font-semibold mr-1">Data &amp; AI</span><span className="px-1.5 py-0.5 rounded bg-purple-100 text-purple-900 font-semibold">Function</span></td>
+                <td className="py-2.5 px-3 text-center"><span className="px-1.5 py-0.5 rounded bg-teal-100 text-teal-900 font-semibold mr-1">Data &amp; AI</span><span className="px-1.5 py-0.5 rounded bg-purple-100 text-purple-900 font-semibold">Function</span></td>
+              </tr>
+              <tr>
+                <td className="py-2.5 px-3.5 font-medium border-r border-gray-200">Define data business objects</td>
+                <td className="py-2.5 px-3.5 text-gray-600 font-mono text-[10px] border-r border-gray-200">PO/BO</td>
+                <td className="py-2.5 px-3 text-center border-r border-gray-200"><span className="px-2 py-0.5 rounded bg-purple-100 text-purple-900 font-bold">Function</span></td>
+                <td className="py-2.5 px-3 text-center border-r border-gray-200"><span className="px-2 py-0.5 rounded bg-purple-100 text-purple-900 font-bold">Function</span></td>
+                <td className="py-2.5 px-3 text-center"><span className="px-2 py-0.5 rounded bg-purple-100 text-purple-900 font-bold">Function</span></td>
+              </tr>
+              <tr>
+                <td className="py-2.5 px-3.5 font-medium border-r border-gray-200">Define and implement quality tests in the pipeline</td>
+                <td className="py-2.5 px-3.5 text-gray-600 font-mono text-[10px] border-r border-gray-200">Data Eng./Architect</td>
+                <td className="py-2.5 px-3 text-center border-r border-gray-200"><span className="px-2 py-0.5 rounded bg-teal-100 text-teal-900 font-bold">Data &amp; AI</span></td>
+                <td className="py-2.5 px-3 text-center border-r border-gray-200"><span className="px-2 py-0.5 rounded bg-teal-100 text-teal-900 font-bold">Data &amp; AI</span></td>
+                <td className="py-2.5 px-3 text-center"><span className="px-1.5 py-0.5 rounded bg-teal-100 text-teal-900 font-semibold mr-1">Data &amp; AI</span><span className="px-1.5 py-0.5 rounded bg-purple-100 text-purple-900 font-semibold">Function</span></td>
+              </tr>
+              <tr>
+                <td className="py-2.5 px-3.5 font-medium border-r border-gray-200">Build flows between source system &amp; data platforms</td>
+                <td className="py-2.5 px-3.5 text-gray-600 font-mono text-[10px] border-r border-gray-200">Data Engineer</td>
+                <td className="py-2.5 px-3 text-center border-r border-gray-200"><span className="px-2 py-0.5 rounded bg-teal-100 text-teal-900 font-bold">Data &amp; AI</span></td>
+                <td className="py-2.5 px-3 text-center border-r border-gray-200"><span className="px-2 py-0.5 rounded bg-teal-100 text-teal-900 font-bold">Data &amp; AI</span></td>
+                <td className="py-2.5 px-3 text-center"><span className="px-1.5 py-0.5 rounded bg-teal-100 text-teal-900 font-semibold mr-1">Data &amp; AI</span><span className="px-1.5 py-0.5 rounded bg-purple-100 text-purple-900 font-semibold">Function</span></td>
+              </tr>
+              <tr>
+                <td className="py-2.5 px-3.5 font-medium border-r border-gray-200">Collect historical data from systems and ingest raw data into the platform</td>
+                <td className="py-2.5 px-3.5 text-gray-600 font-mono text-[10px] border-r border-gray-200">Data Engineer</td>
+                <td className="py-2.5 px-3 text-center border-r border-gray-200"><span className="px-2 py-0.5 rounded bg-teal-100 text-teal-900 font-bold">Data &amp; AI</span></td>
+                <td className="py-2.5 px-3 text-center border-r border-gray-200"><span className="px-2 py-0.5 rounded bg-teal-100 text-teal-900 font-bold">Data &amp; AI</span></td>
+                <td className="py-2.5 px-3 text-center"><span className="px-1.5 py-0.5 rounded bg-teal-100 text-teal-900 font-semibold mr-1">Data &amp; AI</span><span className="px-1.5 py-0.5 rounded bg-purple-100 text-purple-900 font-semibold">Function</span></td>
+              </tr>
+
+              {/* TRANSVERSAL GOVERNANCE & ARCHITECTURE */}
+              <tr className="bg-orange-50/40">
+                <td rowSpan={10} className="py-3 px-3.5 font-bold text-orange-950 align-top border-r border-gray-200">
+                  Transversal Governance &amp; Platform
+                </td>
+                <td className="py-2.5 px-3.5 font-medium border-r border-gray-200">Define the operating model, RACI and gates</td>
+                <td className="py-2.5 px-3.5 text-gray-600 font-mono text-[10px] border-r border-gray-200">Transformation Office lead</td>
+                <td className="py-2.5 px-3 text-center border-r border-gray-200"><span className="px-2 py-0.5 rounded bg-orange-100 text-orange-900 font-bold">Transf. Office</span></td>
+                <td className="py-2.5 px-3 text-center border-r border-gray-200"><span className="px-2 py-0.5 rounded bg-orange-100 text-orange-900 font-bold">Transf. Office</span></td>
+                <td className="py-2.5 px-3 text-center"><span className="px-2 py-0.5 rounded bg-orange-100 text-orange-900 font-bold">Transf. Office</span></td>
+              </tr>
+              <tr>
+                <td className="py-2.5 px-3.5 font-medium border-r border-gray-200">Define architecture, standards and ADRs (Digital Design Authority)</td>
+                <td className="py-2.5 px-3.5 text-gray-600 font-mono text-[10px] border-r border-gray-200">Data Eng / Architect - Enterprise architect</td>
+                <td className="py-2.5 px-3 text-center border-r border-gray-200"><span className="px-1.5 py-0.5 rounded bg-teal-100 text-teal-900 font-semibold mr-1">Data &amp; AI</span><span className="px-1.5 py-0.5 rounded bg-amber-100 text-amber-900 font-semibold">Digital transversal</span></td>
+                <td className="py-2.5 px-3 text-center border-r border-gray-200"><span className="px-1.5 py-0.5 rounded bg-teal-100 text-teal-900 font-semibold mr-1">Data &amp; AI</span><span className="px-1.5 py-0.5 rounded bg-amber-100 text-amber-900 font-semibold">Digital transversal</span></td>
+                <td className="py-2.5 px-3 text-center"><span className="px-1.5 py-0.5 rounded bg-teal-100 text-teal-900 font-semibold mr-1">Data &amp; AI</span><span className="px-1.5 py-0.5 rounded bg-amber-100 text-amber-900 font-semibold">Digital transversal</span></td>
+              </tr>
+              <tr>
+                <td className="py-2.5 px-3.5 font-medium border-r border-gray-200">Run the shared platform and the Opella IQ semantic layer</td>
+                <td className="py-2.5 px-3.5 text-gray-600 font-mono text-[10px] border-r border-gray-200">Semantic layer architect</td>
+                <td className="py-2.5 px-3 text-center border-r border-gray-200"><span className="px-2 py-0.5 rounded bg-teal-100 text-teal-900 font-bold">Data &amp; AI</span></td>
+                <td className="py-2.5 px-3 text-center border-r border-gray-200"><span className="px-2 py-0.5 rounded bg-teal-100 text-teal-900 font-bold">Data &amp; AI</span></td>
+                <td className="py-2.5 px-3 text-center"><span className="px-2 py-0.5 rounded bg-teal-100 text-teal-900 font-bold">Data &amp; AI</span></td>
+              </tr>
+              <tr>
+                <td className="py-2.5 px-3.5 font-medium border-r border-gray-200">Build the function's AI roadmap</td>
+                <td className="py-2.5 px-3.5 text-gray-600 font-mono text-[10px] border-r border-gray-200">PO/BO - TO Lead</td>
+                <td className="py-2.5 px-3 text-center border-r border-gray-200"><span className="px-1.5 py-0.5 rounded bg-purple-100 text-purple-900 font-semibold mr-1">Function</span><span className="px-1.5 py-0.5 rounded bg-orange-100 text-orange-900 font-semibold">Transf. Office</span></td>
+                <td className="py-2.5 px-3 text-center border-r border-gray-200"><span className="px-1.5 py-0.5 rounded bg-purple-100 text-purple-900 font-semibold mr-1">Function</span><span className="px-1.5 py-0.5 rounded bg-orange-100 text-orange-900 font-semibold">Transf. Office</span></td>
+                <td className="py-2.5 px-3 text-center"><span className="px-1.5 py-0.5 rounded bg-purple-100 text-purple-900 font-semibold mr-1">Function</span><span className="px-1.5 py-0.5 rounded bg-orange-100 text-orange-900 font-semibold">Transf. Office</span></td>
+              </tr>
+              <tr>
+                <td className="py-2.5 px-3.5 font-medium border-r border-gray-200">Prioritize across functions; one backlog, quarterly capacity plan</td>
+                <td className="py-2.5 px-3.5 text-gray-600 font-mono text-[10px] border-r border-gray-200">TO Lead - Business Sponsor</td>
+                <td className="py-2.5 px-3 text-center border-r border-gray-200"><span className="px-2 py-0.5 rounded bg-orange-100 text-orange-900 font-bold">Transf. Office</span></td>
+                <td className="py-2.5 px-3 text-center border-r border-gray-200"><span className="px-2 py-0.5 rounded bg-orange-100 text-orange-900 font-bold">Transf. Office</span></td>
+                <td className="py-2.5 px-3 text-center"><span className="px-1.5 py-0.5 rounded bg-purple-100 text-purple-900 font-semibold mr-1">Function</span><span className="px-1.5 py-0.5 rounded bg-orange-100 text-orange-900 font-semibold">Transf. Office</span></td>
+              </tr>
+              <tr>
+                <td className="py-2.5 px-3.5 font-medium border-r border-gray-200">Keep the registry of approved solutions and sandbox builds</td>
+                <td className="py-2.5 px-3.5 text-gray-600 font-mono text-[10px] border-r border-gray-200">AI governance</td>
+                <td className="py-2.5 px-3 text-center border-r border-gray-200"><span className="px-2 py-0.5 rounded bg-teal-100 text-teal-900 font-bold">Data &amp; AI</span></td>
+                <td className="py-2.5 px-3 text-center border-r border-gray-200"><span className="px-2 py-0.5 rounded bg-teal-100 text-teal-900 font-bold">Data &amp; AI</span></td>
+                <td className="py-2.5 px-3 text-center"><span className="px-2 py-0.5 rounded bg-teal-100 text-teal-900 font-bold">Data &amp; AI</span></td>
+              </tr>
+              <tr>
+                <td className="py-2.5 px-3.5 font-medium border-r border-gray-200 text-pink-950 font-bold">Set funding rules: big bets central, the rest and run cost in functions</td>
+                <td className="py-2.5 px-3.5 text-pink-900 font-mono text-[10px] font-bold border-r border-gray-200">Value officer - TO Lead</td>
+                <td className="py-2.5 px-3 text-center border-r border-gray-200"><span className="px-1.5 py-0.5 rounded bg-pink-100 text-pink-900 font-semibold mr-1">Value Officer</span><span className="px-1.5 py-0.5 rounded bg-orange-100 text-orange-900 font-semibold">Transf. Office</span></td>
+                <td className="py-2.5 px-3 text-center border-r border-gray-200"><span className="px-1.5 py-0.5 rounded bg-pink-100 text-pink-900 font-semibold mr-1">Value Officer</span><span className="px-1.5 py-0.5 rounded bg-orange-100 text-orange-900 font-semibold">Transf. Office</span></td>
+                <td className="py-2.5 px-3 text-center"><span className="px-1.5 py-0.5 rounded bg-pink-100 text-pink-900 font-semibold mr-1">Value Officer</span><span className="px-1.5 py-0.5 rounded bg-orange-100 text-orange-900 font-semibold">Transf. Office</span></td>
+              </tr>
+              <tr>
+                <td className="py-2.5 px-3.5 font-medium border-r border-gray-200">Provide data quality monitoring tools</td>
+                <td className="py-2.5 px-3.5 text-gray-600 font-mono text-[10px] border-r border-gray-200">Data Eng/ Architect - Data governance</td>
+                <td className="py-2.5 px-3 text-center border-r border-gray-200"><span className="px-2 py-0.5 rounded bg-teal-100 text-teal-900 font-bold">Data &amp; AI</span></td>
+                <td className="py-2.5 px-3 text-center border-r border-gray-200"><span className="px-2 py-0.5 rounded bg-teal-100 text-teal-900 font-bold">Data &amp; AI</span></td>
+                <td className="py-2.5 px-3 text-center"><span className="px-2 py-0.5 rounded bg-teal-100 text-teal-900 font-bold">Data &amp; AI</span></td>
+              </tr>
+              <tr>
+                <td className="py-2.5 px-3.5 font-medium border-r border-gray-200">Define data quality remediation process</td>
+                <td className="py-2.5 px-3.5 text-gray-600 font-mono text-[10px] border-r border-gray-200">Data governance - Data steward</td>
+                <td className="py-2.5 px-3 text-center border-r border-gray-200"><span className="px-1.5 py-0.5 rounded bg-purple-100 text-purple-900 font-semibold mr-1">Function</span><span className="px-1.5 py-0.5 rounded bg-teal-100 text-teal-900 font-semibold">Data &amp; AI</span></td>
+                <td className="py-2.5 px-3 text-center border-r border-gray-200"><span className="px-1.5 py-0.5 rounded bg-purple-100 text-purple-900 font-semibold mr-1">Function</span><span className="px-1.5 py-0.5 rounded bg-teal-100 text-teal-900 font-semibold">Data &amp; AI</span></td>
+                <td className="py-2.5 px-3 text-center"><span className="px-1.5 py-0.5 rounded bg-purple-100 text-purple-900 font-semibold mr-1">Function</span><span className="px-1.5 py-0.5 rounded bg-teal-100 text-teal-900 font-semibold">Data &amp; AI</span></td>
+              </tr>
+              <tr>
+                <td className="py-2.5 px-3.5 font-medium border-r border-gray-200">Maintain the use case after go-live: features, fixes, model drift</td>
+                <td className="py-2.5 px-3.5 text-gray-600 font-mono text-[10px] border-r border-gray-200">PO/BO - Digital PO - Data Scientist / Data Eng.</td>
+                <td className="py-2.5 px-3 text-center border-r border-gray-200"><span className="px-2 py-0.5 rounded bg-teal-100 text-teal-900 font-bold">Data &amp; AI</span></td>
+                <td className="py-2.5 px-3 text-center border-r border-gray-200"><span className="px-1.5 py-0.5 rounded bg-purple-100 text-purple-900 font-semibold mr-1">Function</span><span className="px-1.5 py-0.5 rounded bg-teal-100 text-teal-900 font-semibold">Data &amp; AI</span></td>
+                <td className="py-2.5 px-3 text-center"><span className="px-1.5 py-0.5 rounded bg-purple-100 text-purple-900 font-semibold mr-1">Function</span><span className="px-1.5 py-0.5 rounded bg-teal-100 text-teal-900 font-semibold">Data &amp; AI</span></td>
+              </tr>
+
+              {/* INFRASTRUCTURE, LEGAL & ADOPTION */}
+              <tr className="bg-pink-50/30">
+                <td rowSpan={11} className="py-3 px-3.5 font-bold text-pink-950 align-top border-r border-gray-200">
+                  Infra, Legal &amp; Adoption
+                </td>
+                <td className="py-2.5 px-3.5 font-medium border-r border-gray-200">Manage network, security and access control</td>
+                <td className="py-2.5 px-3.5 text-gray-600 font-mono text-[10px] border-r border-gray-200">Infra &amp; Cyber</td>
+                <td className="py-2.5 px-3 text-center border-r border-gray-200"><span className="px-2 py-0.5 rounded bg-amber-100 text-amber-900 font-bold">Digital transversal</span></td>
+                <td className="py-2.5 px-3 text-center border-r border-gray-200"><span className="px-2 py-0.5 rounded bg-amber-100 text-amber-900 font-bold">Digital transversal</span></td>
+                <td className="py-2.5 px-3 text-center"><span className="px-2 py-0.5 rounded bg-amber-100 text-amber-900 font-bold">Digital transversal</span></td>
+              </tr>
+              <tr>
+                <td className="py-2.5 px-3.5 font-medium border-r border-gray-200">Monitor platform performance, cost and tokens</td>
+                <td className="py-2.5 px-3.5 text-gray-600 font-mono text-[10px] border-r border-gray-200">Infra &amp; Cyber</td>
+                <td className="py-2.5 px-3 text-center border-r border-gray-200"><span className="px-2 py-0.5 rounded bg-amber-100 text-amber-900 font-bold">Digital transversal</span></td>
+                <td className="py-2.5 px-3 text-center border-r border-gray-200"><span className="px-2 py-0.5 rounded bg-amber-100 text-amber-900 font-bold">Digital transversal</span></td>
+                <td className="py-2.5 px-3 text-center"><span className="px-2 py-0.5 rounded bg-amber-100 text-amber-900 font-bold">Digital transversal</span></td>
+              </tr>
+              <tr>
+                <td className="py-2.5 px-3.5 font-medium border-r border-gray-200">Set the responsible-AI framework and the three risk tiers</td>
+                <td className="py-2.5 px-3.5 text-gray-600 font-mono text-[10px] border-r border-gray-200">ORAI team</td>
+                <td className="py-2.5 px-3 text-center border-r border-gray-200"><span className="px-2 py-0.5 rounded bg-pink-100 text-pink-900 font-bold">ORAI team</span></td>
+                <td className="py-2.5 px-3 text-center border-r border-gray-200"><span className="px-2 py-0.5 rounded bg-pink-100 text-pink-900 font-bold">ORAI team</span></td>
+                <td className="py-2.5 px-3 text-center"><span className="px-2 py-0.5 rounded bg-pink-100 text-pink-900 font-bold">ORAI team</span></td>
+              </tr>
+              <tr>
+                <td className="py-2.5 px-3.5 font-medium border-r border-gray-200">Triage and review each initiative: low, medium or high risk</td>
+                <td className="py-2.5 px-3.5 text-gray-600 font-mono text-[10px] border-r border-gray-200">ORAI team - Cyber</td>
+                <td className="py-2.5 px-3 text-center border-r border-gray-200"><span className="px-2 py-0.5 rounded bg-pink-100 text-pink-900 font-bold">ORAI team</span></td>
+                <td className="py-2.5 px-3 text-center border-r border-gray-200"><span className="px-2 py-0.5 rounded bg-pink-100 text-pink-900 font-bold">ORAI team</span></td>
+                <td className="py-2.5 px-3 text-center"><span className="px-2 py-0.5 rounded bg-pink-100 text-pink-900 font-bold">ORAI team</span></td>
+              </tr>
+              <tr>
+                <td className="py-2.5 px-3.5 font-medium border-r border-gray-200">Check privacy, security and contracts of bought tools and SaaS</td>
+                <td className="py-2.5 px-3.5 text-gray-600 font-mono text-[10px] border-r border-gray-200">ORAI team - Cyber</td>
+                <td className="py-2.5 px-3 text-center border-r border-gray-200"><span className="px-1.5 py-0.5 rounded bg-pink-100 text-pink-900 font-semibold mr-1">ORAI team</span><span className="px-1.5 py-0.5 rounded bg-amber-100 text-amber-900 font-semibold">Digital transversal</span></td>
+                <td className="py-2.5 px-3 text-center border-r border-gray-200"><span className="px-1.5 py-0.5 rounded bg-pink-100 text-pink-900 font-semibold mr-1">ORAI team</span><span className="px-1.5 py-0.5 rounded bg-amber-100 text-amber-900 font-semibold">Digital transversal</span></td>
+                <td className="py-2.5 px-3 text-center"><span className="px-1.5 py-0.5 rounded bg-pink-100 text-pink-900 font-semibold mr-1">ORAI team</span><span className="px-1.5 py-0.5 rounded bg-amber-100 text-amber-900 font-semibold">Digital transversal</span></td>
+              </tr>
+              <tr>
+                <td className="py-2.5 px-3.5 font-medium border-r border-gray-200">Set communication &amp; capability building guidelines</td>
+                <td className="py-2.5 px-3.5 text-gray-600 font-mono text-[10px] border-r border-gray-200">TO lead - Change &amp; adoption lead</td>
+                <td className="py-2.5 px-3 text-center border-r border-gray-200"><span className="px-2 py-0.5 rounded bg-orange-100 text-orange-900 font-bold">Transf. Office</span></td>
+                <td className="py-2.5 px-3 text-center border-r border-gray-200"><span className="px-2 py-0.5 rounded bg-orange-100 text-orange-900 font-bold">Transf. Office</span></td>
+                <td className="py-2.5 px-3 text-center"><span className="px-2 py-0.5 rounded bg-orange-100 text-orange-900 font-bold">Transf. Office</span></td>
+              </tr>
+              <tr>
+                <td className="py-2.5 px-3.5 font-medium border-r border-gray-200">Define playbook of guidelines (adoption, acculturation)</td>
+                <td className="py-2.5 px-3.5 text-gray-600 font-mono text-[10px] border-r border-gray-200">TO lead - Change &amp; adoption lead</td>
+                <td className="py-2.5 px-3 text-center border-r border-gray-200"><span className="px-2 py-0.5 rounded bg-orange-100 text-orange-900 font-bold">Transf. Office</span></td>
+                <td className="py-2.5 px-3 text-center border-r border-gray-200"><span className="px-2 py-0.5 rounded bg-orange-100 text-orange-900 font-bold">Transf. Office</span></td>
+                <td className="py-2.5 px-3 text-center"><span className="px-2 py-0.5 rounded bg-orange-100 text-orange-900 font-bold">Transf. Office</span></td>
+              </tr>
+              <tr>
+                <td className="py-2.5 px-3.5 font-medium border-r border-gray-200">Create and manage adoption plan</td>
+                <td className="py-2.5 px-3.5 text-gray-600 font-mono text-[10px] border-r border-gray-200">PO/BO - Regional adoption relays</td>
+                <td className="py-2.5 px-3 text-center border-r border-gray-200"><span className="px-1.5 py-0.5 rounded bg-purple-100 text-purple-900 font-semibold mr-1">Function</span><span className="px-1.5 py-0.5 rounded bg-orange-100 text-orange-900 font-semibold">Transf. Office</span></td>
+                <td className="py-2.5 px-3 text-center border-r border-gray-200"><span className="px-1.5 py-0.5 rounded bg-purple-100 text-purple-900 font-semibold mr-1">Function</span><span className="px-1.5 py-0.5 rounded bg-orange-100 text-orange-900 font-semibold">Transf. Office</span></td>
+                <td className="py-2.5 px-3 text-center"><span className="px-1.5 py-0.5 rounded bg-purple-100 text-purple-900 font-semibold mr-1">Function</span><span className="px-1.5 py-0.5 rounded bg-orange-100 text-orange-900 font-semibold">Transf. Office</span></td>
+              </tr>
+              <tr>
+                <td className="py-2.5 px-3.5 font-medium border-r border-gray-200">Acculturate &amp; train users on Data &amp; AI</td>
+                <td className="py-2.5 px-3.5 text-gray-600 font-mono text-[10px] border-r border-gray-200">PO/BO - AI Catalyst - Regional adoption relays</td>
+                <td className="py-2.5 px-3 text-center border-r border-gray-200"><span className="px-1.5 py-0.5 rounded bg-purple-100 text-purple-900 font-semibold mr-1">Function</span><span className="px-1.5 py-0.5 rounded bg-orange-100 text-orange-900 font-semibold">Transf. Office</span></td>
+                <td className="py-2.5 px-3 text-center border-r border-gray-200"><span className="px-2 py-0.5 rounded bg-purple-100 text-purple-900 font-bold">Function</span></td>
+                <td className="py-2.5 px-3 text-center"><span className="px-2 py-0.5 rounded bg-purple-100 text-purple-900 font-bold">Function</span></td>
+              </tr>
+              <tr>
+                <td className="py-2.5 px-3.5 font-medium border-r border-gray-200">Build &amp; animate Data &amp; AI communities</td>
+                <td className="py-2.5 px-3.5 text-gray-600 font-mono text-[10px] border-r border-gray-200">Regional adoption relays</td>
+                <td className="py-2.5 px-3 text-center border-r border-gray-200"><span className="px-2 py-0.5 rounded bg-orange-100 text-orange-900 font-bold">Transf. Office</span></td>
+                <td className="py-2.5 px-3 text-center border-r border-gray-200"><span className="px-2 py-0.5 rounded bg-orange-100 text-orange-900 font-bold">Transf. Office</span></td>
+                <td className="py-2.5 px-3 text-center"><span className="px-2 py-0.5 rounded bg-orange-100 text-orange-900 font-bold">Transf. Office</span></td>
+              </tr>
+              <tr>
+                <td className="py-2.5 px-3.5 font-medium border-r border-gray-200">Plan workforce and social dialogue</td>
+                <td className="py-2.5 px-3.5 text-gray-600 font-mono text-[10px] border-r border-gray-200">P&amp;C counterparts</td>
+                <td className="py-2.5 px-3 text-center border-r border-gray-200"><span className="px-2 py-0.5 rounded bg-pink-100 text-pink-900 font-bold">P&amp;C counterparts</span></td>
+                <td className="py-2.5 px-3 text-center border-r border-gray-200"><span className="px-2 py-0.5 rounded bg-pink-100 text-pink-900 font-bold">P&amp;C counterparts</span></td>
+                <td className="py-2.5 px-3 text-center"><span className="px-2 py-0.5 rounded bg-pink-100 text-pink-900 font-bold">P&amp;C counterparts</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* ----------------------------------------------------------------- */}
       {/* 4. LEGEND & FOOTNOTES (MATCHING SLIDE FOOTER EXACTLY)             */}
       {/* ----------------------------------------------------------------- */}
       <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-200 flex flex-col md:flex-row items-center justify-between gap-4 text-xs">

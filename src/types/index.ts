@@ -104,6 +104,7 @@ export interface GateDetail {
   name: string;
   phase: "Framing" | "Build MVP" | "Pre-scale" | "Scale" | "Run";
   decision: string;
+  decisionAuthority: "Automatic" | "Transformation Office" | "Data & AI";
   type: "AUTOMATIC" | "MANUAL";
   approver: string;
   forum: string;

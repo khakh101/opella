@@ -2137,13 +2137,16 @@ export const PipelineFlowSimulator: React.FC = () => {
               {/* GATE G1 */}
               <g transform="translate(220, 290)">
                 <circle r="30" fill="#0b1329" stroke="#34d399" strokeWidth="2.5" />
-                <text x="0" y="-6" textAnchor="middle" fill="#34d399" fontSize="10" fontWeight="900">
+                <text x="0" y="-8" textAnchor="middle" fill="#34d399" fontSize="9.5" fontWeight="900">
                   GATE G1
                 </text>
-                <text x="0" y="7" textAnchor="middle" fill="#ffffff" fontSize="9" fontWeight="bold">
+                <text x="0" y="4" textAnchor="middle" fill="#ffffff" fontSize="8.5" fontWeight="bold">
                   AI Triage
                 </text>
-                <text x="0" y="18" textAnchor="middle" fill="#94a3b8" fontSize="8">
+                <text x="0" y="14" textAnchor="middle" fill="#a7f3d0" fontSize="7" fontWeight="bold">
+                  Automatic
+                </text>
+                <text x="0" y="23" textAnchor="middle" fill="#94a3b8" fontSize="6.5">
                   {assumptions.acceptanceRateG1}% Pass
                 </text>
               </g>
@@ -2196,13 +2199,13 @@ export const PipelineFlowSimulator: React.FC = () => {
               {/* T1 - Gate G4 GO BUILD */}
               <g transform="translate(750, 90)">
                 <rect x="-44" y="-22" width="88" height="44" rx="9" fill="#0b1329" stroke="#10b981" strokeWidth="2" />
-                <text x="0" y="-6" textAnchor="middle" fill="#10b981" fontSize="9" fontWeight="bold">
+                <text x="0" y="-7" textAnchor="middle" fill="#10b981" fontSize="9" fontWeight="bold">
                   G4 · GO BUILD
                 </text>
-                <text x="0" y="6" textAnchor="middle" fill="#ffffff" fontSize="8" fontWeight="bold">
-                  Mode 1 · Hub
+                <text x="0" y="4" textAnchor="middle" fill="#ffffff" fontSize="8" fontWeight="bold">
+                  Data &amp; AI
                 </text>
-                <text x="0" y="16" textAnchor="middle" fill="#94a3b8" fontSize="7">
+                <text x="0" y="15" textAnchor="middle" fill="#94a3b8" fontSize="7">
                   SteerCo / AmplifAI
                 </text>
               </g>
@@ -2254,28 +2257,28 @@ export const PipelineFlowSimulator: React.FC = () => {
 
               {/* T2 - Gate G4 GO BUILD */}
               <g transform="translate(750, 210)">
-                <rect x="-42" y="-22" width="84" height="44" rx="9" fill="#0b1329" stroke="#38bdf8" strokeWidth="2" />
-                <text x="0" y="-6" textAnchor="middle" fill="#38bdf8" fontSize="9" fontWeight="bold">
+                <rect x="-44" y="-22" width="88" height="44" rx="9" fill="#0b1329" stroke="#38bdf8" strokeWidth="2" />
+                <text x="0" y="-7" textAnchor="middle" fill="#38bdf8" fontSize="9" fontWeight="bold">
                   G4 · GO BUILD
                 </text>
-                <text x="0" y="6" textAnchor="middle" fill="#ffffff" fontSize="8" fontWeight="bold">
-                  Mode 2 · Tranche
+                <text x="0" y="4" textAnchor="middle" fill="#ffffff" fontSize="8" fontWeight="bold">
+                  Data &amp; AI
                 </text>
-                <text x="0" y="16" textAnchor="middle" fill="#94a3b8" fontSize="7">
-                  CDO/CFO Unlock
+                <text x="0" y="15" textAnchor="middle" fill="#94a3b8" fontSize="7">
+                  Tech &amp; Sourcing Unlock
                 </text>
               </g>
 
               {/* T3 - Gate G4 1-Page Canvas */}
               <g transform="translate(750, 350)">
                 <rect x="-50" y="-22" width="100" height="44" rx="9" fill="#0b1329" stroke="#fbbf24" strokeWidth="2" />
-                <text x="0" y="-6" textAnchor="middle" fill="#fbbf24" fontSize="9" fontWeight="bold">
+                <text x="0" y="-7" textAnchor="middle" fill="#fbbf24" fontSize="9" fontWeight="bold">
                   G4 · 1-Page Canvas
                 </text>
-                <text x="0" y="6" textAnchor="middle" fill="#ffffff" fontSize="8" fontWeight="bold">
-                  Mode 3 · Enable me
+                <text x="0" y="4" textAnchor="middle" fill="#ffffff" fontSize="8" fontWeight="bold">
+                  Data &amp; AI
                 </text>
-                <text x="0" y="16" textAnchor="middle" fill="#34d399" fontSize="7.5" fontWeight="bold">
+                <text x="0" y="15" textAnchor="middle" fill="#34d399" fontSize="7.5" fontWeight="bold">
                   10-Day SLA (Skips G2/3)
                 </text>
               </g>
@@ -2283,14 +2286,14 @@ export const PipelineFlowSimulator: React.FC = () => {
               {/* T4 - Gate G4 Registry Line */}
               <g transform="translate(750, 470)">
                 <rect x="-50" y="-22" width="100" height="44" rx="9" fill="#0b1329" stroke="#c084fc" strokeWidth="2" />
-                <text x="0" y="-6" textAnchor="middle" fill="#c084fc" fontSize="9" fontWeight="bold">
+                <text x="0" y="-7" textAnchor="middle" fill="#c084fc" fontSize="9" fontWeight="bold">
                   G4 · Registry Line
                 </text>
-                <text x="0" y="6" textAnchor="middle" fill="#ffffff" fontSize="8" fontWeight="bold">
+                <text x="0" y="4" textAnchor="middle" fill="#ffffff" fontSize="8" fontWeight="bold">
                   Self-Service AI
                 </text>
-                <text x="0" y="16" textAnchor="middle" fill="#94a3b8" fontSize="7">
-                  Instant (Skips G2/3)
+                <text x="0" y="15" textAnchor="middle" fill="#94a3b8" fontSize="7">
+                  Automatic (Skips G2/3)
                 </text>
               </g>
 
@@ -2318,28 +2321,34 @@ export const PipelineFlowSimulator: React.FC = () => {
 
               {/* GATE G5 (PRE-SCALE / POST-MVP DECISION) */}
               <g transform="translate(1030, 290)">
-                <circle r="32" fill="#0b1329" stroke="#818cf8" strokeWidth="2.5" />
-                <text x="0" y="-7" textAnchor="middle" fill="#a5b4fc" fontSize="9.5" fontWeight="bold">
+                <circle r="34" fill="#0b1329" stroke="#818cf8" strokeWidth="2.5" />
+                <text x="0" y="-9" textAnchor="middle" fill="#a5b4fc" fontSize="9" fontWeight="bold">
                   GATE G5
                 </text>
-                <text x="0" y="6" textAnchor="middle" fill="#ffffff" fontSize="8.5" fontWeight="bold">
+                <text x="0" y="3" textAnchor="middle" fill="#ffffff" fontSize="8" fontWeight="bold">
                   Pre-Scale
                 </text>
-                <text x="0" y="17" textAnchor="middle" fill="#818cf8" fontSize="7.5" fontWeight="bold">
+                <text x="0" y="14" textAnchor="middle" fill="#c7d2fe" fontSize="7" fontWeight="bold">
+                  Transf. Office
+                </text>
+                <text x="0" y="24" textAnchor="middle" fill="#94a3b8" fontSize="6.5">
                   Eval &amp; Scaling
                 </text>
               </g>
 
               {/* RUN (G6) */}
-              <g transform="translate(1140, 290)">
+              <g transform="translate(1145, 290)">
                 <circle r="34" fill="#0b1329" stroke="#38bdf8" strokeWidth="2.5" />
-                <text x="0" y="-7" textAnchor="middle" fill="#38bdf8" fontSize="10" fontWeight="bold">
+                <text x="0" y="-9" textAnchor="middle" fill="#38bdf8" fontSize="9" fontWeight="bold">
                   RUN (G6)
                 </text>
-                <text x="0" y="8" textAnchor="middle" fill="#ffffff" fontSize="13" fontWeight="900">
+                <text x="0" y="4" textAnchor="middle" fill="#ffffff" fontSize="12" fontWeight="900">
                   {assumptions.activeInRunCount}
                 </text>
-                <text x="0" y="20" textAnchor="middle" fill="#94a3b8" fontSize="8">
+                <text x="0" y="15" textAnchor="middle" fill="#7dd3fc" fontSize="7" fontWeight="bold">
+                  Transf. Office
+                </text>
+                <text x="0" y="24" textAnchor="middle" fill="#94a3b8" fontSize="6.5">
                   Live Operations
                 </text>
               </g>

@@ -11,6 +11,7 @@ import {
   Euro,
   Users,
   Shield,
+  ShieldCheck,
   Zap,
   Check,
   Building,
@@ -523,6 +524,70 @@ export const IntakeWizard: React.FC<IntakeWizardProps> = ({
   const handleStartAgentTriage = () => {
     setIsAgentThinking(true);
     setAgentLogIndex(0);
+
+    // Sync preliminary answers to all business case structures
+    if (answers.description) {
+      setT2BC((prev) => ({ ...prev, problemStatement: answers.description }));
+      setT3Canvas((prev) => ({ ...prev, summaryAndHypothesis: answers.description }));
+    }
+    if (answers.estimatedValueDescription) {
+      setT2BC((prev) => ({ ...prev, directionalValue: answers.estimatedValueDescription || "" }));
+      setT1BC((prev) => ({
+        ...prev,
+        recurringItems: {
+          ...prev.recurringItems,
+          fy25_30BenefitsSummary: answers.estimatedValueDescription || "",
+          topLineImpact: answers.estimatedValueDescription || "",
+        },
+        dashboardSignOffs: {
+          ...prev.dashboardSignOffs,
+          ebitdaEffect: answers.estimatedValueDescription || "",
+        },
+      }));
+    }
+    if (answers.businessOwnerName) {
+      setT2BC((prev) => ({
+        ...prev,
+        governance: { ...prev.governance, namedBusinessOwner: answers.businessOwnerName || "" },
+      }));
+      setT1BC((prev) => ({
+        ...prev,
+        resourcePeopleCosts: {
+          ...prev.resourcePeopleCosts,
+          namedInternalRoles: `${answers.businessOwnerName} (BO/PO, 50%), Lead Architect`,
+        },
+      }));
+    }
+    if (answers.aiCatalystName) {
+      setT2BC((prev) => ({
+        ...prev,
+        governance: { ...prev.governance, namedAiCatalyst: answers.aiCatalystName || "" },
+      }));
+      setT3Canvas((prev) => ({
+        ...prev,
+        assignedBuilderOrCatalyst: answers.aiCatalystName || "",
+      }));
+    }
+    if (answers.targetUserCount) {
+      setT2BC((prev) => ({
+        ...prev,
+        governance: { ...prev.governance, targetUserCount: answers.targetUserCount },
+      }));
+    }
+    if (answers.estimatedCost) {
+      setT1BC((prev) => ({
+        ...prev,
+        resourcePeopleCosts: {
+          ...prev.resourcePeopleCosts,
+          fullyLoadedCostEstimate: `€${answers.estimatedCost.toLocaleString()} budget envelope`,
+        },
+      }));
+      setT3Canvas((prev) => ({
+        ...prev,
+        budgetEnvelope: answers.estimatedCost,
+      }));
+    }
+
     setStep(2);
 
     const timer1 = setTimeout(() => setAgentLogIndex(1), 600);
@@ -1452,49 +1517,6 @@ export const IntakeWizard: React.FC<IntakeWizardProps> = ({
               </div>
             </div>
 
-            {/* TEAMS ACCOMPANYING YOU IN THIS INTAKE PHASE */}
-            <div className="pt-3 border-t border-white/15 space-y-2.5">
-              <div className="text-[11px] uppercase tracking-wider font-bold text-emerald-300 flex items-center gap-1.5">
-                <Users className="w-3.5 h-3.5 text-amber-400" />
-                Dedicated Teams & Profiles Accompanying You in This Intake Phase:
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 text-xs">
-                <div className="p-2.5 rounded-lg bg-black/25 border border-white/10 flex items-center gap-2.5">
-                  <div className="w-8 h-8 rounded-full bg-blue-500/30 text-blue-300 font-bold flex items-center justify-center shrink-0 border border-blue-400/30 text-xs">
-                    Hub
-                  </div>
-                  <div>
-                    <div className="font-bold text-white text-[11px]">Front Door AI Catalyst</div>
-                    <div className="text-[10px] text-white/70">
-                      Data & AI Hub (0.2 FTE) · Intake guidance & registry check
-                    </div>
-                  </div>
-                </div>
-                <div className="p-2.5 rounded-lg bg-black/25 border border-white/10 flex items-center gap-2.5">
-                  <div className="w-8 h-8 rounded-full bg-purple-500/30 text-purple-300 font-bold flex items-center justify-center shrink-0 border border-purple-400/30 text-xs">
-                    TO
-                  </div>
-                  <div>
-                    <div className="font-bold text-white text-[11px]">Portfolio Intake Lead</div>
-                    <div className="text-[10px] text-white/70">
-                      Transformation Office (0.1 FTE) · Speed lane routing & SLA
-                    </div>
-                  </div>
-                </div>
-                <div className="p-2.5 rounded-lg bg-black/25 border border-white/10 flex items-center gap-2.5">
-                  <div className="w-8 h-8 rounded-full bg-emerald-500/30 text-emerald-300 font-bold flex items-center justify-center shrink-0 border border-emerald-400/30 text-xs">
-                    Fn
-                  </div>
-                  <div>
-                    <div className="font-bold text-white text-[11px]">Function Domain Lead</div>
-                    <div className="text-[10px] text-white/70">
-                      Business Function (0.3 FTE) · Friction context & user reach
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
             {/* GATE G1 COMITOLOGY ADVANCE BAR */}
             <div className="pt-4 border-t border-white/20 flex flex-col sm:flex-row items-center justify-between gap-4">
               {!isStep1Valid ? (
@@ -1653,111 +1675,90 @@ export const IntakeWizard: React.FC<IntakeWizardProps> = ({
                 </span>
               </div>
 
-              {/* Part 1: This Means the Following */}
-              <div className="bg-white/10 rounded-xl p-4 border border-white/15 space-y-2.5">
-                <div className="text-xs font-black uppercase tracking-wider text-amber-300 flex items-center gap-2">
-                  <Building className="w-4 h-4 text-amber-300" />
-                  This means the following for your initiative:
+              {/* Opella AmplifAI Gate Decision Authority Governance Spine */}
+              <div className="bg-white/10 rounded-xl p-4 border border-white/15 space-y-3">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-white/15 pb-2.5">
+                  <div className="text-xs font-black uppercase tracking-wider text-emerald-300 flex items-center gap-2">
+                    <ShieldCheck className="w-4 h-4 text-emerald-300" />
+                    Opella AmplifAI Gate Decision Authority Governance Spine
+                  </div>
+                  <span className="text-[10px] text-amber-300 font-mono font-bold bg-black/40 px-2 py-0.5 rounded border border-amber-400/30 self-start sm:self-auto">
+                    Official Gating Matrix (Gates G1 to G6)
+                  </span>
                 </div>
-                {decision.tier === "T1" ? (
-                  <div className="space-y-2 text-xs text-white/90 leading-relaxed">
-                    <p>
-                      Your initiative is classified as an <strong>Enterprise Big Bet / Transformative Strategic Initiative</strong> (part of an AmplifAI Big Bet, alters core Butterfly SAP/IBP platforms, or budget &gt; €1M).
-                    </p>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-2.5 pt-1 text-[11px]">
-                      <div className="p-2.5 rounded-lg bg-black/30 border border-white/10">
-                        <span className="text-emerald-300 font-bold block mb-0.5">Delivery Mode:</span>
-                        <span>
-                          Assigned to <strong>Mode 1 ("Do it for me")</strong>. The Data & AI Hub leads build, engineering, and platform operations; your Business Function frames the need, validates outcomes, and owns the P&L value.
-                        </span>
-                      </div>
-                      <div className="p-2.5 rounded-lg bg-black/30 border border-white/10">
-                        <span className="text-emerald-300 font-bold block mb-0.5">Capacity Envelope:</span>
-                        <span>
-                          Secured access to the <strong>60% Hub delivery capacity pool</strong> reserved for enterprise transformations.
-                        </span>
-                      </div>
-                      <div className="p-2.5 rounded-lg bg-black/30 border border-white/10">
-                        <span className="text-emerald-300 font-bold block mb-0.5">Process Reshape:</span>
-                        <span>
-                          Mandatory end-to-end <strong>process redesign</strong> to eliminate manual approval hops before MVP build.
-                        </span>
-                      </div>
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 pt-1 text-xs">
+                  <div className="p-2.5 rounded-lg bg-black/30 border border-emerald-400/40 space-y-1">
+                    <div className="flex items-center justify-between">
+                      <span className="font-bold text-white text-[11px]">Gate G1</span>
+                      <span className="text-[9px] bg-emerald-500/20 text-emerald-300 px-1 py-0.2 rounded font-mono font-semibold">Triage</span>
                     </div>
-                  </div>
-                ) : decision.tier === "T2" ? (
-                  <div className="space-y-2 text-xs text-white/90 leading-relaxed">
-                    <p>
-                      Your initiative is classified as <strong>T2 (Scale)</strong>: proven pilot value scaling across 500+ users or 2+ regions (€200k–€1M).
-                    </p>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-2.5 pt-1 text-[11px]">
-                      <div className="p-2.5 rounded-lg bg-black/30 border border-white/10">
-                        <span className="text-sky-300 font-bold block mb-0.5">Delivery Mode:</span>
-                        <span>
-                          Assigned to <strong>Mode 2 ("Do it with me")</strong> default. Co-funded delivery squad combining Hub engineering and functional teams.
-                        </span>
-                      </div>
-                      <div className="p-2.5 rounded-lg bg-black/30 border border-white/10">
-                        <span className="text-sky-300 font-bold block mb-0.5">Capacity Envelope:</span>
-                        <span>
-                          Allocated from the <strong>60% capacity pool</strong> for enterprise scaling initiatives.
-                        </span>
-                      </div>
-                      <div className="p-2.5 rounded-lg bg-black/30 border border-white/10">
-                        <span className="text-sky-300 font-bold block mb-0.5">Business Case:</span>
-                        <span>
-                          Light Business Case (1–2 pages) with tranche release funding.
-                        </span>
-                      </div>
+                    <div className="text-[10px] text-white/70">Need Validation</div>
+                    <div className="text-[11px] font-bold text-emerald-300 pt-0.5 border-t border-white/10">
+                      Automatic
                     </div>
+                    <div className="text-[9px] text-white/60">Charter Agent (OpellaGPT)</div>
                   </div>
-                ) : decision.tier === "T3" ? (
-                  <div className="space-y-2 text-xs text-white/90 leading-relaxed">
-                    <p>
-                      Your initiative is classified as <strong>T3 (Fast Lane)</strong>: testing a rapid value hypothesis within a single function (€50k–€1M).
-                    </p>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-2.5 pt-1 text-[11px]">
-                      <div className="p-2.5 rounded-lg bg-black/30 border border-white/10">
-                        <span className="text-amber-300 font-bold block mb-0.5">Delivery Mode:</span>
-                        <span>
-                          Assigned to <strong>Mode 3 ("Enable me")</strong> default. Built autonomously by certified AI builders or approved SaaS provider.
-                        </span>
-                      </div>
-                      <div className="p-2.5 rounded-lg bg-black/30 border border-white/10">
-                        <span className="text-amber-300 font-bold block mb-0.5">Decision Pace:</span>
-                        <span>
-                          Strict <strong>10-day decision SLA</strong> in front of the AI Portfolio Board.
-                        </span>
-                      </div>
-                      <div className="p-2.5 rounded-lg bg-black/30 border border-white/10">
-                        <span className="text-amber-300 font-bold block mb-0.5">Sprint Commitment:</span>
-                        <span>
-                          Focused <strong>6–8 week MVP sprint</strong> with a defined kill/scale milestone date.
-                        </span>
-                      </div>
+
+                  <div className="p-2.5 rounded-lg bg-black/30 border border-purple-400/40 space-y-1">
+                    <div className="flex items-center justify-between">
+                      <span className="font-bold text-white text-[11px]">Gate G2</span>
+                      <span className="text-[9px] bg-purple-500/20 text-purple-300 px-1 py-0.2 rounded font-mono font-semibold">Feasibility</span>
                     </div>
-                  </div>
-                ) : (
-                  <div className="space-y-2 text-xs text-white/90 leading-relaxed">
-                    <p>
-                      Your initiative is classified as <strong>Self-Service AI</strong>: personal or team productivity under €50k leveraging approved enterprise tools.
-                    </p>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-2.5 pt-1 text-[11px]">
-                      <div className="p-2.5 rounded-lg bg-black/30 border border-white/10">
-                        <span className="text-purple-300 font-bold block mb-0.5">Governance Shortcut:</span>
-                        <span>Skips Gates G2 to G4 directly to build with no committee delay.</span>
-                      </div>
-                      <div className="p-2.5 rounded-lg bg-black/30 border border-white/10">
-                        <span className="text-purple-300 font-bold block mb-0.5">Guardrails:</span>
-                        <span>Automated token caps, no patient/production data write-back.</span>
-                      </div>
-                      <div className="p-2.5 rounded-lg bg-black/30 border border-white/10">
-                        <span className="text-purple-300 font-bold block mb-0.5">Catalog:</span>
-                        <span>Instant registration in the Opella AI Registry.</span>
-                      </div>
+                    <div className="text-[10px] text-white/70">Pre-Approval</div>
+                    <div className="text-[11px] font-bold text-purple-300 pt-0.5 border-t border-white/10">
+                      Transformation Office
                     </div>
+                    <div className="text-[9px] text-white/60">Stream Approvers & DDA</div>
                   </div>
-                )}
+
+                  <div className="p-2.5 rounded-lg bg-black/30 border border-purple-400/40 space-y-1">
+                    <div className="flex items-center justify-between">
+                      <span className="font-bold text-white text-[11px]">Gate G3</span>
+                      <span className="text-[9px] bg-purple-500/20 text-purple-300 px-1 py-0.2 rounded font-mono font-semibold">Priority</span>
+                    </div>
+                    <div className="text-[10px] text-white/70">Capacity Match</div>
+                    <div className="text-[11px] font-bold text-purple-300 pt-0.5 border-t border-white/10">
+                      Transformation Office
+                    </div>
+                    <div className="text-[9px] text-white/60">TO Lead & SteerCo / Board</div>
+                  </div>
+
+                  <div className="p-2.5 rounded-lg bg-black/30 border border-blue-400/40 space-y-1">
+                    <div className="flex items-center justify-between">
+                      <span className="font-bold text-white text-[11px]">Gate G4</span>
+                      <span className="text-[9px] bg-blue-500/20 text-blue-300 px-1 py-0.2 rounded font-mono font-semibold">GO BUILD</span>
+                    </div>
+                    <div className="text-[10px] text-white/70">Mode & Tech Unlock</div>
+                    <div className="text-[11px] font-bold text-blue-300 pt-0.5 border-t border-white/10">
+                      Data & AI
+                    </div>
+                    <div className="text-[9px] text-white/60">DDA & Tech Architecture</div>
+                  </div>
+
+                  <div className="p-2.5 rounded-lg bg-black/30 border border-purple-400/40 space-y-1">
+                    <div className="flex items-center justify-between">
+                      <span className="font-bold text-white text-[11px]">Gate G5</span>
+                      <span className="text-[9px] bg-purple-500/20 text-purple-300 px-1 py-0.2 rounded font-mono font-semibold">Pre-Scale</span>
+                    </div>
+                    <div className="text-[10px] text-white/70">MVP Scale Gate</div>
+                    <div className="text-[11px] font-bold text-purple-300 pt-0.5 border-t border-white/10">
+                      Transformation Office
+                    </div>
+                    <div className="text-[9px] text-white/60">SteerCo / Portfolio Board</div>
+                  </div>
+
+                  <div className="p-2.5 rounded-lg bg-black/30 border border-purple-400/40 space-y-1">
+                    <div className="flex items-center justify-between">
+                      <span className="font-bold text-white text-[11px]">Gate G6</span>
+                      <span className="text-[9px] bg-purple-500/20 text-purple-300 px-1 py-0.2 rounded font-mono font-semibold">Run & Value</span>
+                    </div>
+                    <div className="text-[10px] text-white/70">Live Value Ledger</div>
+                    <div className="text-[11px] font-bold text-purple-300 pt-0.5 border-t border-white/10">
+                      Transformation Office
+                    </div>
+                    <div className="text-[9px] text-white/60">Value Officer & BO/PO</div>
+                  </div>
+                </div>
               </div>
 
               {/* Part 2: Review Meetings & Comitology Forums You Will Have */}
@@ -2067,37 +2068,6 @@ export const IntakeWizard: React.FC<IntakeWizardProps> = ({
             </div>
           </div>
 
-          {/* USER JOURNEY COMPANIONS: TEAMS WITH YOU AT TRIAGE */}
-          <div className="p-4 rounded-xl bg-gray-50 border border-gray-200 space-y-3">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-bold uppercase tracking-wider text-gray-700 flex items-center gap-1.5">
-                <Users className="w-4 h-4 text-emerald-700" />
-                Your Triage & Sizing Governance Squad (Gate G1 Evaluation):
-              </span>
-              <span className="text-[11px] font-semibold text-gray-500">
-                Playbook Comitology Relay
-              </span>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-4 gap-2.5 text-xs">
-              <div className="p-2.5 rounded-lg bg-white border border-gray-200">
-                <div className="font-bold text-gray-900">OpellaGPT Charter Agent</div>
-                <div className="text-[10px] text-gray-500">AI Front Door · Rule triage</div>
-              </div>
-              <div className="p-2.5 rounded-lg bg-white border border-gray-200">
-                <div className="font-bold text-gray-900">Portfolio Secretariat</div>
-                <div className="text-[10px] text-gray-500">Transformation Office · SLA & Backlog</div>
-              </div>
-              <div className="p-2.5 rounded-lg bg-white border border-gray-200">
-                <div className="font-bold text-gray-900">Enterprise AI Architect</div>
-                <div className="text-[10px] text-gray-500">Data & AI Hub · Tech sizing</div>
-              </div>
-              <div className="p-2.5 rounded-lg bg-white border border-gray-200">
-                <div className="font-bold text-gray-900">Function Business Sponsor</div>
-                <div className="text-[10px] text-gray-500">Business Unit · Value priority</div>
-              </div>
-            </div>
-          </div>
-
           <div className="flex justify-between pt-4 border-t border-opella-border">
             <button
               onClick={() => setStep(1)}
@@ -2107,7 +2077,68 @@ export const IntakeWizard: React.FC<IntakeWizardProps> = ({
             </button>
             <button
               onClick={() => {
-                if (decision.tier === "T1") setChosenMode("Mode 1");
+                // Synchronize data entered in Step 1 to subsequent business case forms
+                if (answers.description) {
+                  setT2BC((prev) => ({ ...prev, problemStatement: answers.description }));
+                  setT3Canvas((prev) => ({ ...prev, summaryAndHypothesis: answers.description }));
+                }
+                if (answers.estimatedValueDescription) {
+                  setT2BC((prev) => ({ ...prev, directionalValue: answers.estimatedValueDescription || "" }));
+                  setT1BC((prev) => ({
+                    ...prev,
+                    recurringItems: {
+                      ...prev.recurringItems,
+                      fy25_30BenefitsSummary: answers.estimatedValueDescription || "",
+                      topLineImpact: answers.estimatedValueDescription || "",
+                    },
+                    dashboardSignOffs: {
+                      ...prev.dashboardSignOffs,
+                      ebitdaEffect: answers.estimatedValueDescription || "",
+                    },
+                  }));
+                }
+                if (answers.businessOwnerName) {
+                  setT2BC((prev) => ({
+                    ...prev,
+                    governance: { ...prev.governance, namedBusinessOwner: answers.businessOwnerName || "" },
+                  }));
+                  setT1BC((prev) => ({
+                    ...prev,
+                    resourcePeopleCosts: {
+                      ...prev.resourcePeopleCosts,
+                      namedInternalRoles: `${answers.businessOwnerName} (BO/PO, 50%), Lead Architect`,
+                    },
+                  }));
+                }
+                if (answers.aiCatalystName) {
+                  setT2BC((prev) => ({
+                    ...prev,
+                    governance: { ...prev.governance, namedAiCatalyst: answers.aiCatalystName || "" },
+                  }));
+                  setT3Canvas((prev) => ({
+                    ...prev,
+                    assignedBuilderOrCatalyst: answers.aiCatalystName || "",
+                  }));
+                }
+                if (answers.targetUserCount) {
+                  setT2BC((prev) => ({
+                    ...prev,
+                    governance: { ...prev.governance, targetUserCount: answers.targetUserCount },
+                  }));
+                }
+                if (answers.estimatedCost) {
+                  setT1BC((prev) => ({
+                    ...prev,
+                    resourcePeopleCosts: {
+                      ...prev.resourcePeopleCosts,
+                      fullyLoadedCostEstimate: `€${answers.estimatedCost.toLocaleString()} budget envelope`,
+                    },
+                  }));
+                  setT3Canvas((prev) => ({
+                    ...prev,
+                    budgetEnvelope: answers.estimatedCost,
+                  }));
+                }
                 setStep(3);
               }}
               className="px-6 py-2.5 bg-opella-forest text-white rounded-lg font-bold text-sm flex items-center gap-2 hover:bg-opella-emerald shadow-sm"
@@ -2234,7 +2265,7 @@ export const IntakeWizard: React.FC<IntakeWizardProps> = ({
             <FileText className="w-8 h-8 text-gray-300 hidden sm:block" />
           </div>
 
-          {/* USER JOURNEY COMPANIONS: TEAMS WITH YOU IN BUSINESS CASE FORMULATION */}
+          {/* USER JOURNEY COMPANIONS: OFFICIAL WORKING GROUP PROFILES ACCOMPANYING FORMULATION */}
           <div className="p-4 rounded-xl bg-gray-50 border border-gray-200 space-y-3">
             <div className="flex items-center justify-between">
               <span className="text-xs font-bold uppercase tracking-wider text-gray-700 flex items-center gap-1.5">
@@ -2242,25 +2273,58 @@ export const IntakeWizard: React.FC<IntakeWizardProps> = ({
                 Working Group Accompanying Your Business Case Formulation:
               </span>
               <span className="text-[11px] font-semibold text-gray-500">
-                Four-in-a-Box Working Group
+                Official Opella Operating Model Roles
               </span>
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-4 gap-2.5 text-xs">
-              <div className="p-2.5 rounded-lg bg-white border border-gray-200">
-                <div className="font-bold text-gray-900">Finance Business Partner</div>
-                <div className="text-[10px] text-gray-500">Finance · Baseline validation (€/unit)</div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-2.5 text-xs">
+              <div className="p-2.5 rounded-lg bg-white border border-gray-200 space-y-1">
+                <div className="flex items-center justify-between">
+                  <span className="font-bold text-gray-900">Value Officer</span>
+                  <span className="text-[9px] bg-pink-100 text-pink-800 px-1.5 py-0.2 rounded font-semibold">TO / Finance</span>
+                </div>
+                <div className="text-[10px] text-gray-500 leading-snug">
+                  Accountable for UC business case, VCP scorecard, baseline validation & funding rules.
+                </div>
               </div>
-              <div className="p-2.5 rounded-lg bg-white border border-gray-200">
-                <div className="font-bold text-gray-900">Value Realization Lead</div>
-                <div className="text-[10px] text-gray-500">Transformation Office · VCP scorecard</div>
+
+              <div className="p-2.5 rounded-lg bg-white border border-gray-200 space-y-1">
+                <div className="flex items-center justify-between">
+                  <span className="font-bold text-gray-900">BO / PO</span>
+                  <span className="text-[9px] bg-purple-100 text-purple-800 px-1.5 py-0.2 rounded font-semibold">Function</span>
+                </div>
+                <div className="text-[10px] text-gray-500 leading-snug">
+                  Business Owner / Product Owner: frames need, builds UC business case & defines acceptance criteria.
+                </div>
               </div>
-              <div className="p-2.5 rounded-lg bg-white border border-gray-200">
-                <div className="font-bold text-gray-900">Data & AI Architect</div>
-                <div className="text-[10px] text-gray-500">Data & AI Hub · Enabler costs & tokens</div>
+
+              <div className="p-2.5 rounded-lg bg-white border border-gray-200 space-y-1">
+                <div className="flex items-center justify-between">
+                  <span className="font-bold text-gray-900">Digital PO</span>
+                  <span className="text-[9px] bg-amber-100 text-amber-800 px-1.5 py-0.2 rounded font-semibold">Digital</span>
+                </div>
+                <div className="text-[10px] text-gray-500 leading-snug">
+                  Translates business needs into technical product architecture and orchestrates engineering backlog.
+                </div>
               </div>
-              <div className="p-2.5 rounded-lg bg-white border border-gray-200">
-                <div className="font-bold text-gray-900">Business Product Owner</div>
-                <div className="text-[10px] text-gray-500">Business Function · Process owner</div>
+
+              <div className="p-2.5 rounded-lg bg-white border border-gray-200 space-y-1">
+                <div className="flex items-center justify-between">
+                  <span className="font-bold text-gray-900">Data Eng / Architect</span>
+                  <span className="text-[9px] bg-emerald-100 text-emerald-800 px-1.5 py-0.2 rounded font-semibold">Data & AI</span>
+                </div>
+                <div className="text-[10px] text-gray-500 leading-snug">
+                  Sizes tech complexity, estimates enabler costs, checks data readiness & model token consumption.
+                </div>
+              </div>
+
+              <div className="p-2.5 rounded-lg bg-white border border-gray-200 space-y-1">
+                <div className="flex items-center justify-between">
+                  <span className="font-bold text-gray-900">ORAI team (LEX)</span>
+                  <span className="text-[9px] bg-pink-100 text-pink-800 px-1.5 py-0.2 rounded font-semibold">Legal & Cyber</span>
+                </div>
+                <div className="text-[10px] text-gray-500 leading-snug">
+                  Assesses legal feasibility, EU AI Act compliance, and establishes pre-build risk tier conditions.
+                </div>
               </div>
             </div>
           </div>
@@ -2808,43 +2872,298 @@ export const IntakeWizard: React.FC<IntakeWizardProps> = ({
             </div>
           )}
 
-          {/* 2. T2 LIGHT BUSINESS CASE */}
+          {/* 2. T2 LIGHT BUSINESS CASE (5 MODULES FROM SLIDE 40) */}
           {decision.tier === "T2" && (
-            <div className="space-y-5 text-sm">
-              <div>
-                <label className="block text-xs font-semibold text-gray-700 mb-1.5">
-                  1. Problem Statement & Manual Bottleneck (2–3 sentences)
-                </label>
-                <textarea
-                  rows={3}
-                  value={t2BC.problemStatement}
-                  onChange={(e) => setT2BC({ ...t2BC, problemStatement: e.target.value })}
-                  className="w-full px-3.5 py-2.5 border rounded-lg text-xs focus:ring-2 focus:ring-blue-600 focus:outline-none"
-                />
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-semibold text-gray-700 mb-1.5">
-                    2. Directional Value (Hours saved / speed increase)
-                  </label>
-                  <input
-                    type="text"
-                    value={t2BC.directionalValue}
-                    onChange={(e) => setT2BC({ ...t2BC, directionalValue: e.target.value })}
-                    className="w-full px-3.5 py-2 border rounded-lg text-xs"
-                  />
+            <div className="space-y-6 text-sm">
+              {/* Module 1: Problem Statement & Directional Value */}
+              <div className="bg-sky-50/60 p-5 rounded-xl border border-sky-200 space-y-4">
+                <div className="flex items-center justify-between border-b border-sky-200/80 pb-2">
+                  <h4 className="font-bold text-sky-950 flex items-center gap-2 text-sm">
+                    <span className="w-5 h-5 rounded-full bg-sky-800 text-white text-xs flex items-center justify-center font-mono">1</span>
+                    1. Problem Statement & Directional Value
+                  </h4>
+                  <span className="text-[11px] bg-sky-200/80 text-sky-900 font-bold px-2 py-0.5 rounded">
+                    Slide 40 · Mandatory
+                  </span>
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-gray-700 mb-1.5">
-                    3. Rough Token / Infrastructure Sizing
+                  <label className="block text-xs font-semibold text-gray-700 mb-1">
+                    Problem Statement (2–3 sentence description of manual bottleneck)
                   </label>
-                  <input
-                    type="text"
-                    value={t2BC.roughTokenConsumption}
-                    onChange={(e) => setT2BC({ ...t2BC, roughTokenConsumption: e.target.value })}
-                    className="w-full px-3.5 py-2 border rounded-lg text-xs"
+                  <textarea
+                    rows={2}
+                    value={t2BC.problemStatement}
+                    onChange={(e) => setT2BC({ ...t2BC, problemStatement: e.target.value })}
+                    className="w-full px-3 py-2 border rounded-lg text-xs bg-white focus:ring-2 focus:ring-sky-500 focus:outline-none"
+                    placeholder="Describe the operational friction and manual tasks..."
                   />
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-700 mb-1">
+                      Target User Group & Functional Reach
+                    </label>
+                    <input
+                      type="text"
+                      value={answers.targetUserGroupDescription || "Cross-functional users across 2+ regions"}
+                      onChange={(e) => setAnswers({ ...answers, targetUserGroupDescription: e.target.value })}
+                      className="w-full px-3 py-2 border rounded-lg text-xs bg-white"
+                      placeholder="e.g., 500+ Spenders across EU & NA"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-700 mb-1">
+                      Directional Benefit Estimate (Hours saved/wk or turnaround speed)
+                    </label>
+                    <input
+                      type="text"
+                      value={t2BC.directionalValue}
+                      onChange={(e) => setT2BC({ ...t2BC, directionalValue: e.target.value })}
+                      className="w-full px-3 py-2 border rounded-lg text-xs bg-white"
+                      placeholder="e.g., Saves 25 hrs/analyst weekly, 60% faster cycle"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Module 2: Build Mode & Rough Effort / Token Sizing */}
+              <div className="bg-gray-50 p-5 rounded-xl border border-gray-200 space-y-4">
+                <div className="flex items-center justify-between border-b border-gray-200 pb-2">
+                  <h4 className="font-bold text-gray-900 flex items-center gap-2 text-sm">
+                    <span className="w-5 h-5 rounded-full bg-gray-800 text-white text-xs flex items-center justify-center font-mono">2</span>
+                    2. Build Mode & Rough Effort / Token Sizing
+                  </h4>
+                  <span className="text-[11px] text-gray-500 font-mono">Budget Envelope Fit</span>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-700 mb-1">
+                      Build Mode
+                    </label>
+                    <select
+                      value={t2BC.buildMode}
+                      onChange={(e) => setT2BC({ ...t2BC, buildMode: e.target.value as any })}
+                      className="w-full px-3 py-2 border rounded-lg text-xs bg-white font-medium"
+                    >
+                      <option value="Do it with me">Mode 2: Do it with me (Shared Squad)</option>
+                      <option value="Enable me">Mode 3: Enable me (Function Autonomous)</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-700 mb-1">
+                      Estimated AI Builder Days
+                    </label>
+                    <input
+                      type="number"
+                      value={t2BC.estimatedBuilderDays}
+                      onChange={(e) => setT2BC({ ...t2BC, estimatedBuilderDays: Number(e.target.value) })}
+                      className="w-full px-3 py-2 border rounded-lg text-xs bg-white"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-700 mb-1">
+                      Rough License / Token Consumption
+                    </label>
+                    <input
+                      type="text"
+                      value={t2BC.roughTokenConsumption}
+                      onChange={(e) => setT2BC({ ...t2BC, roughTokenConsumption: e.target.value })}
+                      className="w-full px-3 py-2 border rounded-lg text-xs bg-white"
+                      placeholder="e.g., Approx. €1,200/mo Azure GenAI tokens"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Module 3: Existing Data & Platform Fit */}
+              <div className="bg-gray-50 p-5 rounded-xl border border-gray-200 space-y-4">
+                <div className="flex items-center justify-between border-b border-gray-200 pb-2">
+                  <h4 className="font-bold text-gray-900 flex items-center gap-2 text-sm">
+                    <span className="w-5 h-5 rounded-full bg-gray-800 text-white text-xs flex items-center justify-center font-mono">3</span>
+                    3. Existing Data & Platform Fit
+                  </h4>
+                  <span className="text-[11px] text-gray-500 font-mono">Approved Sources</span>
+                </div>
+                <div className="space-y-3">
+                  <label className="flex items-center gap-2.5 p-3 rounded-lg bg-white border border-gray-200 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={t2BC.existingDataFit.approvedSourcesConfirmed}
+                      onChange={(e) =>
+                        setT2BC({
+                          ...t2BC,
+                          existingDataFit: { ...t2BC.existingDataFit, approvedSourcesConfirmed: e.target.checked },
+                        })
+                      }
+                      className="rounded text-sky-600 focus:ring-sky-500 w-4 h-4"
+                    />
+                    <div>
+                      <span className="font-semibold text-gray-900 text-xs block">
+                        Confirmation that data is already available in approved enterprise sources
+                      </span>
+                      <span className="text-[11px] text-gray-500">
+                        Data resides in certified Opella lakes/read replicas with no unapproved web-scraping or rogue databases.
+                      </span>
+                    </div>
+                  </label>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-xs font-semibold text-gray-700 mb-1">
+                        Data Sources & Connector Details
+                      </label>
+                      <input
+                        type="text"
+                        value={t2BC.existingDataFit.dataSourcesDetails}
+                        onChange={(e) =>
+                          setT2BC({
+                            ...t2BC,
+                            existingDataFit: { ...t2BC.existingDataFit, dataSourcesDetails: e.target.value },
+                          })
+                        }
+                        className="w-full px-3 py-2 border rounded-lg text-xs bg-white"
+                        placeholder="e.g., Snowflake Data Mart & SharePoint Hub"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-semibold text-gray-700 mb-1">
+                        Platform Architecture Fit
+                      </label>
+                      <select
+                        value={t2BC.existingDataFit.platformType}
+                        onChange={(e) =>
+                          setT2BC({
+                            ...t2BC,
+                            existingDataFit: { ...t2BC.existingDataFit, platformType: e.target.value as any },
+                          })
+                        }
+                        className="w-full px-3 py-2 border rounded-lg text-xs bg-white font-medium"
+                      >
+                        <option value="Existing Hub Platform">Existing Hub Platform (Azure AI / Databricks)</option>
+                        <option value="Low-Code/No-Code">Standard Low-Code / No-Code (Copilot Studio)</option>
+                        <option value="SaaS Integration">Enterprise SaaS Integration</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Module 4: Named Owner & Single-Step Triage */}
+              <div className="bg-gray-50 p-5 rounded-xl border border-gray-200 space-y-4">
+                <div className="flex items-center justify-between border-b border-gray-200 pb-2">
+                  <h4 className="font-bold text-gray-900 flex items-center gap-2 text-sm">
+                    <span className="w-5 h-5 rounded-full bg-gray-800 text-white text-xs flex items-center justify-center font-mono">4</span>
+                    4. Named Owner & Single-Step Triage
+                  </h4>
+                  <span className="text-[11px] text-gray-500 font-mono">Fortnightly AI Portfolio Board</span>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-700 mb-1">Named Business Owner (BO/PO)</label>
+                    <input
+                      type="text"
+                      value={t2BC.governance.namedBusinessOwner}
+                      onChange={(e) =>
+                        setT2BC({
+                          ...t2BC,
+                          governance: { ...t2BC.governance, namedBusinessOwner: e.target.value },
+                        })
+                      }
+                      className="w-full px-3 py-2 border rounded-lg text-xs bg-white font-medium"
+                      placeholder="e.g., Sarah Chen"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-700 mb-1">Named AI Catalyst</label>
+                    <input
+                      type="text"
+                      value={t2BC.governance.namedAiCatalyst}
+                      onChange={(e) =>
+                        setT2BC({
+                          ...t2BC,
+                          governance: { ...t2BC.governance, namedAiCatalyst: e.target.value },
+                        })
+                      }
+                      className="w-full px-3 py-2 border rounded-lg text-xs bg-white"
+                      placeholder="e.g., Guillaume Roux"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-700 mb-1">Target User Count</label>
+                    <input
+                      type="number"
+                      value={t2BC.governance.targetUserCount}
+                      onChange={(e) =>
+                        setT2BC({
+                          ...t2BC,
+                          governance: { ...t2BC.governance, targetUserCount: Number(e.target.value) },
+                        })
+                      }
+                      className="w-full px-3 py-2 border rounded-lg text-xs bg-white"
+                      placeholder="500"
+                    />
+                  </div>
+                </div>
+                <div className="p-2.5 rounded-lg bg-sky-50 border border-sky-200 text-sky-950 text-xs flex items-center justify-between">
+                  <span>✓ Validated in a single pass at the fortnightly AI Portfolio Board with CDO + CFO sponsors</span>
+                  <span className="font-mono font-bold text-sky-700 text-[11px]">Fortnightly Session</span>
+                </div>
+              </div>
+
+              {/* Module 5: ORAI Risk Tier Screening */}
+              <div className="bg-gray-50 p-5 rounded-xl border border-gray-200 space-y-4">
+                <div className="flex items-center justify-between border-b border-gray-200 pb-2">
+                  <h4 className="font-bold text-gray-900 flex items-center gap-2 text-sm">
+                    <span className="w-5 h-5 rounded-full bg-gray-800 text-white text-xs flex items-center justify-center font-mono">5</span>
+                    5. ORAI Risk Tier Screening
+                  </h4>
+                  <span className="text-[11px] text-gray-500 font-mono">ORAI Clearance</span>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-700 mb-1">
+                      Initial ORAI Risk Tier Score
+                    </label>
+                    <select
+                      value={t2BC.oraiScreeningConfirmation.riskTierConfirmed}
+                      onChange={(e) =>
+                        setT2BC({
+                          ...t2BC,
+                          oraiScreeningConfirmation: {
+                            ...t2BC.oraiScreeningConfirmation,
+                            riskTierConfirmed: e.target.value as any,
+                          },
+                        })
+                      }
+                      className="w-full px-3 py-2 border rounded-lg text-xs bg-white font-bold"
+                    >
+                      <option value="Low">Low Risk Tier (Standard low-code / internal use)</option>
+                      <option value="Medium">Medium Risk Tier (Confidential business workflows)</option>
+                      <option value="High">High Risk Tier (Flags route out of Fast Lane)</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-700 mb-1">
+                      Mitigations & Guardrails Summary
+                    </label>
+                    <input
+                      type="text"
+                      value={t2BC.oraiScreeningConfirmation.mitigationsSummary}
+                      onChange={(e) =>
+                        setT2BC({
+                          ...t2BC,
+                          oraiScreeningConfirmation: {
+                            ...t2BC.oraiScreeningConfirmation,
+                            mitigationsSummary: e.target.value,
+                          },
+                        })
+                      }
+                      className="w-full px-3 py-2 border rounded-lg text-xs bg-white"
+                      placeholder="e.g., Human-in-the-loop review, zero training on external LLMs"
+                    />
+                  </div>
+                </div>
+                <div className="text-[11px] text-amber-800 bg-amber-50 p-2.5 rounded-lg border border-amber-200">
+                  ⚠️ Note: Any initiative triggered with high-risk flags (patient health data or unsupervised autonomous execution) automatically routes out of the fast lane to the Digital Design Authority and Full Comitology.
                 </div>
               </div>
             </div>
@@ -2984,16 +3303,19 @@ export const IntakeWizard: React.FC<IntakeWizardProps> = ({
         <div className="bg-white rounded-2xl p-7 shadow-sm border border-opella-border space-y-6">
           <div className="border-b border-opella-border pb-4 flex items-center justify-between">
             <div>
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center gap-2">
                 <span className="text-xs font-bold px-2.5 py-0.5 rounded bg-emerald-700 text-white">
                   Gate G4 Decision
+                </span>
+                <span className="text-xs font-bold px-2.5 py-0.5 rounded bg-blue-100 text-blue-900 border border-blue-300">
+                  Decision Authority: Data & AI
                 </span>
                 <h2 className="text-xl font-bold text-opella-forest">
                   Sourcing & Delivery Mode Selection (Slides 10 & 46)
                 </h2>
               </div>
               <p className="text-sm text-gray-600 mt-1">
-                Now that your business case is established, select who builds and runs the solution: Hub-led, Shared Squad, or Function-led.
+                Select who builds and runs the solution: Hub-led (Mode 1), Shared Squad (Mode 2), or Function-led (Mode 3). Note: any tier (T1, T2, T3) can select any delivery mode.
               </p>
             </div>
             <Workflow className="w-8 h-8 text-gray-300 hidden sm:block" />
@@ -3015,9 +3337,9 @@ export const IntakeWizard: React.FC<IntakeWizardProps> = ({
                   <span className="text-xs font-bold px-2 py-0.5 rounded bg-emerald-100 text-emerald-900">
                     Mode 1
                   </span>
-                  {decision.tier === "T1" ? (
+                  {chosenMode === "Mode 1" ? (
                     <span className="text-[10px] bg-emerald-800 text-white font-bold px-2 py-0.5 rounded-full">
-                      Locked for T1 · Mandatory
+                      Selected
                     </span>
                   ) : decision.mode === "Mode 1" ? (
                     <span className="text-[10px] bg-emerald-700 text-white font-bold px-2 py-0.5 rounded-full">
@@ -3032,11 +3354,6 @@ export const IntakeWizard: React.FC<IntakeWizardProps> = ({
                 <p className="text-xs text-gray-600 leading-relaxed">
                   The hub leads delivery and run; the function defines the need, validates the outcome and owns the value.
                 </p>
-                {decision.tier === "T1" && (
-                  <div className="mt-2 p-2 rounded bg-emerald-100/70 border border-emerald-300 text-[10px] text-emerald-950 font-medium">
-                    ✓ Playbook Mandate: All T1 initiatives are delivered under Mode 1 to preserve enterprise architecture & central platform integrity.
-                  </div>
-                )}
               </div>
 
               <div className="mt-4 pt-3 border-t border-gray-100 text-[11px] text-gray-500">

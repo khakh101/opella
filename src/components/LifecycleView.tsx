@@ -74,7 +74,7 @@ const GATE_PREREQUISITES_CONFIG: Record<GateId, Omit<PrerequisiteItem, "collecte
     {
       id: "g1_1",
       title: "1. Problem Statement & Friction Baseline",
-      responsibleRole: "Business Owner & AI Catalyst",
+      responsibleRole: "BO / PO & AI Catalyst",
       roleCategory: "Business",
       description: "Define the operational bottleneck, manual cycle time, and touchpoints causing current friction.",
       defaultEvidence: "Manual Source-to-Pay quote handling and 7-tier approvals create 7–10 day turnaround bottleneck.",
@@ -83,7 +83,7 @@ const GATE_PREREQUISITES_CONFIG: Record<GateId, Omit<PrerequisiteItem, "collecte
     {
       id: "g1_2",
       title: "2. Target User Community & Persona Scope",
-      responsibleRole: "AI Catalyst (Relay in Function)",
+      responsibleRole: "AI Catalyst (Business Function Relay)",
       roleCategory: "Change / P&C",
       description: "Identify user community, estimated seat count, and geographic/market footprint.",
       defaultEvidence: "1,800 Procurement buyers and functional spenders across 14 markets in EULA, NA, and AMEA.",
@@ -92,7 +92,7 @@ const GATE_PREREQUISITES_CONFIG: Record<GateId, Omit<PrerequisiteItem, "collecte
     {
       id: "g1_3",
       title: "3. Playbook 4-Questions Assessment",
-      responsibleRole: "OpellaGPT Triage Agent",
+      responsibleRole: "OpellaGPT Charter Agent (Automatic G1)",
       roleCategory: "Governance",
       description: "Automated qualification against Slide 35 criteria (Big Bet, tools under €50k, pilot reach, or new hypothesis).",
       defaultEvidence: "Qualified as T1 · Transform: Big Bet 6 anchor, SAP core write-back, multi-year spend >€1M.",
@@ -101,7 +101,7 @@ const GATE_PREREQUISITES_CONFIG: Record<GateId, Omit<PrerequisiteItem, "collecte
     {
       id: "g1_4",
       title: "4. ORAI Responsible AI Screening",
-      responsibleRole: "Legal & Ethics (ORAI Team)",
+      responsibleRole: "ORAI team (LEX)",
       roleCategory: "Governance",
       description: "5-question preliminary risk check for patient data, autonomous write-back, and model boundary.",
       defaultEvidence: "Assessed Medium Risk Tier: autonomous PO generation under human-in-the-loop threshold.",
@@ -112,7 +112,7 @@ const GATE_PREREQUISITES_CONFIG: Record<GateId, Omit<PrerequisiteItem, "collecte
     {
       id: "g2_1",
       title: "1. Finance Baseline Sign-off",
-      responsibleRole: "Finance Business Partner (FP&A)",
+      responsibleRole: "Value Officer (Transformation Office)",
       roleCategory: "Finance",
       description: "Formal Finance sign-off validating the unit economics baseline before any budget request.",
       defaultEvidence: "Manual S2P processing cost benchmarked and locked at €142 per PO across 240,000 orders/year.",
@@ -121,7 +121,7 @@ const GATE_PREREQUISITES_CONFIG: Record<GateId, Omit<PrerequisiteItem, "collecte
     {
       id: "g2_2",
       title: "2. Architecture Decision Record (ADR)",
-      responsibleRole: "Digital Design Authority (DDA)",
+      responsibleRole: "Data Eng / Architect & DDA",
       roleCategory: "Data & AI",
       description: "Architectural clearance for API integrations, tenant private link, and Opella IQ taxonomy.",
       defaultEvidence: "ADR #2026-88 approved: SAP S/4HANA OData v4 + Azure GenAI Private Link with zero public ingress.",
@@ -130,7 +130,7 @@ const GATE_PREREQUISITES_CONFIG: Record<GateId, Omit<PrerequisiteItem, "collecte
     {
       id: "g2_3",
       title: "3. Process Redesign Check: YES",
-      responsibleRole: "Transformation Office Business Architect",
+      responsibleRole: "Transformation Office & BO / PO",
       roleCategory: "Business",
       description: "Slide 47 mandate: 'Does the use case change how work is done?' (Eliminates manual approval hops).",
       defaultEvidence: "YES: Eliminates 4 manual approval hops; shifts buyers from clerical transcription to category negotiations.",
@@ -139,7 +139,7 @@ const GATE_PREREQUISITES_CONFIG: Record<GateId, Omit<PrerequisiteItem, "collecte
     {
       id: "g2_4",
       title: "4. Data Boundary & Security Controls",
-      responsibleRole: "CISO & Data Governance Lead",
+      responsibleRole: "ORAI team & Data Governance",
       roleCategory: "Governance",
       description: "Access controls, tokenization, RBAC, and confirmation of zero public LLM model training.",
       defaultEvidence: "Azure Tenant isolation confirmed; SAP user-level RBAC tokenization; GDPR & EU AI Act compliant.",
@@ -150,7 +150,7 @@ const GATE_PREREQUISITES_CONFIG: Record<GateId, Omit<PrerequisiteItem, "collecte
     {
       id: "g3_1",
       title: "1. VCP Prioritisation Matrix Scorecard",
-      responsibleRole: "Transformation Office Lead",
+      responsibleRole: "Transformation Office Lead & Value Officer",
       roleCategory: "Governance",
       description: "Slide 48 composite scoring: Value (30%), Strategic Fit (20%), Reach (20%), Feasibility (20%), Risk (10%).",
       defaultEvidence: "VCP Score: 92/100 (Value: 28/30, Fit: 20/20, Reach: 18/20, Feasibility: 17/20, Risk: 9/10). Ranked #1 in Big Bet 6.",
@@ -168,7 +168,7 @@ const GATE_PREREQUISITES_CONFIG: Record<GateId, Omit<PrerequisiteItem, "collecte
     {
       id: "g3_3",
       title: "3. Business Owner Dedication Agreement",
-      responsibleRole: "Function Head / CPO",
+      responsibleRole: "BO / PO (Business Owner / Product Owner)",
       roleCategory: "Business",
       description: "Formal commitment releasing business time for the designated Product Owner and testers.",
       defaultEvidence: "Sarah Chen released at 80% dedicated PO allocation; 3 regional category leads for sprint UAT.",
@@ -177,7 +177,7 @@ const GATE_PREREQUISITES_CONFIG: Record<GateId, Omit<PrerequisiteItem, "collecte
     {
       id: "g3_4",
       title: "4. Planisware Tracking Code & Stream Link",
-      responsibleRole: "Control Tower & PMO",
+      responsibleRole: "Transformation Office & Control Tower",
       roleCategory: "Finance",
       description: "Project setup in corporate Planisware system for monthly RAG and quarterly value audit tracking.",
       defaultEvidence: "Planisware Initiative Code #TO-AI-2026-06 activated; linked to Corporate EBITDA Value Pool.",
@@ -188,7 +188,7 @@ const GATE_PREREQUISITES_CONFIG: Record<GateId, Omit<PrerequisiteItem, "collecte
     {
       id: "g4_1",
       title: "1. Sourcing Mode Lock (Mode 1 / 2 / 3)",
-      responsibleRole: "Digital Design Authority",
+      responsibleRole: "Data & AI (Tech Sizing & Architecture Unlock)",
       roleCategory: "Data & AI",
       description: "Slide 10–11: Mode chosen from Complexity, Budget & Capacity (Do it for me / with me / Enable me).",
       defaultEvidence: "Mode 2 ('Do it with me') ratified: Function owns category rules; Hub provides dedicated FDE & platform.",
@@ -197,7 +197,7 @@ const GATE_PREREQUISITES_CONFIG: Record<GateId, Omit<PrerequisiteItem, "collecte
     {
       id: "g4_2",
       title: "2. Tranche 1 Budget Unlock",
-      responsibleRole: "Transformation SteerCo & Finance",
+      responsibleRole: "Transformation SteerCo & Value Officer",
       roleCategory: "Finance",
       description: "Initial envelope release specifically for the 6–8 week MVP build and pilot market integration.",
       defaultEvidence: "Tranche 1 budget of €380,000 released for 8-week MVP Sprint in France and Spain.",
@@ -206,7 +206,7 @@ const GATE_PREREQUISITES_CONFIG: Record<GateId, Omit<PrerequisiteItem, "collecte
     {
       id: "g4_3",
       title: "3. Tri-Partite Squad Mobilization",
-      responsibleRole: "Transformation Office & Data & AI Hub",
+      responsibleRole: "BO / PO, Digital PO & FDE Squad",
       roleCategory: "Governance",
       description: "Slide 14: Named profiles co-assigned across Business, TO, and Data & AI Hub.",
       defaultEvidence: "Squad mobilized: BO (Sarah Chen 80%), FDE (Lucas Vance 100%), Arch (Elena 40%), Change (Ana 30%).",
@@ -215,7 +215,7 @@ const GATE_PREREQUISITES_CONFIG: Record<GateId, Omit<PrerequisiteItem, "collecte
     {
       id: "g4_4",
       title: "4. MVP Sprint Backlog & Training Plan",
-      responsibleRole: "Product Owner & AI Catalyst",
+      responsibleRole: "BO / PO & AI Catalyst",
       roleCategory: "Change / P&C",
       description: "Prioritized user stories for Sprint 1 + ProcurLab prompt engineering enablement clinic dates.",
       defaultEvidence: "Sprint 1 backlog groomed (14 user stories); ProcurLab AI Prompting clinics scheduled for 60 pilot buyers.",
@@ -226,7 +226,7 @@ const GATE_PREREQUISITES_CONFIG: Record<GateId, Omit<PrerequisiteItem, "collecte
     {
       id: "g5_1",
       title: "1. MVP Pilot Results & KPI Report",
-      responsibleRole: "Product Owner & Lead Data Scientist",
+      responsibleRole: "BO / PO & Lead Data Scientist / AI Engineer",
       roleCategory: "Data & AI",
       description: "Actual pilot performance benchmarked against initial Gate G2 baseline.",
       defaultEvidence: "Pilot in France/Spain delivered 28h PO turnaround (vs 7.2d baseline) with 94.2% quote match accuracy.",
@@ -244,7 +244,7 @@ const GATE_PREREQUISITES_CONFIG: Record<GateId, Omit<PrerequisiteItem, "collecte
     {
       id: "g5_3",
       title: "3. Tranche 2 Scaling Funding Request",
-      responsibleRole: "Finance BP & Transformation SteerCo",
+      responsibleRole: "Value Officer & Transformation SteerCo",
       roleCategory: "Finance",
       description: "Budget release for enterprise expansion across all 14 markets (1,800 users).",
       defaultEvidence: "Tranche 2 (€850,000) requested and confirmed for multi-market scaling and localized SAP integrations.",
@@ -253,7 +253,7 @@ const GATE_PREREQUISITES_CONFIG: Record<GateId, Omit<PrerequisiteItem, "collecte
     {
       id: "g5_4",
       title: "4. Production Security Hardening Audit",
-      responsibleRole: "CISO & Cyber Audit Lead",
+      responsibleRole: "Infra & Cyber Team",
       roleCategory: "Governance",
       description: "Penetration testing, token spend throttles, and automated prompt injection red-teaming.",
       defaultEvidence: "Zero policy violations across 420 pilot orders; rate-limiting and budget kill-switches active.",
@@ -264,7 +264,7 @@ const GATE_PREREQUISITES_CONFIG: Record<GateId, Omit<PrerequisiteItem, "collecte
     {
       id: "g6_1",
       title: "1. Annual Realized Value Audit",
-      responsibleRole: "Finance BP & Value Office",
+      responsibleRole: "Value Officer & BO / PO",
       roleCategory: "Finance",
       description: "Formal audit confirming verified EBITDA and working capital improvements in the General Ledger.",
       defaultEvidence: "Confirmed €3.8M net run-rate EBITDA savings realized in P&L Cost Center 4100.",
@@ -282,7 +282,7 @@ const GATE_PREREQUISITES_CONFIG: Record<GateId, Omit<PrerequisiteItem, "collecte
     {
       id: "g6_3",
       title: "3. Sustained User Adoption Rate",
-      responsibleRole: "Change & Adoption Lead",
+      responsibleRole: "Adoption Lead & Regional Adoption Relays",
       roleCategory: "Change / P&C",
       description: "Weekly active users, repeat prompt engagement, and feature adoption across the buyer pool.",
       defaultEvidence: "82% weekly active buyers across 1,800 user seats; CSAT score 4.7/5 on automated PO generation.",
@@ -291,7 +291,7 @@ const GATE_PREREQUISITES_CONFIG: Record<GateId, Omit<PrerequisiteItem, "collecte
     {
       id: "g6_4",
       title: "4. BAU Operations Handover SLA",
-      responsibleRole: "GBS Service Delivery Lead",
+      responsibleRole: "Digital PO & GBS Service Delivery Lead",
       roleCategory: "Business",
       description: "Formal SLA sign-off transferring first-line maintenance to GBS with tier-3 Hub support.",
       defaultEvidence: "Run SLAs formalized: 99.8% uptime target, 4h P1 incident response, model re-tuning scheduled bi-annually.",
@@ -724,6 +724,15 @@ export const LifecycleView: React.FC<LifecycleViewProps> = ({
                 <div className={`text-[10px] truncate ${isSelected ? "text-white/70" : "text-gray-500"}`}>
                   {gate.phase}
                 </div>
+                <div
+                  className={`text-[9px] font-bold mt-1 px-1.5 py-0.5 rounded truncate ${
+                    isSelected
+                      ? "bg-white/20 text-emerald-200"
+                      : "bg-emerald-50 text-emerald-900 border border-emerald-200/60"
+                  }`}
+                >
+                  Decision: {gate.decisionAuthority}
+                </div>
               </button>
             );
           })}
@@ -763,8 +772,14 @@ export const LifecycleView: React.FC<LifecycleViewProps> = ({
             </p>
           </div>
 
-          <div className="flex items-center gap-3 text-xs bg-gray-50 p-3 rounded-xl border border-gray-200">
+          <div className="flex flex-wrap items-center gap-3 text-xs bg-gray-50 p-3 rounded-xl border border-gray-200">
             <div>
+              <span className="text-gray-400 block font-semibold">Decision Authority</span>
+              <span className="font-bold text-emerald-900 text-xs px-2 py-0.5 rounded bg-emerald-100/90 border border-emerald-300 inline-block">
+                {activeGate.decisionAuthority}
+              </span>
+            </div>
+            <div className="border-l border-gray-200 pl-3">
               <span className="text-gray-400 block font-semibold">Forum / Approver</span>
               <span className="font-bold text-gray-800">{activeGate.forum}</span>
             </div>
@@ -1539,9 +1554,14 @@ export const LifecycleView: React.FC<LifecycleViewProps> = ({
           <div className="p-5 rounded-2xl bg-emerald-50/60 border-2 border-emerald-600/30 space-y-4">
             <div className="border-b border-emerald-200/80 pb-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
               <div>
-                <span className="text-[10px] font-black uppercase tracking-wider text-emerald-800 bg-emerald-200/60 px-2 py-0.5 rounded">
-                  Gate G4 Mode Selection Zoom
-                </span>
+                <div className="flex flex-wrap items-center gap-2 mb-1">
+                  <span className="text-[10px] font-black uppercase tracking-wider text-emerald-800 bg-emerald-200/60 px-2 py-0.5 rounded">
+                    Gate G4 Mode Selection Zoom
+                  </span>
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-blue-900 bg-blue-100 px-2 py-0.5 rounded border border-blue-200">
+                    Decision Authority: Data & AI
+                  </span>
+                </div>
                 <h4 className="text-base font-black text-opella-forest mt-1">
                   Selected Mode: {MODE_DEEP_DIVES[currentCase.mode].title} ·{" "}
                   <span className="italic font-serif text-emerald-800 text-sm font-normal">
