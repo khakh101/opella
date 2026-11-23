@@ -9,7 +9,7 @@ import { PortfolioView } from "@/components/PortfolioView";
 import { HistoryView } from "@/components/HistoryView";
 import { OperatingModelMap } from "@/components/OperatingModelMap";
 import { PipelineFlowSimulator } from "@/components/PipelineFlowSimulator";
-import { UseCase } from "@/types";
+import { UseCase, Tier } from "@/types";
 import { fetchUseCases, deleteUseCase } from "@/lib/storage";
 import { INITIAL_USE_CASES } from "@/lib/mockData";
 
@@ -22,7 +22,21 @@ export default function Home() {
   const [selectedUseCaseId, setSelectedUseCaseId] = useState<string>(
     INITIAL_USE_CASES[0]?.id || ""
   );
+  const [rescopingUseCase, setRescopingUseCase] = useState<UseCase | null>(null);
+  const [rescopingTier, setRescopingTier] = useState<Tier | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+
+  const handleNavigateToRescope = (useCase: UseCase, newTier: Tier, justification?: string) => {
+    setRescopingUseCase(useCase);
+    setRescopingTier(newTier);
+    setActiveTab("wizard");
+  };
+
+  const handleNavigateToNewIntake = () => {
+    setRescopingUseCase(null);
+    setRescopingTier(null);
+    setActiveTab("wizard");
+  };
 
   // Load use cases on mount
   useEffect(() => {
@@ -102,6 +116,12 @@ export default function Home() {
               <IntakeWizard
                 onUseCaseCreated={handleUseCaseCreated}
                 onNavigateToLifecycle={handleSelectUseCaseAndGoToLifecycle}
+                rescopingUseCase={rescopingUseCase}
+                rescopingTier={rescopingTier}
+                onClearRescoping={() => {
+                  setRescopingUseCase(null);
+                  setRescopingTier(null);
+                }}
               />
             )}
 
@@ -111,6 +131,8 @@ export default function Home() {
                 selectedUseCaseId={selectedUseCaseId}
                 onSelectUseCase={setSelectedUseCaseId}
                 onUseCaseUpdated={handleUseCaseUpdated}
+                onNavigateToRescope={handleNavigateToRescope}
+                onNavigateToNewIntake={handleNavigateToNewIntake}
               />
             )}
 

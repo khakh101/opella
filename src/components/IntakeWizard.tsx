@@ -68,11 +68,17 @@ import { saveUseCase } from "@/lib/storage";
 interface IntakeWizardProps {
   onUseCaseCreated: (newCase: UseCase) => void;
   onNavigateToLifecycle: (useCaseId: string) => void;
+  rescopingUseCase?: UseCase | null;
+  rescopingTier?: Tier | null;
+  onClearRescoping?: () => void;
 }
 
 export const IntakeWizard: React.FC<IntakeWizardProps> = ({
   onUseCaseCreated,
   onNavigateToLifecycle,
+  rescopingUseCase,
+  rescopingTier,
+  onClearRescoping,
 }) => {
   // Exact Sequencing:
   // Step 1: 4 Questions Assessment & Initiative Framing
@@ -386,6 +392,38 @@ export const IntakeWizard: React.FC<IntakeWizardProps> = ({
       setChosenMode(decision.mode);
     }
   }, [decision.tier, decision.mode]);
+
+  // Handle incoming Re-scoping from Lifecycle View
+  useEffect(() => {
+    if (rescopingUseCase) {
+      setStep(3); // Send straight to Business Case Formulation
+
+      const targetTier = rescopingTier || rescopingUseCase.tier;
+      setAnswers((prev) => ({
+        ...prev,
+        initiativeTitle: rescopingUseCase.title,
+        description: rescopingUseCase.description,
+        businessOwnerName: rescopingUseCase.owner,
+        estimatedCost: rescopingUseCase.budget || prev.estimatedCost,
+        targetUserCount: rescopingUseCase.intakeAnswers?.targetUserCount || prev.targetUserCount,
+        functionName: rescopingUseCase.functionName || prev.functionName,
+        region: rescopingUseCase.region || prev.region,
+        estimatedValueDescription: rescopingUseCase.roiEstimate || prev.estimatedValueDescription,
+        // Match the 4-question flags to the rescoped tier
+        q1_bigBetOrOver1m: targetTier === "T1",
+        q2_approvedToolsUnder50k: targetTier === "Self-Serve",
+        q3_provenPilotOrReach: targetTier === "T2",
+        q4_newHypothesis: targetTier === "T3",
+      }));
+
+      if (rescopingUseCase.mode) {
+        setChosenMode(rescopingUseCase.mode);
+      }
+      if (rescopingUseCase.customTeam && rescopingUseCase.customTeam.length > 0) {
+        setCustomTeamMembers(rescopingUseCase.customTeam);
+      }
+    }
+  }, [rescopingUseCase, rescopingTier]);
 
   // AUTO-SYNC: Any information filled in the preliminary intake form (Step 1)
   // is automatically mapped into subsequent business case forms (T1, T2, T3, Self-Serve)
@@ -824,6 +862,32 @@ export const IntakeWizard: React.FC<IntakeWizardProps> = ({
       updatedAt: new Date().toISOString(),
     };
 
+    // If this is a re-scoped initiative, update existing use case and return to simulator
+    if (rescopingUseCase) {
+      const updatedCase: UseCase = {
+        ...rescopingUseCase,
+        ...newCase,
+        id: rescopingUseCase.id, // Keep the same ID
+        tier: decision.tier,
+        mode: chosenMode,
+        businessCase: businessCasePayload,
+        customTeam: customTeamMembers.length > 0 ? customTeamMembers : rescopingUseCase.customTeam,
+        updatedAt: new Date().toISOString(),
+      };
+      await saveUseCase(updatedCase);
+      onUseCaseCreated(updatedCase);
+      if (onClearRescoping) onClearRescoping();
+      try {
+        confetti({
+          particleCount: 90,
+          spread: 70,
+          origin: { y: 0.6 },
+        });
+      } catch (e) {}
+      onNavigateToLifecycle(updatedCase.id);
+      return;
+    }
+
     // Save to Supabase and LocalStorage
     await saveUseCase(newCase);
     onUseCaseCreated(newCase);
@@ -883,7 +947,7 @@ export const IntakeWizard: React.FC<IntakeWizardProps> = ({
                     Phase 1: Framing · Gate G1 Candidate Station
                   </div>
                   <h3 className="text-xl font-black text-white mt-0.5">
-                    Front Door Intake & 4-Question Playbook Assessment
+                    Front Door Intake & 4-Questions Assessment
                   </h3>
                   <p className="text-xs text-white/70 mt-0.5 max-w-2xl">
                     Actively collect and verify the 5 mandatory governance items below before the autonomous AI Charter Agent can formulate the comitology triage.
@@ -1240,10 +1304,10 @@ export const IntakeWizard: React.FC<IntakeWizardProps> = ({
                       <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-white/15 text-emerald-200 border border-white/10">
                         Transformation Office Lead
                       </span>
-                      <span className="text-[10px] text-white/60">Slide 35 Playbook Triage</span>
+                      <span className="text-[10px] text-white/60">Slide 35 Triage</span>
                     </div>
                     <h4 className="font-bold text-white text-base">
-                      4. Opella Playbook 4-Questions Assessment *
+                      4. Opella 4-Questions Assessment *
                     </h4>
                   </div>
                   {item4Collected ? (
@@ -2297,6 +2361,36 @@ export const IntakeWizard: React.FC<IntakeWizardProps> = ({
       {/* ================= STEP 3: FILL RELEVANT BUSINESS CASE ================= */}
       {step === 3 && (
         <div className="bg-white rounded-2xl p-7 shadow-sm border border-opella-border space-y-6">
+          {/* RE-SCOPING ACTIVE NOTICE BANNER */}
+          {rescopingUseCase && (
+            <div className="p-4 rounded-xl bg-amber-50 border-2 border-amber-400 text-amber-950 flex items-start justify-between gap-3 shadow-xs animate-in fade-in">
+              <div className="flex items-start gap-3">
+                <RotateCcw className="w-5 h-5 text-amber-700 shrink-0 mt-0.5" />
+                <div className="space-y-1">
+                  <div className="font-bold text-xs uppercase tracking-wider text-amber-900 flex items-center gap-2">
+                    <span>Re-scoping Active: {rescopingUseCase.title}</span>
+                    <span className="text-[10px] px-2 py-0.5 rounded bg-amber-200 text-amber-900 font-mono">
+                      {rescopingUseCase.tier} ➔ {decision.tier}
+                    </span>
+                  </div>
+                  <p className="text-xs text-amber-900/90 leading-snug">
+                    This initiative was formally re-scoped from <strong>{rescopingUseCase.tier}</strong> to <strong>{decision.tier}</strong> by the Transformation Office.
+                    Please complete the required <strong>{decision.tier} Business Case</strong> below to establish its updated governance baseline.
+                  </p>
+                </div>
+              </div>
+              {onClearRescoping && (
+                <button
+                  type="button"
+                  onClick={onClearRescoping}
+                  className="text-amber-700 hover:text-amber-900 text-xs font-semibold px-2 py-1 rounded hover:bg-amber-100 transition-colors"
+                >
+                  Dismiss
+                </button>
+              )}
+            </div>
+          )}
+
           {/* USER JOURNEY STATION: STAGE 2 (GATE G1 APPROVED -> G2 BUSINESS CASE BRIEFING) */}
           <div className="rounded-2xl p-6 bg-gradient-to-br from-[#0c2a1a] via-[#093c1f] to-[#044c23] text-white border-2 border-emerald-400 shadow-xl space-y-5">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-white/20 pb-4">

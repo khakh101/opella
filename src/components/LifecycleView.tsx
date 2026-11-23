@@ -35,22 +35,69 @@ import {
   Sparkle,
   Lock,
   Unlock,
+  AlertTriangle,
+  AlertOctagon,
+  Send,
 } from "lucide-react";
 import confetti from "canvas-confetti";
-import { UseCase, GateId, GateStatus } from "@/types";
+import { UseCase, GateId, GateStatus, Tier, GateDetail } from "@/types";
 import {
   TIER_CONFIG,
   DELIVERY_MODES_INFO,
   MODE_DEEP_DIVES,
 } from "@/lib/constants";
-import { updateGateStatus } from "@/lib/storage";
+import { updateGateStatus, saveUseCase } from "@/lib/storage";
 
 interface LifecycleViewProps {
   useCases: UseCase[];
   selectedUseCaseId: string;
   onSelectUseCase: (id: string) => void;
   onUseCaseUpdated: (updated: UseCase) => void;
+  onNavigateToRescope?: (useCase: UseCase, newTier: Tier, justification?: string) => void;
+  onNavigateToNewIntake?: () => void;
 }
+
+export const GATE_EXECUTIVE_SUMMARIES: Record<
+  GateId,
+  { whatHappened: string; whatYouNeed: string }
+> = {
+  G1: {
+    whatHappened:
+      "OpellaGPT Charter Agent screened the initiative, verified AI Registry uniqueness, and cleared ORAI baseline risk tiering.",
+    whatYouNeed:
+      "Mobilize Business Owner (BO/PO) and Data Architect to assemble feasibility and platform fit artifacts for Gate G2 review.",
+  },
+  G2: {
+    whatHappened:
+      "Transformation Office reviewed strategic fit; Finance BP verified baseline cost savings and platform architecture was endorsed.",
+    whatYouNeed:
+      "Formalize capacity request and submit for Transformation Office G3 prioritization in the next SteerCo cycle.",
+  },
+  G3: {
+    whatHappened:
+      "Transformation Office confirmed strategic priority and allocated delivery capacity from the Hub pool (60/25/15 model).",
+    whatYouNeed:
+      "Present technical delivery plan to Data & AI Hub at Gate G4 to unlock engineering sprints and start MVP build.",
+  },
+  G4: {
+    whatHappened:
+      "Data & AI Hub approved delivery architecture, token sizing, and unlocked engineering capacity to begin building.",
+    whatYouNeed:
+      "Launch 6–8 week agile MVP build sprint and track primary success KPI against baseline for Gate G5 pre-scale validation.",
+  },
+  G5: {
+    whatHappened:
+      "Scale Committee reviewed pilot MVP KPIs against baseline targets and cleared the 5-pillar HR workforce scan.",
+    whatYouNeed:
+      "Release tranche 2 funding and execute multi-market rollout and user onboarding plan.",
+  },
+  G6: {
+    whatHappened:
+      "Production cutover completed; value capture ledger operationalized with live P&L tracking.",
+    whatYouNeed:
+      "Ongoing monitoring of model drift, token usage caps, and quarterly value realization reporting.",
+  },
+};
 
 const GATE_ORDER: GateId[] = ["G1", "G2", "G3", "G4", "G5", "G6"];
 
@@ -91,7 +138,7 @@ const GATE_PREREQUISITES_CONFIG: Record<GateId, Omit<PrerequisiteItem, "collecte
     },
     {
       id: "g1_3",
-      title: "3. Playbook 4-Questions Assessment",
+      title: "3. 4-Questions Assessment",
       responsibleRole: "OpellaGPT Charter Agent (Automatic G1)",
       roleCategory: "Governance",
       description: "Automated qualification against Slide 35 criteria (Big Bet, tools under €50k, pilot reach, or new hypothesis).",
@@ -305,6 +352,8 @@ export const LifecycleView: React.FC<LifecycleViewProps> = ({
   selectedUseCaseId,
   onSelectUseCase,
   onUseCaseUpdated,
+  onNavigateToRescope,
+  onNavigateToNewIntake,
 }) => {
   const currentCase =
     useCases.find((u) => u.id === selectedUseCaseId) || useCases[0];
@@ -316,6 +365,17 @@ export const LifecycleView: React.FC<LifecycleViewProps> = ({
   const [isSimulatingAgent, setIsSimulatingAgent] = useState(false);
   const [simulationLog, setSimulationLog] = useState<string | null>(null);
 
+  // Re-scope / Block Popup State
+  const [isRescopeBlockModalOpen, setIsRescopeBlockModalOpen] = useState(false);
+  const [rescopeBlockMode, setRescopeBlockMode] = useState<"rescope" | "block">("rescope");
+  const [selectedRescopeTier, setSelectedRescopeTier] = useState<Tier>("T3");
+  const [rescopeNotes, setRescopeNotes] = useState<string>("");
+  const [denialReason, setDenialReason] = useState<string>("");
+  const [blockConfirmed, setBlockConfirmed] = useState(false);
+
+  // Latest Simulated Gate
+  const [latestSimulatedGate, setLatestSimulatedGate] = useState<GateId | null>(null);
+
   // Per-use-case and per-gate interactive collection items state
   // Keyed by `${caseId}_${gateId}`
   const [collectionState, setCollectionState] = useState<Record<string, PrerequisiteItem[]>>({});
@@ -324,6 +384,80 @@ export const LifecycleView: React.FC<LifecycleViewProps> = ({
 
   // Initialize prerequisites for the current view
   const currentKey = currentCase ? `${currentCase.id}_${activeGateTab}` : "";
+
+  const handleConfirmBlock = async () => {
+    if (!currentCase) return;
+    const updated = await updateGateStatus(
+      currentCase.id,
+      activeGateTab,
+      "FAILED",
+      `DENIED: ${denialReason || "Use case terminated by committee decision."}`
+    );
+    if (updated) {
+      const deniedCase: UseCase = {
+        ...updated,
+        status: "RETIRED",
+      };
+      await saveUseCase(deniedCase);
+      onUseCaseUpdated(deniedCase);
+      setBlockConfirmed(true);
+    }
+  };
+
+  const handleConfirmRescope = async () => {
+    if (!currentCase) return;
+    const updatedGates = JSON.parse(JSON.stringify(currentCase.gates)) as Record<GateId, GateDetail>;
+
+    if (updatedGates[activeGateTab]) {
+      updatedGates[activeGateTab].feedback = `Re-scoped from ${currentCase.tier} to ${selectedRescopeTier}: ${
+        rescopeNotes || "Committee realignment"
+      }`;
+      updatedGates[activeGateTab].updatedAt = new Date().toISOString();
+    }
+
+    let nextCurrentGate: GateId = "G1";
+    let nextStatus: UseCase["status"] = "FRAMING";
+
+    if (selectedRescopeTier === "Self-Serve") {
+      updatedGates.G1.status = "PASSED";
+      updatedGates.G2.status = "SKIPPED";
+      updatedGates.G3.status = "SKIPPED";
+      updatedGates.G4.status = "SKIPPED";
+      updatedGates.G5.status = "SKIPPED";
+      updatedGates.G6.status = "SKIPPED";
+      nextCurrentGate = "G1";
+      nextStatus = "BUILD_MVP";
+    } else if (selectedRescopeTier === "T3") {
+      updatedGates.G1.status = "PASSED";
+      updatedGates.G2.status = "SKIPPED";
+      updatedGates.G3.status = "SKIPPED";
+      updatedGates.G4.status = "IN_REVIEW";
+      nextCurrentGate = "G4";
+      nextStatus = "FRAMING";
+    } else {
+      updatedGates.G1.status = "PASSED";
+      updatedGates.G2.status = "IN_REVIEW";
+      nextCurrentGate = "G2";
+      nextStatus = "FRAMING";
+    }
+
+    const rescopedCase: UseCase = {
+      ...currentCase,
+      tier: selectedRescopeTier,
+      currentGate: nextCurrentGate,
+      status: nextStatus,
+      gates: updatedGates,
+      updatedAt: new Date().toISOString(),
+    };
+
+    await saveUseCase(rescopedCase);
+    onUseCaseUpdated(rescopedCase);
+    setIsRescopeBlockModalOpen(false);
+
+    if (onNavigateToRescope) {
+      onNavigateToRescope(rescopedCase, selectedRescopeTier, rescopeNotes);
+    }
+  };
 
   useEffect(() => {
     if (!currentCase) return;
@@ -786,6 +920,57 @@ export const LifecycleView: React.FC<LifecycleViewProps> = ({
             <div className="border-l border-gray-200 pl-3">
               <span className="text-gray-400 block font-semibold">Decision SLA</span>
               <span className="font-bold text-emerald-700">{activeGate.sla}</span>
+            </div>
+          </div>
+        </div>
+
+        {/* EXECUTIVE DECISION BRIEFING: WHAT HAPPENED & WHAT YOU NEED (RIGHT AT THE BEGINNING) */}
+        <div className="p-4 rounded-xl bg-gradient-to-r from-emerald-950 via-[#0a3517] to-emerald-950 text-white border-2 border-emerald-500/80 shadow-md space-y-2.5">
+          <div className="flex items-center justify-between pb-2 border-b border-emerald-700/60">
+            <div className="flex items-center gap-2">
+              <Sparkles className="w-4 h-4 text-amber-300" />
+              <span className="font-bold text-xs uppercase tracking-wider text-emerald-200">
+                Gate {activeGate.id} Executive Briefing & Decision Summary
+              </span>
+              {activeGate.status === "PASSED" ? (
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-400 text-emerald-950 flex items-center gap-1 font-sans">
+                  <Check className="w-3 h-3 stroke-[3]" /> Passed
+                </span>
+              ) : activeGate.status === "FAILED" ? (
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-rose-500 text-white flex items-center gap-1 font-sans">
+                  <X className="w-3 h-3 stroke-[3]" /> Denied / Blocked
+                </span>
+              ) : (
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-400/20 text-amber-300 border border-amber-400/40 font-sans">
+                  Deliberation Active
+                </span>
+              )}
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] font-mono text-emerald-300 bg-black/40 px-2 py-0.5 rounded border border-emerald-600/40 font-bold">
+                Authority: {activeGate.decisionAuthority}
+              </span>
+              <span className="text-[10px] font-mono text-white/70 bg-black/30 px-2 py-0.5 rounded">
+                Forum: {activeGate.forum}
+              </span>
+            </div>
+          </div>
+          <div className="text-xs space-y-2 leading-relaxed">
+            <div className="flex items-start gap-2">
+              <span className="px-1.5 py-0.5 rounded bg-amber-400/20 text-amber-300 font-bold text-[10px] shrink-0 mt-0.5 uppercase tracking-wide">
+                What Happened
+              </span>
+              <span className="text-white/95 leading-snug">
+                {activeGate.feedback || GATE_EXECUTIVE_SUMMARIES[activeGateTab]?.whatHappened || "Gate review in progress."}
+              </span>
+            </div>
+            <div className="flex items-start gap-2">
+              <span className="px-1.5 py-0.5 rounded bg-emerald-400/20 text-emerald-300 font-bold text-[10px] shrink-0 mt-0.5 uppercase tracking-wide">
+                What You Need
+              </span>
+              <span className="text-emerald-100 font-medium leading-snug">
+                {GATE_EXECUTIVE_SUMMARIES[activeGateTab]?.whatYouNeed || "Provide required deliverables for committee review."}
+              </span>
             </div>
           </div>
         </div>
@@ -1783,8 +1968,15 @@ export const LifecycleView: React.FC<LifecycleViewProps> = ({
 
             <button
               type="button"
-              onClick={() => handleUpdateStatus("FAILED")}
-              className="px-3.5 py-2 border border-rose-300 text-rose-700 hover:bg-rose-50 rounded-lg text-xs font-bold transition-colors flex items-center gap-1"
+              onClick={() => {
+                setRescopeBlockMode("rescope");
+                setSelectedRescopeTier("T3");
+                setRescopeNotes("");
+                setDenialReason("");
+                setBlockConfirmed(false);
+                setIsRescopeBlockModalOpen(true);
+              }}
+              className="px-3.5 py-2 border border-rose-300 text-rose-700 hover:bg-rose-50 rounded-lg text-xs font-bold transition-colors flex items-center gap-1.5 shadow-2xs"
             >
               <X className="w-3.5 h-3.5" /> Re-scope / Block
             </button>
@@ -1810,6 +2002,285 @@ export const LifecycleView: React.FC<LifecycleViewProps> = ({
           </div>
         </div>
       </div>
+
+      {/* RE-SCOPE / BLOCK GOVERNANCE POPUP MODAL */}
+      {isRescopeBlockModalOpen && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl shadow-2xl border border-gray-200 max-w-xl w-full p-6 space-y-4 animate-in fade-in zoom-in-95 duration-150 max-h-[90vh] overflow-y-auto">
+            {/* Header */}
+            <div className="flex items-center justify-between pb-3 border-b border-gray-100">
+              <div>
+                <h3 className="font-bold text-base text-gray-900 flex items-center gap-2">
+                  <AlertTriangle className="w-5 h-5 text-amber-600" />
+                  Gate Governance Decision: Block or Re-scope
+                </h3>
+                <p className="text-xs text-gray-500 mt-0.5">
+                  Initiative: <strong className="text-gray-800">{currentCase.title}</strong> · Currently in <strong>{currentCase.tier}</strong> at <strong>Gate {activeGate.id}</strong>
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setIsRescopeBlockModalOpen(false);
+                  setBlockConfirmed(false);
+                }}
+                className="p-1 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {!blockConfirmed ? (
+              <div className="space-y-4">
+                {/* Action Tabs: Choose Block or Re-scope */}
+                <div className="grid grid-cols-2 gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setRescopeBlockMode("rescope")}
+                    className={`p-3.5 rounded-xl border text-left transition-all ${
+                      rescopeBlockMode === "rescope"
+                        ? "bg-amber-50 border-amber-500 ring-2 ring-amber-500/20"
+                        : "bg-white border-gray-200 hover:bg-gray-50"
+                    }`}
+                  >
+                    <div className="flex items-center gap-2 font-bold text-xs text-amber-950 mb-1">
+                      <RotateCcw className="w-4 h-4 text-amber-600" />
+                      <span>Re-scope Initiative</span>
+                    </div>
+                    <p className="text-[11px] text-gray-600 leading-snug">
+                      Re-route to a lighter speed lane (e.g. T3 Fast Lane or Self-Service AI) and re-frame the business case.
+                    </p>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setRescopeBlockMode("block")}
+                    className={`p-3.5 rounded-xl border text-left transition-all ${
+                      rescopeBlockMode === "block"
+                        ? "bg-rose-50 border-rose-500 ring-2 ring-rose-500/20"
+                        : "bg-white border-gray-200 hover:bg-gray-50"
+                    }`}
+                  >
+                    <div className="flex items-center gap-2 font-bold text-xs text-rose-950 mb-1">
+                      <X className="w-4 h-4 text-rose-600" />
+                      <span>Block / Deny Use Case</span>
+                    </div>
+                    <p className="text-[11px] text-gray-600 leading-snug">
+                      Formally terminate this use case. Deny progression and notify the business sponsor.
+                    </p>
+                  </button>
+                </div>
+
+                {rescopeBlockMode === "block" ? (
+                  <div className="space-y-3 p-4 rounded-xl bg-rose-50/60 border border-rose-200 text-xs">
+                    <div className="font-bold text-rose-950 flex items-center gap-1.5">
+                      <AlertOctagon className="w-4 h-4 text-rose-600" />
+                      <span>Deny & Retire Initiative:</span>
+                    </div>
+                    <p className="text-gray-600 leading-relaxed text-[11px]">
+                      Blocking this use case marks it as <strong>DENIED (FAILED)</strong> at Gate {activeGate.id}. The initiative will be archived in the portfolio value ledger and will not consume further delivery capacity.
+                    </p>
+                    <div className="space-y-1">
+                      <label className="font-semibold text-gray-700 block">
+                        Committee Denial Reason:
+                      </label>
+                      <textarea
+                        rows={2}
+                        value={denialReason}
+                        onChange={(e) => setDenialReason(e.target.value)}
+                        placeholder="e.g. Insufficient ROI, overlapping with existing enterprise initiative, or unacceptable regulatory compliance risk..."
+                        className="w-full p-2.5 rounded-lg border border-rose-300 bg-white text-gray-900 focus:ring-2 focus:ring-rose-500 text-xs"
+                      />
+                    </div>
+
+                    <div className="flex items-center justify-end gap-2.5 pt-2">
+                      <button
+                        type="button"
+                        onClick={() => setIsRescopeBlockModalOpen(false)}
+                        className="px-3.5 py-2 rounded-lg border border-gray-300 text-gray-700 font-semibold hover:bg-white text-xs"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        type="button"
+                        onClick={handleConfirmBlock}
+                        className="px-4 py-2 rounded-lg bg-rose-600 hover:bg-rose-700 text-white font-bold flex items-center gap-1.5 shadow-xs text-xs"
+                      >
+                        <X className="w-4 h-4" />
+                        Confirm Denial
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="space-y-3.5 text-xs">
+                    <div className="space-y-2">
+                      <label className="font-bold text-gray-800 uppercase tracking-wider block">
+                        Select New Target Speed Lane / Governance Tier:
+                      </label>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        {/* T3 Fast Lane */}
+                        <button
+                          type="button"
+                          onClick={() => setSelectedRescopeTier("T3")}
+                          className={`p-3 rounded-xl border text-left transition-all ${
+                            selectedRescopeTier === "T3"
+                              ? "bg-amber-50 border-amber-500 ring-2 ring-amber-500/20"
+                              : "bg-white border-gray-200 hover:bg-gray-50"
+                          }`}
+                        >
+                          <div className="flex items-center justify-between mb-1">
+                            <span className="font-bold text-xs text-amber-900">T3 · Fast Lane</span>
+                            <span className="text-[10px] font-bold bg-amber-100 text-amber-800 px-1.5 py-0.5 rounded">
+                              Recommended
+                            </span>
+                          </div>
+                          <p className="text-[11px] text-gray-600 leading-snug">
+                            &lt;€200k · 1-Page Canvas · 10-day SLA · 6–8 week agile MVP sprint. Skips G2 & G3!
+                          </p>
+                        </button>
+
+                        {/* Self-Service AI (T4) */}
+                        <button
+                          type="button"
+                          onClick={() => setSelectedRescopeTier("Self-Serve")}
+                          className={`p-3 rounded-xl border text-left transition-all ${
+                            selectedRescopeTier === "Self-Serve"
+                              ? "bg-purple-50 border-purple-500 ring-2 ring-purple-500/20"
+                              : "bg-white border-gray-200 hover:bg-gray-50"
+                          }`}
+                        >
+                          <div className="flex items-center justify-between mb-1">
+                            <span className="font-bold text-xs text-purple-900">Self-Service AI (T4)</span>
+                            <span className="text-[10px] font-bold bg-purple-100 text-purple-800 px-1.5 py-0.5 rounded">
+                              Catalog
+                            </span>
+                          </div>
+                          <p className="text-[11px] text-gray-600 leading-snug">
+                            &lt;€50k · Pre-approved tools (Copilot Studio) · Instant speed, skips G2–G4 directly to build.
+                          </p>
+                        </button>
+
+                        {/* T2 Scale Lane */}
+                        <button
+                          type="button"
+                          onClick={() => setSelectedRescopeTier("T2")}
+                          className={`p-3 rounded-xl border text-left transition-all ${
+                            selectedRescopeTier === "T2"
+                              ? "bg-blue-50 border-blue-500 ring-2 ring-blue-500/20"
+                              : "bg-white border-gray-200 hover:bg-gray-50"
+                          }`}
+                        >
+                          <div className="flex items-center justify-between mb-1">
+                            <span className="font-bold text-xs text-blue-900">T2 · Scale Lane</span>
+                            <span className="text-[10px] font-bold bg-blue-100 text-blue-800 px-1.5 py-0.5 rounded">
+                              €200k–€1M
+                            </span>
+                          </div>
+                          <p className="text-[11px] text-gray-600 leading-snug">
+                            Light Business Case (5 modules) · AI Portfolio Board review · Shared delivery squad.
+                          </p>
+                        </button>
+
+                        {/* T1 Transform Lane */}
+                        <button
+                          type="button"
+                          onClick={() => setSelectedRescopeTier("T1")}
+                          className={`p-3 rounded-xl border text-left transition-all ${
+                            selectedRescopeTier === "T1"
+                              ? "bg-emerald-50 border-emerald-500 ring-2 ring-emerald-500/20"
+                              : "bg-white border-gray-200 hover:bg-gray-50"
+                          }`}
+                        >
+                          <div className="flex items-center justify-between mb-1">
+                            <span className="font-bold text-xs text-emerald-900">T1 · Transform Lane</span>
+                            <span className="text-[10px] font-bold bg-emerald-100 text-emerald-800 px-1.5 py-0.5 rounded">
+                              &gt;€1M / Big Bet
+                            </span>
+                          </div>
+                          <p className="text-[11px] text-gray-600 leading-snug">
+                            Full Business Case (6 modules) · Transformation SteerCo gating · 60% Hub pool capacity.
+                          </p>
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Re-scoping Notes */}
+                    <div className="space-y-1">
+                      <label className="font-semibold text-gray-700 block">
+                        Re-scoping Reason & Committee Guidance:
+                      </label>
+                      <textarea
+                        rows={2}
+                        value={rescopeNotes}
+                        onChange={(e) => setRescopeNotes(e.target.value)}
+                        placeholder="e.g. Committee decided to downscope to T3 Fast Lane to validate core business adoption with an 8-week MVP sprint before funding enterprise scaling..."
+                        className="w-full p-2.5 rounded-lg border border-gray-300 bg-white text-gray-900 focus:ring-2 focus:ring-amber-500 text-xs"
+                      />
+                    </div>
+
+                    <div className="flex items-center justify-end gap-2.5 pt-2 border-t border-gray-100">
+                      <button
+                        type="button"
+                        onClick={() => setIsRescopeBlockModalOpen(false)}
+                        className="px-3.5 py-2 rounded-lg border border-gray-300 text-gray-700 font-semibold hover:bg-gray-50 text-xs"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        type="button"
+                        onClick={handleConfirmRescope}
+                        className="px-4 py-2 rounded-lg bg-amber-600 hover:bg-amber-700 text-white font-bold flex items-center gap-1.5 shadow-xs text-xs"
+                      >
+                        <RotateCcw className="w-4 h-4" />
+                        Confirm Re-scoping & Open {selectedRescopeTier} Business Case →
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            ) : (
+              /* BLOCK CONFIRMATION SCREEN */
+              <div className="text-center py-6 space-y-4">
+                <div className="w-14 h-14 rounded-full bg-rose-100 text-rose-600 mx-auto flex items-center justify-center">
+                  <X className="w-8 h-8 stroke-[2.5]" />
+                </div>
+                <div className="space-y-1.5">
+                  <h4 className="text-base font-bold text-gray-900">
+                    Use Case Formally Denied & Archived
+                  </h4>
+                  <p className="text-xs text-gray-600 max-w-md mx-auto leading-relaxed">
+                    This initiative has been denied at Gate {activeGate.id}. Its status is set to <strong>RETIRED</strong>. You can resubmit another form to propose a new or refined initiative.
+                  </p>
+                </div>
+                <div className="flex items-center justify-center gap-3 pt-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsRescopeBlockModalOpen(false);
+                      setBlockConfirmed(false);
+                    }}
+                    className="px-4 py-2 rounded-lg border border-gray-300 text-gray-700 text-xs font-semibold hover:bg-gray-50"
+                  >
+                    Close & View History
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsRescopeBlockModalOpen(false);
+                      setBlockConfirmed(false);
+                      if (onNavigateToNewIntake) onNavigateToNewIntake();
+                    }}
+                    className="px-5 py-2 rounded-lg bg-opella-forest hover:bg-opella-emerald text-white text-xs font-bold flex items-center gap-1.5 shadow-sm"
+                  >
+                    <Send className="w-3.5 h-3.5" />
+                    Submit Another Form
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 };
