@@ -48,7 +48,7 @@ export const IntakeHome: React.FC<IntakeHomeProps> = ({ tier, onOpenStep, onOpen
     {
       n: 1,
       emoji: "📝",
-      name: "The 4 Questions Assessment & Initiative Framing",
+      name: "Preliminary project charter",
       oneLiner: "Front Door Intake & 4-Questions Assessment",
       bullets: [
         "Collect the 5 mandatory items: title, description, users, 4 questions, ORAI screening",
@@ -74,8 +74,8 @@ export const IntakeHome: React.FC<IntakeHomeProps> = ({ tier, onOpenStep, onOpen
     {
       n: 3,
       emoji: "📊",
-      name: `Fill Relevant Business Case (${tier})`,
-      oneLiner: "The business case depends on the tier",
+      name: "Business case filled",
+      oneLiner: `The business case depends on the tier (current: ${tier})`,
       bullets: [
         "T1: Full Business Case",
         "T2: Light Business Case (1–2 pages)",
@@ -90,7 +90,7 @@ export const IntakeHome: React.FC<IntakeHomeProps> = ({ tier, onOpenStep, onOpen
     {
       n: 4,
       emoji: "🤝",
-      name: "Mode Selection (Do it for me / With me / Enable me)",
+      name: "Mode selection",
       oneLiner: "Who delivers the use case",
       bullets: [
         "Mode 1 · Do it for me: “We ride for you”",
@@ -105,7 +105,7 @@ export const IntakeHome: React.FC<IntakeHomeProps> = ({ tier, onOpenStep, onOpen
     <div className="space-y-6">
       <div>
         <h2 className="text-2xl font-black tracking-tight text-opella-forest">
-          Intake &amp; Agent Triage
+          User experience
         </h2>
         <p className="mt-1 flex items-center gap-1.5 text-sm text-gray-600">
           <MousePointerClick className="h-4 w-4 shrink-0" aria-hidden="true" />
@@ -125,14 +125,30 @@ export const IntakeHome: React.FC<IntakeHomeProps> = ({ tier, onOpenStep, onOpen
                 className="group flex flex-col text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-opella-forest rounded-xl"
               >
                 <div
-                  className="relative flex h-14 items-center justify-center gap-2 px-6 text-base font-black text-white transition-colors bg-[#5b7a64] group-hover:bg-opella-forest"
+                  className={cx(
+                    "relative flex h-14 items-center justify-center gap-2 px-6 text-base font-black text-white transition-colors",
+                    s.noAction ? "bg-violet-600 group-hover:bg-violet-800" : "bg-pink-600 group-hover:bg-pink-800"
+                  )}
                   style={{ clipPath: i === 0 ? CHEVRON_FIRST : CHEVRON }}
                 >
                   <span aria-hidden="true">{s.emoji}</span>
                   <span>Step {s.n}</span>
                 </div>
+                <div
+                  className={cx(
+                    "mt-2 self-center rounded-full px-2.5 py-0.5 text-[10px] font-black uppercase tracking-wider",
+                    s.noAction ? "bg-violet-100 text-violet-800" : "bg-pink-100 text-pink-800"
+                  )}
+                >
+                  {s.noAction ? "🤖 Automated process" : "✋ Manual process"}
+                </div>
 
-                <div className="mt-3 flex min-h-[250px] flex-1 flex-col rounded-xl border border-gray-200 bg-white p-4 shadow-sm transition-all group-hover:-translate-y-1 group-hover:border-opella-forest group-hover:shadow-lg">
+                <div
+                  className={cx(
+                    "mt-2 flex min-h-[250px] flex-1 flex-col rounded-xl border-2 bg-white p-4 shadow-sm transition-all group-hover:-translate-y-1 group-hover:shadow-lg",
+                    s.noAction ? "border-violet-300 group-hover:border-violet-600" : "border-pink-200 group-hover:border-pink-600"
+                  )}
+                >
                   <div className="text-sm font-black leading-snug text-gray-900">{s.name}</div>
                   <div className="mt-1 text-xs font-semibold text-opella-forest">{s.oneLiner}</div>
                   {s.noAction && (
@@ -164,7 +180,7 @@ export const IntakeHome: React.FC<IntakeHomeProps> = ({ tier, onOpenStep, onOpen
                 <span aria-hidden="true">🚀</span>
                 <span>GO BUILD</span>
               </div>
-              <div className="mt-3 flex min-h-[250px] flex-1 flex-col rounded-xl border-2 border-dashed border-emerald-300 bg-emerald-50/60 p-4">
+              <div className="mt-[34px] flex min-h-[250px] flex-1 flex-col rounded-xl border-2 border-dashed border-emerald-300 bg-emerald-50/60 p-4">
                 <div className="text-sm font-black leading-snug text-gray-900">Next step: Build (MVP)</div>
                 <div className="mt-1 text-xs font-semibold text-opella-forest">
                   Build and test the MVP in the selected mode
@@ -189,7 +205,7 @@ export const IntakeHome: React.FC<IntakeHomeProps> = ({ tier, onOpenStep, onOpen
                     </button>
                   ))}
                 </div>
-                <div className="mt-auto pt-3 text-[11px] text-gray-600">One page per mode: who builds and the 4 build steps.</div>
+                <div className="mt-auto pt-3 text-[11px] text-gray-600">One page per mode: what the build means for you, from nothing (Do it for me) to most of the work (Enable me).</div>
               </div>
             </div>
           </div>
@@ -240,6 +256,12 @@ export const IntakeHome: React.FC<IntakeHomeProps> = ({ tier, onOpenStep, onOpen
 
           {/* Legend */}
           <div className="mt-2 flex flex-wrap items-center justify-center gap-6 text-xs text-gray-600">
+            <span className="flex items-center gap-2 font-semibold text-gray-800">
+              <span className="inline-block h-3.5 w-6 rounded-sm bg-pink-600" /> Manual process (steps 1, 3, 4)
+            </span>
+            <span className="flex items-center gap-2 font-semibold text-gray-800">
+              <span className="inline-block h-3.5 w-6 rounded-sm bg-violet-600" /> Automated process (step 2)
+            </span>
             <span className="flex items-center gap-2">
               <span className="inline-block h-3.5 w-3.5 rotate-45 border-2 border-dashed border-violet-500 bg-violet-50" />
               Automatic gate: reviewed by an agent

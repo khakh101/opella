@@ -92,7 +92,7 @@ export const Header: React.FC<HeaderProps> = ({ activeTab, setActiveTab, useCase
             }`}
           >
             <Sparkles className="w-4 h-4 text-amber-400" />
-            2. Intake & Agent Triage
+            2. User experience
           </button>
 
           <button
@@ -104,7 +104,7 @@ export const Header: React.FC<HeaderProps> = ({ activeTab, setActiveTab, useCase
             }`}
           >
             <PlayCircle className="w-4 h-4 text-emerald-300" />
-            3. Real-Time Lifecycle Simulator (Gates G1–G6)
+            3. TO experience (validation cockpit)
           </button>
 
           <button
