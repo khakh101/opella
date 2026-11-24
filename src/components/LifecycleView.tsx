@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import { Details } from "@/components/ui/Details";
 import {
   CheckCircle2,
   Clock,
@@ -1028,6 +1029,7 @@ export const LifecycleView: React.FC<LifecycleViewProps> = ({
             </div>
           </div>
 
+          <Details tone="dark" title={`User journey for gate ${activeGateTab}`}>
           {/* ======================================================== */}
           {/* DYNAMIC USER JOURNEY GUIDANCE STATION (PER ACTIVE GATE) */}
           {/* ======================================================== */}
@@ -1428,6 +1430,7 @@ export const LifecycleView: React.FC<LifecycleViewProps> = ({
               </p>
             </div>
           )}
+          </Details>
 
           {/* Interactive Progress Meter */}
           <div className="bg-black/25 rounded-xl p-3.5 border border-white/10 space-y-2">
@@ -1666,6 +1669,7 @@ export const LifecycleView: React.FC<LifecycleViewProps> = ({
           </div>
         </div>
 
+        <Details tone="light" title={"Multi-Dimensional Gate Review Criteria (Slide 79)"}>
         {/* ============================================================= */}
         {/* MULTI-DIMENSIONAL REVIEW CRITERIA (SLIDE 45 & 79) */}
         {/* ============================================================= */}
@@ -1722,6 +1726,7 @@ export const LifecycleView: React.FC<LifecycleViewProps> = ({
             </div>
           </div>
         </div>
+        </Details>
 
         {/* Committee / Agent Feedback Note */}
         {activeGate.feedback && (
@@ -1736,6 +1741,7 @@ export const LifecycleView: React.FC<LifecycleViewProps> = ({
 
         {/* Gate G4 Deep Dive: Mode Zoom, WHY Selected & 3-Way Team Disposition */}
         {activeGateTab === "G4" && MODE_DEEP_DIVES[currentCase.mode] && (
+          <Details tone="light" title={"Gate G4 deep dive: Mode, why it was selected, and team at disposition"}>
           <div className="p-5 rounded-2xl bg-emerald-50/60 border-2 border-emerald-600/30 space-y-4">
             <div className="border-b border-emerald-200/80 pb-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
               <div>
@@ -1928,6 +1934,7 @@ export const LifecycleView: React.FC<LifecycleViewProps> = ({
               </div>
             </div>
           </div>
+          </Details>
         )}
 
         {/* Live Simulation Banner */}

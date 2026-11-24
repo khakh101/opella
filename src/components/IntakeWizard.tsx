@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import { Details } from "@/components/ui/Details";
 import {
   Sparkles,
   ArrowRight,
@@ -908,27 +909,58 @@ export const IntakeWizard: React.FC<IntakeWizardProps> = ({
   return (
     <div className="w-full max-w-[1600px] 2xl:max-w-[1850px] mx-auto px-4 sm:px-6 lg:px-10 py-8">
       {/* Wizard Progress Stepper */}
-      <div className="mb-8 bg-white rounded-xl p-5 shadow-sm border border-opella-border">
-        <div className="flex items-center justify-between text-xs font-semibold text-gray-500 mb-2">
-          <span>STEP {step} OF 4</span>
-          <span className="text-opella-forest font-bold">
-            {step === 1 && "1. The 4 Questions Assessment & Initiative Framing"}
-            {step === 2 && "2. Autonomous Agent Triage (Tier & Speed)"}
-            {step === 3 && `3. Fill Relevant Business Case (${decision.tier})`}
-            {step === 4 && "4. Mode Selection (Do it for me / With me / Enable me)"}
-          </span>
-        </div>
-        <div className="w-full bg-gray-100 rounded-full h-2.5 overflow-hidden flex">
-          {[1, 2, 3, 4].map((s) => (
-            <div
-              key={s}
-              className={`flex-1 transition-all duration-300 ${
-                s <= step ? "bg-opella-forest" : "bg-transparent"
-              } ${s < step ? "border-r border-white/50" : ""}`}
-            />
-          ))}
-        </div>
-      </div>
+      <nav
+        aria-label="Intake steps"
+        className="mb-8 bg-white rounded-xl p-4 shadow-sm border border-opella-border"
+      >
+        <div className="text-xs font-semibold text-gray-500 mb-3">STEP {step} OF 4</div>
+        <ol className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
+          {([
+            [1, "1. The 4 Questions Assessment & Initiative Framing"],
+            [2, "2. Autonomous Agent Triage (Tier & Speed)"],
+            [3, `3. Fill Relevant Business Case (${decision.tier})`],
+            [4, "4. Mode Selection (Do it for me / With me / Enable me)"],
+          ] as [1 | 2 | 3 | 4, string][]).map(([s, label]) => {
+            const isCurrent = s === step;
+            const isDone = s < step;
+            const base =
+              "w-full h-full min-h-[56px] flex items-center gap-3 rounded-lg border px-3 py-2.5 text-left text-sm transition-colors";
+            const look = isCurrent
+              ? "bg-opella-forest border-opella-forest text-white font-bold"
+              : isDone
+              ? "bg-opella-sageLight border-opella-mint text-opella-forest font-semibold hover:bg-opella-mint"
+              : "bg-white border-opella-border text-gray-500";
+            const marker = (
+              <span
+                className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-bold ${
+                  isCurrent
+                    ? "bg-white text-opella-forest"
+                    : isDone
+                    ? "bg-opella-forest text-white"
+                    : "border-2 border-gray-300 text-gray-500"
+                }`}
+              >
+                {isDone ? <Check className="h-4 w-4" aria-hidden="true" /> : s}
+              </span>
+            );
+            return (
+              <li key={s}>
+                {isDone ? (
+                  <button type="button" onClick={() => setStep(s)} className={`${base} ${look}`}>
+                    {marker}
+                    <span>{label}</span>
+                  </button>
+                ) : (
+                  <div aria-current={isCurrent ? "step" : undefined} className={`${base} ${look}`}>
+                    {marker}
+                    <span>{label}</span>
+                  </div>
+                )}
+              </li>
+            );
+          })}
+        </ol>
+      </nav>
 
       {/* ================= STEP 1: THE 4 QUESTIONS ASSESSMENT & ACTIVE INTAKE COLLECTION ================= */}
       {step === 1 && (
@@ -1884,6 +1916,7 @@ export const IntakeWizard: React.FC<IntakeWizardProps> = ({
                 </span>
               </div>
 
+              <Details tone="dark" title={"Opella AmplifAI Gate Decision Authority Governance Spine"}>
               {/* Opella AmplifAI Gate Decision Authority Governance Spine */}
               <div className="bg-white/10 rounded-xl p-4 border border-white/15 space-y-3">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-white/15 pb-2.5">
@@ -1969,7 +2002,9 @@ export const IntakeWizard: React.FC<IntakeWizardProps> = ({
                   </div>
                 </div>
               </div>
+              </Details>
 
+              <Details tone="dark" title={"You will have the following meetings for review"}>
               {/* Part 2: Review Meetings & Comitology Forums You Will Have */}
               <div className="bg-white/10 rounded-xl p-4 border border-white/15 space-y-2.5">
                 <div className="text-xs font-black uppercase tracking-wider text-emerald-300 flex items-center gap-2">
@@ -2090,7 +2125,9 @@ export const IntakeWizard: React.FC<IntakeWizardProps> = ({
                   )}
                 </div>
               </div>
+              </Details>
 
+              <Details tone="dark" title={"Gate G2 Prerequisite Checklist"}>
               {/* Part 3: Information You Need to Collect Before Gate G2 */}
               <div className="bg-white/10 rounded-xl p-4 border border-white/15 space-y-3">
                 <div className="flex items-center justify-between">
@@ -2274,6 +2311,7 @@ export const IntakeWizard: React.FC<IntakeWizardProps> = ({
                   )}
                 </div>
               </div>
+              </Details>
             </div>
           </div>
 
@@ -2413,6 +2451,7 @@ export const IntakeWizard: React.FC<IntakeWizardProps> = ({
               </span>
             </div>
 
+            <Details tone="dark" title={"What it means"}>
             {/* What it means (1, 2, 3) */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
               <div className="p-3.5 rounded-xl bg-white/10 border border-emerald-400/30 space-y-1.5">
@@ -2457,7 +2496,9 @@ export const IntakeWizard: React.FC<IntakeWizardProps> = ({
                 </p>
               </div>
             </div>
+            </Details>
 
+            <Details tone="dark" title={`Information to collect for your business case (${decision.tier})`}>
             {/* Information you will need to collect for the business case */}
             <div className="bg-black/30 rounded-xl p-4 border border-white/15 space-y-2">
               <div className="text-xs font-bold uppercase tracking-wider text-amber-300 flex items-center gap-2">
@@ -2482,6 +2523,7 @@ export const IntakeWizard: React.FC<IntakeWizardProps> = ({
                 </p>
               )}
             </div>
+            </Details>
           </div>
 
           <div className="border-b border-opella-border pb-4 flex items-center justify-between">
@@ -2504,6 +2546,7 @@ export const IntakeWizard: React.FC<IntakeWizardProps> = ({
             <FileText className="w-8 h-8 text-gray-300 hidden sm:block" />
           </div>
 
+          <Details tone="light" title={"Working Group Accompanying Your Business Case Formulation"}>
           {/* USER JOURNEY COMPANIONS: OFFICIAL WORKING GROUP PROFILES ACCOMPANYING FORMULATION */}
           <div className="p-4 rounded-xl bg-gray-50 border border-gray-200 space-y-3">
             <div className="flex items-center justify-between">
@@ -2567,6 +2610,7 @@ export const IntakeWizard: React.FC<IntakeWizardProps> = ({
               </div>
             </div>
           </div>
+          </Details>
 
           {/* DYNAMIC FORMS BASED ON TIER */}
 
@@ -3697,6 +3741,7 @@ export const IntakeWizard: React.FC<IntakeWizardProps> = ({
                 </p>
               </div>
 
+              <Details tone="light" title={"WHY This Mode Was Selected for this Use Case"}>
               {/* WHY Was This Mode Selected? */}
               <div className="bg-white rounded-xl p-5 border border-emerald-200 shadow-2xs space-y-3 text-xs">
                 <div className="flex items-center justify-between">
@@ -3746,7 +3791,9 @@ export const IntakeWizard: React.FC<IntakeWizardProps> = ({
                   ))}
                 </div>
               </div>
+              </Details>
 
+              <Details tone="light" title={"Dedicated Team Put at the Disposition of the Use Case"}>
               {/* THE TEAM PUT AT THE DISPOSITION OF THE USE CASE */}
               <div className="space-y-4">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-2 border-b border-gray-200">
@@ -4060,6 +4107,7 @@ export const IntakeWizard: React.FC<IntakeWizardProps> = ({
                   );
                 })()}
               </div>
+              </Details>
             </div>
           )}
 
