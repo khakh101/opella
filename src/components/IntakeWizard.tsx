@@ -972,11 +972,12 @@ export const IntakeWizard: React.FC<IntakeWizardProps> = ({
         <div className="text-xs font-semibold text-gray-500 mb-3">STEP {step} OF 4</div>
         <ol className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
           {([
-            [1, "1. The 4 Questions Assessment & Initiative Framing"],
+            [1, "1. Preliminary project charter"],
             [2, "2. Autonomous Agent Triage (Tier & Speed)"],
-            [3, `3. Fill Relevant Business Case (${decision.tier})`],
-            [4, "4. Mode Selection (Do it for me / With me / Enable me)"],
+            [3, "3. Business case filled"],
+            [4, "4. Mode selection"],
           ] as [1 | 2 | 3 | 4, string][]).map(([s, label]) => {
+            const automated = s === 2;
             const isCurrent = s === step;
             const isDone = s < step;
             const base =
@@ -1004,12 +1005,22 @@ export const IntakeWizard: React.FC<IntakeWizardProps> = ({
                 {isDone ? (
                   <button type="button" onClick={() => setStep(s)} className={`${base} ${look}`}>
                     {marker}
-                    <span>{label}</span>
+                    <span className="flex flex-col">
+                      <span>{label}</span>
+                      <span className={`mt-0.5 inline-flex w-fit items-center gap-1 rounded px-1.5 py-px text-[10px] font-bold uppercase tracking-wide ${automated ? "bg-violet-100 text-violet-800" : "bg-pink-100 text-pink-800"}`}>
+                        {automated ? "🤖 Automated" : "✋ Manual"}
+                      </span>
+                    </span>
                   </button>
                 ) : (
                   <div aria-current={isCurrent ? "step" : undefined} className={`${base} ${look}`}>
                     {marker}
-                    <span>{label}</span>
+                    <span className="flex flex-col">
+                      <span>{label}</span>
+                      <span className={`mt-0.5 inline-flex w-fit items-center gap-1 rounded px-1.5 py-px text-[10px] font-bold uppercase tracking-wide ${automated ? "bg-violet-100 text-violet-800" : "bg-pink-100 text-pink-800"}`}>
+                        {automated ? "🤖 Automated" : "✋ Manual"}
+                      </span>
+                    </span>
                   </div>
                 )}
               </li>
@@ -2446,7 +2457,7 @@ export const IntakeWizard: React.FC<IntakeWizardProps> = ({
               }}
               className="px-6 py-2.5 bg-opella-forest text-white rounded-lg font-bold text-sm flex items-center gap-2 hover:bg-opella-emerald shadow-sm"
             >
-              Fill Relevant Business Case ({decision.tier}) <ArrowRight className="w-4 h-4" />
+              Go to step 3: Business case filled ({decision.tier}) <ArrowRight className="w-4 h-4" />
             </button>
           </div>
         </div>

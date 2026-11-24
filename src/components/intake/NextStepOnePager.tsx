@@ -4,6 +4,8 @@ import React from "react";
 import { ArrowLeft, Rocket } from "lucide-react";
 import { BUILD_MODES, BUILD_STEPS, ORIGIN, Chip } from "@/lib/miroBuild";
 import { ModeId, STEPS } from "@/lib/miroLifecycle";
+import { USER_BUILD_VIEW } from "@/lib/buildUserView";
+import { Details } from "@/components/ui/Details";
 
 interface NextStepOnePagerProps {
   mode: ModeId;
@@ -44,6 +46,7 @@ export const NextStepOnePager: React.FC<NextStepOnePagerProps> = ({
   const m = BUILD_MODES[mode];
   const tab = MODE_TABS.find((t) => t.id === mode);
   const prescale = STEPS.find((s) => s.id === "prescale");
+  const uv = USER_BUILD_VIEW[mode];
 
   return (
     <div className="space-y-6">
@@ -111,6 +114,56 @@ export const NextStepOnePager: React.FC<NextStepOnePagerProps> = ({
           </div>
         </div>
 
+        {/* Deep dive: what the build means for the user */}
+        <div className="border-b border-opella-border p-6">
+          <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+            <div>
+              <div className="text-xs font-bold uppercase tracking-wider text-gray-500">
+                What the build means for you
+              </div>
+              <p className="mt-1 max-w-3xl text-sm text-gray-800">{uv.summary}</p>
+            </div>
+            <div className="flex items-center gap-3 rounded-xl border border-gray-200 bg-[#faf8f5] px-4 py-3">
+              <span className="text-xs font-bold text-gray-500">Your effort</span>
+              <span className="flex gap-1" aria-hidden="true">
+                {[1, 2, 3].map((n) => (
+                  <span
+                    key={n}
+                    className="h-3 w-7 rounded-sm"
+                    style={{ background: n <= uv.effort ? m.color : "#e5e7eb" }}
+                  />
+                ))}
+              </span>
+              <span className="text-sm font-black text-gray-900">{uv.effortLabel}</span>
+            </div>
+          </div>
+
+          <div className="mt-4 overflow-x-auto">
+            <table className="w-full min-w-[640px] border-separate border-spacing-0 text-sm">
+              <thead>
+                <tr className="text-left text-xs uppercase tracking-wider text-gray-500">
+                  <th scope="col" className="w-[22%] border-b border-gray-200 pb-2 pr-4 font-bold">Build step</th>
+                  <th scope="col" className="w-[39%] border-b border-gray-200 pb-2 pr-4 font-bold" style={{ color: m.color }}>
+                    You do
+                  </th>
+                  <th scope="col" className="w-[39%] border-b border-gray-200 pb-2 font-bold">{uv.othersLabel}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {BUILD_STEPS.map((s) => (
+                  <tr key={s.n} className="align-top">
+                    <td className="border-b border-gray-100 py-3 pr-4 font-bold text-gray-900">
+                      {s.n}. {s.name}
+                    </td>
+                    <td className="border-b border-gray-100 py-3 pr-4 text-gray-900">{uv.you[s.n]}</td>
+                    <td className="border-b border-gray-100 py-3 text-gray-600">{uv.others[s.n]}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
         {/* The 4 build steps */}
         <div className="p-6">
           <div className="mb-3 text-xs font-bold uppercase tracking-wider text-gray-500">The 4 build steps</div>
@@ -131,6 +184,18 @@ export const NextStepOnePager: React.FC<NextStepOnePagerProps> = ({
                   <div className="mt-2 text-sm font-semibold text-gray-800">{cell.short}</div>
                   <div className="mt-3">
                     <ChipList chips={cell.who} />
+                  </div>
+                  <div className="mt-3">
+                    <Details title="What happens">
+                      <ul className="space-y-1.5">
+                        {cell.happens.map((h) => (
+                          <li key={h} className="flex gap-2 text-xs leading-snug text-gray-700">
+                            <span className="mt-[6px] h-1.5 w-1.5 shrink-0 rounded-full" style={{ background: m.color }} />
+                            {h}
+                          </li>
+                        ))}
+                      </ul>
+                    </Details>
                   </div>
                   <div className="mt-auto pt-3 text-xs text-gray-700">
                     <span className="font-bold text-gray-900">Output: </span>
