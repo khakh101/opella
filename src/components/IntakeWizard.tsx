@@ -2,6 +2,9 @@
 
 import React, { useState, useEffect } from "react";
 import { Details } from "@/components/ui/Details";
+import { IntakeHome } from "@/components/intake/IntakeHome";
+import { NextStepOnePager } from "@/components/intake/NextStepOnePager";
+import { ModeId } from "@/lib/miroLifecycle";
 import {
   Sparkles,
   ArrowRight,
@@ -87,6 +90,11 @@ export const IntakeWizard: React.FC<IntakeWizardProps> = ({
   // Step 3: Fill Out Relevant Business Case Form
   // Step 4: Sourcing & Delivery Mode Selection (Mode 1, 2, 3)
   const [step, setStep] = useState<1 | 2 | 3 | 4>(1);
+
+  // Tab 2 home screen (the 4 steps), zoom page (one step), or the next-step one pager
+  const [view, setView] = useState<"home" | "step" | "next">(rescopingUseCase ? "step" : "home");
+  const [nextMode, setNextMode] = useState<ModeId>("for-me");
+  const [nextBack, setNextBack] = useState<"home" | "step">("home");
 
   // Form State
   const [answers, setAnswers] = useState<IntakeAnswers>({
@@ -398,6 +406,7 @@ export const IntakeWizard: React.FC<IntakeWizardProps> = ({
   useEffect(() => {
     if (rescopingUseCase) {
       setStep(3); // Send straight to Business Case Formulation
+      setView("step");
 
       const targetTier = rescopingTier || rescopingUseCase.tier;
       setAnswers((prev) => ({
@@ -906,8 +915,55 @@ export const IntakeWizard: React.FC<IntakeWizardProps> = ({
     onNavigateToLifecycle(newCase.id);
   };
 
+  const modeToId = (m: DeliveryMode): ModeId =>
+    m === "Mode 1" ? "for-me" : m === "Mode 2" ? "with-me" : m === "Mode 3" ? "enable-me" : "self-service";
+
+  if (view === "home") {
+    return (
+      <div className="w-full max-w-[1600px] 2xl:max-w-[1850px] mx-auto px-4 sm:px-6 lg:px-10 py-8">
+        <IntakeHome
+          tier={decision.tier}
+          onOpenStep={(s) => {
+            setStep(s);
+            setView("step");
+            if (s === 2 && agentLogIndex < 4) {
+              // Replay the agent triage so the reader sees the agent work on its own
+              setAgentLogIndex(0);
+              [1, 2, 3, 4].forEach((n) => setTimeout(() => setAgentLogIndex(n), n * 600));
+            }
+          }}
+          onOpenNextStep={(m) => {
+            setNextMode(m);
+            setNextBack("home");
+            setView("next");
+          }}
+        />
+      </div>
+    );
+  }
+
+  if (view === "next") {
+    return (
+      <div className="w-full max-w-[1600px] 2xl:max-w-[1850px] mx-auto px-4 sm:px-6 lg:px-10 py-8">
+        <NextStepOnePager
+          mode={nextMode}
+          onChangeMode={setNextMode}
+          onBack={() => setView(nextBack)}
+          backLabel={nextBack === "home" ? "Back to the 4 steps" : "Back to step 4"}
+        />
+      </div>
+    );
+  }
+
   return (
     <div className="w-full max-w-[1600px] 2xl:max-w-[1850px] mx-auto px-4 sm:px-6 lg:px-10 py-8">
+      <button
+        type="button"
+        onClick={() => setView("home")}
+        className="mb-4 inline-flex min-h-[44px] items-center gap-2 rounded-lg border border-gray-300 bg-white px-4 text-sm font-semibold text-gray-700 hover:bg-gray-50"
+      >
+        <ArrowLeft className="h-4 w-4" aria-hidden="true" /> Back to the 4 steps
+      </button>
       {/* Wizard Progress Stepper */}
       <nav
         aria-label="Intake steps"
@@ -4340,6 +4396,18 @@ export const IntakeWizard: React.FC<IntakeWizardProps> = ({
             >
               <ArrowLeft className="w-4 h-4" /> Back to Business Case
             </button>
+            <div className="flex flex-wrap items-center gap-3">
+            <button
+              type="button"
+              onClick={() => {
+                setNextMode(modeToId(chosenMode));
+                setNextBack("step");
+                setView("next");
+              }}
+              className="px-5 py-2.5 border-2 border-opella-forest text-opella-forest rounded-xl text-sm font-bold hover:bg-emerald-50 flex items-center gap-1.5"
+            >
+              <span aria-hidden="true">🚀</span> See the next step for {chosenMode}
+            </button>
             <button
               onClick={handleCreateUseCase}
               className="px-7 py-3 bg-opella-forest text-white rounded-xl font-bold text-sm flex items-center gap-2 hover:bg-opella-emerald shadow-md transition-all hover:scale-[1.01]"
@@ -4347,6 +4415,7 @@ export const IntakeWizard: React.FC<IntakeWizardProps> = ({
               <Send className="w-4 h-4" />
               Launch into Real-Time Lifecycle Simulator
             </button>
+            </div>
           </div>
         </div>
       )}
