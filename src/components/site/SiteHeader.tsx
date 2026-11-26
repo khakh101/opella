@@ -7,7 +7,8 @@ export const SITE_TABS: { id: TabId; label: string }[] = [
   { id: "overview", label: "1. What we aim to achieve" },
   { id: "user", label: "2. User experience" },
   { id: "support", label: "3. Support employee experience" },
-  { id: "cockpit", label: "4. TO experience (validation cockpit)" },
+  { id: "cockpit", label: "4. Q&A" },
+  { id: "tocockpit", label: "5. TO cockpit" },
 ];
 
 interface SiteHeaderProps {

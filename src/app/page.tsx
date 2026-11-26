@@ -6,6 +6,7 @@ import { OverviewView } from "@/components/overview/OverviewView";
 import { IntakeWizard } from "@/components/IntakeWizard";
 import { SupportView, SupportPreset } from "@/components/support/SupportView";
 import { CockpitView } from "@/components/cockpit/CockpitView";
+import { TOCockpitView } from "@/components/cockpit/TOCockpitView";
 import { LifecycleView } from "@/components/LifecycleView";
 import { UseCase, Tier } from "@/types";
 import { fetchUseCases } from "@/lib/storage";
@@ -114,6 +115,7 @@ export default function Home() {
                 simulator={simulator}
               />
             )}
+            {activeTab === "tocockpit" && <TOCockpitView />}
           </>
         )}
       </main>

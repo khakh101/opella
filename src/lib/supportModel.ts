@@ -7,7 +7,7 @@ export type RoleId = "TO" | "VO" | "PC" | "DA" | "LEX" | "AL";
 export type StageId = "G1" | "G2" | "G3" | "G4" | "Build" | "G5" | "Scale" | "G6";
 export type Kind = "v" | "w" | "c" | "i" | "n";
 export type MeetingCode = "D" | "P" | "A" | "W" | "I";
-export type TabId = "overview" | "user" | "support" | "cockpit";
+export type TabId = "overview" | "user" | "support" | "cockpit" | "tocockpit";
 
 export interface SupportRole {
   id: RoleId; name: string; full: string; blurb: string; mission: string;
