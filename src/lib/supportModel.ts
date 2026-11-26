@@ -1760,20 +1760,24 @@ export const GENTIANE_QUESTIONS: QuestionCategory[] = [
     "text": "The big bets set the enterprise-level priorities. For AI initiatives outside the big bets, how do we decide which ones get enterprise priority and support, and which stay with the functions?",
     "s": "a",
     "answer": "G3 prioritisation formula: 30% value, 20% strategic fit, 20% reach and reuse, risk scored inversely. Self-serve stays with the functions.",
-    "where": "Tab 4 · gate G3",
+    "where": "Tab 3 · TO one-pager (G3)",
     "target": {
-     "tab": "cockpit",
-     "gate": "G3"
+     "tab": "support",
+     "screen": "sheet",
+     "role": "TO",
+     "tier": "T2"
     }
    },
    {
     "text": "Digital support needs to follow these priorities, and teams already have more requests than they can support well. How do we match the demand we create with delivery capacity, so the intake doesn't turn into a bottleneck?",
     "s": "p",
     "answer": "Quarterly capacity split (60% big bets, 25% fast lane, 15% enablement) and capacity arbitration at the AI Portfolio Board. Open: actual capacity figures.",
-    "where": "Tab 4 · gate G3",
+    "where": "Tab 3 · TO one-pager (G3)",
     "target": {
-     "tab": "cockpit",
-     "gate": "G3"
+     "tab": "support",
+     "screen": "sheet",
+     "role": "TO",
+     "tier": "T2"
     }
    }
   ]
@@ -1785,40 +1789,48 @@ export const GENTIANE_QUESTIONS: QuestionCategory[] = [
     "text": "Once a use case is validated, who owns it: the business sponsor, the use case owner, the delivery lead (Digital, Artefact, a partner)? How does this connect to the bet sponsor and owner model we are working on?",
     "s": "p",
     "answer": "One accountable business owner; the run owner is named at G5. Open: the link to the bet sponsor and owner model.",
-    "where": "Tab 4 · gate G5",
+    "where": "Tab 3 · TO one-pager (G5)",
     "target": {
-     "tab": "cockpit",
-     "gate": "G5"
+     "tab": "support",
+     "screen": "sheet",
+     "role": "TO",
+     "tier": "T1"
     }
    },
    {
     "text": "Which forums steer delivery, and how often (stream steercos, AmplifAI steerco)? What does each one decide, and what gets escalated?",
     "s": "a",
-    "answer": "Committee matrix: stream meetings, Portfolio board, SteerCo and the cross stream meeting, by gate and tier. Escalation goes from stream to Portfolio board to SteerCo.",
-    "where": "Tab 4 · committee matrix",
+    "answer": "The Where column of each role one-pager gives the forum at each gate and tier: stream meetings, Portfolio board, SteerCo, Design Authority. Escalation goes from stream to Portfolio board to SteerCo.",
+    "where": "Tab 3 · TO one-pager (Where column)",
     "target": {
-     "tab": "cockpit",
-     "anchor": "committees"
+     "tab": "support",
+     "screen": "sheet",
+     "role": "TO",
+     "tier": "T1"
     }
    },
    {
     "text": "What are the gates after validation (design, pilot, scale, run)? What are the criteria to go ahead, pause or stop a use case?",
     "s": "a",
     "answer": "G4 (mode and budget), G5 (scale) and G6 (run), each with value, complexity, risk and adoption criteria. Pause is not defined as a separate outcome.",
-    "where": "Tab 4 · gates G4 to G6",
+    "where": "Tab 3 · TO one-pager (G4 to G6)",
     "target": {
-     "tab": "cockpit",
-     "gate": "G4"
+     "tab": "support",
+     "screen": "sheet",
+     "role": "TO",
+     "tier": "T1"
     }
    },
    {
     "text": "How are validated use cases funded and staffed? Who decides when they compete for the same Digital or data capacity?",
     "s": "p",
     "answer": "Funding follows the lane at G4; Data & AI composes the squad; the AI Portfolio Board arbitrates capacity. Open: who funds the run.",
-    "where": "Tab 4 · gate G4",
+    "where": "Tab 3 · Data & AI one-pager (G4)",
     "target": {
-     "tab": "cockpit",
-     "gate": "G4"
+     "tab": "support",
+     "screen": "sheet",
+     "role": "DA",
+     "tier": "T1"
     }
    },
    {
@@ -1880,10 +1892,12 @@ export const GENTIANE_QUESTIONS: QuestionCategory[] = [
     "text": "How do we govern what moves from the sandbox to scale? What are the gates, and who decides at each one?",
     "s": "a",
     "answer": "G5 is the scale gate; who decides depends on the tier.",
-    "where": "Tab 4 · gate G5",
+    "where": "Tab 3 · TO one-pager (G5)",
     "target": {
-     "tab": "cockpit",
-     "gate": "G5"
+     "tab": "support",
+     "screen": "sheet",
+     "role": "TO",
+     "tier": "T1"
     }
    },
    {
@@ -1947,10 +1961,12 @@ export const GENTIANE_QUESTIONS: QuestionCategory[] = [
     "text": "How do we set up and maintain a registry of approved AI solutions and use cases, so we don't assess or build the same thing twice?",
     "s": "p",
     "answer": "Self-serve creates a registry line and reuse weighs 20% at G3. Open: who keeps the registry and who can search it.",
-    "where": "Tab 4 · gate G3",
+    "where": "Tab 3 · TO one-pager (G3)",
     "target": {
-     "tab": "cockpit",
-     "gate": "G3"
+     "tab": "support",
+     "screen": "sheet",
+     "role": "TO",
+     "tier": "T2"
     }
    }
   ]

@@ -3,6 +3,11 @@ from model import export
 import questions
 
 T = {
+ "Tab 3 · TO one-pager (G3)": {"tab": "support", "screen": "sheet", "role": "TO", "tier": "T2"},
+ "Tab 3 · TO one-pager (G5)": {"tab": "support", "screen": "sheet", "role": "TO", "tier": "T1"},
+ "Tab 3 · TO one-pager (Where column)": {"tab": "support", "screen": "sheet", "role": "TO", "tier": "T1"},
+ "Tab 3 · TO one-pager (G4 to G6)": {"tab": "support", "screen": "sheet", "role": "TO", "tier": "T1"},
+ "Tab 3 · Data & AI one-pager (G4)": {"tab": "support", "screen": "sheet", "role": "DA", "tier": "T1"},
  "Tab 2 · the 4 steps": {"tab": "user"}, "Tab 2 · step 1": {"tab": "user"},
  "Tab 3 · the tier questions": {"tab": "support", "screen": "tier", "role": "TO"},
  "Tab 3 · self-serve one-pager": {"tab": "support", "screen": "sheet", "role": "TO", "tier": "SS"},
@@ -33,7 +38,7 @@ export type RoleId = "TO" | "VO" | "PC" | "DA" | "LEX" | "AL";
 export type StageId = "G1" | "G2" | "G3" | "G4" | "Build" | "G5" | "Scale" | "G6";
 export type Kind = "v" | "w" | "c" | "i" | "n";
 export type MeetingCode = "D" | "P" | "A" | "W" | "I";
-export type TabId = "overview" | "user" | "support" | "cockpit";
+export type TabId = "overview" | "user" | "support" | "cockpit" | "tocockpit";
 
 export interface SupportRole {{
   id: RoleId; name: string; full: string; blurb: string; mission: string;

@@ -5,9 +5,8 @@ import { SiteHeader } from "@/components/site/SiteHeader";
 import { OverviewView } from "@/components/overview/OverviewView";
 import { IntakeWizard } from "@/components/IntakeWizard";
 import { SupportView, SupportPreset } from "@/components/support/SupportView";
-import { CockpitView } from "@/components/cockpit/CockpitView";
+import { QAView } from "@/components/qa/QAView";
 import { TOCockpitView } from "@/components/cockpit/TOCockpitView";
-import { LifecycleView } from "@/components/LifecycleView";
 import { UseCase, Tier } from "@/types";
 import { fetchUseCases } from "@/lib/storage";
 import { INITIAL_USE_CASES } from "@/lib/mockData";
@@ -23,7 +22,6 @@ export default function Home() {
 
   // Deep links between tabs (Gentiane's questions, Tab 1 shortcut)
   const [supportPreset, setSupportPreset] = useState<SupportPreset | undefined>(undefined);
-  const [cockpitTarget, setCockpitTarget] = useState<{ gate?: string; anchor?: string; simulator?: boolean }>({});
   const [navKey, setNavKey] = useState(0);
 
   useEffect(() => {
@@ -44,7 +42,6 @@ export default function Home() {
 
   const goTab = (tab: TabId) => {
     setSupportPreset(undefined);
-    setCockpitTarget({});
     setNavKey((k) => k + 1);
     setActiveTab(tab);
     window.scrollTo({ top: 0 });
@@ -53,33 +50,13 @@ export default function Home() {
   const navigate = (t: NavTarget) => {
     setNavKey((k) => k + 1);
     setSupportPreset(t.tab === "support" ? { screen: t.screen, role: t.role, tier: t.tier } : undefined);
-    setCockpitTarget(t.tab === "cockpit" ? { gate: t.gate, anchor: t.anchor } : {});
     setActiveTab(t.tab);
-    if (t.anchor && t.tab !== "cockpit") {
+    if (t.anchor) {
       setTimeout(() => document.getElementById(t.anchor!)?.scrollIntoView({ behavior: "smooth", block: "start" }), 80);
-    } else if (t.tab !== "cockpit") {
+    } else {
       window.scrollTo({ top: 0 });
     }
   };
-
-  // The wizard and the simulator still hand off to the detailed simulator, now inside Tab 4
-  const openSimulator = (id?: string) => {
-    if (id) setSelectedUseCaseId(id);
-    setNavKey((k) => k + 1);
-    setCockpitTarget({ anchor: "simulator", simulator: true });
-    setActiveTab("cockpit");
-  };
-
-  const simulator = (
-    <LifecycleView
-      useCases={useCases}
-      selectedUseCaseId={selectedUseCaseId}
-      onSelectUseCase={setSelectedUseCaseId}
-      onUseCaseUpdated={(u) => setUseCases((prev) => prev.map((x) => (x.id === u.id ? u : x)))}
-      onNavigateToRescope={(u, tier) => { setRescopingUseCase(u); setRescopingTier(tier); goTab("user"); }}
-      onNavigateToNewIntake={() => { setRescopingUseCase(null); setRescopingTier(null); goTab("user"); }}
-    />
-  );
 
   return (
     <div className="flex min-h-screen flex-col bg-[#F4F3EE]">
@@ -97,7 +74,7 @@ export default function Home() {
               <div className="bg-[#f7f5ef]">
                 <IntakeWizard
                   onUseCaseCreated={(c) => { setUseCases((prev) => [c, ...prev]); setSelectedUseCaseId(c.id); }}
-                  onNavigateToLifecycle={(id) => openSimulator(id)}
+                  onNavigateToLifecycle={(id) => setSelectedUseCaseId(id)}
                   rescopingUseCase={rescopingUseCase}
                   rescopingTier={rescopingTier}
                   onClearRescoping={() => { setRescopingUseCase(null); setRescopingTier(null); }}
@@ -105,16 +82,7 @@ export default function Home() {
               </div>
             )}
             {activeTab === "support" && <SupportView key={`support-${navKey}`} preset={supportPreset} />}
-            {activeTab === "cockpit" && (
-              <CockpitView
-                key={`cockpit-${navKey}`}
-                initialGate={cockpitTarget.gate}
-                initialAnchor={cockpitTarget.anchor}
-                simulatorOpen={cockpitTarget.simulator}
-                onNavigate={navigate}
-                simulator={simulator}
-              />
-            )}
+            {activeTab === "cockpit" && <QAView key={`qa-${navKey}`} onNavigate={navigate} />}
             {activeTab === "tocockpit" && <TOCockpitView />}
           </>
         )}
