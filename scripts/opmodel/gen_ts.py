@@ -16,6 +16,8 @@ T = {
  "Tab 3 · LEX (ORAI)": {"tab": "support", "screen": "sheet", "role": "LEX", "tier": "T1"},
  "Tab 3 · T3 one-pagers": {"tab": "support", "screen": "sheet", "role": "TO", "tier": "T3"},
  "Tab 1 · what it is": {"tab": "overview", "anchor": "what"},
+ "Tab 1 · stream allocation": {"tab": "overview", "anchor": "what", "miro": "stream"},
+ "Tab 5 · committees": {"tab": "tocockpit", "anchor": "committees"},
  "Tab 4 · committee matrix": {"tab": "cockpit", "anchor": "committees"},
  "Tab 4 · gate G3": {"tab": "cockpit", "gate": "G3"}, "Tab 4 · gate G4": {"tab": "cockpit", "gate": "G4"},
  "Tab 4 · gate G5": {"tab": "cockpit", "gate": "G5"}, "Tab 4 · gates G4 to G6": {"tab": "cockpit", "gate": "G4"},
@@ -26,8 +28,9 @@ for c in cats:
         q["target"] = T[q["where"]] if q["where"] else None
         del q["href"]
 
-src = open("/mnt/user-data/outputs/artifacts/d848803f/project/Tab4.dc.html").read()
-gates = re.search(r"const GATES = (\[.*?\n    \]);", src, re.S).group(1)
+# COCKPIT_GATES: kept as in the current file (the canvas Tab 4 no longer holds them)
+prev = open("/home/claude/opella/src/lib/supportModel.ts").read()
+gates = re.search(r"export const COCKPIT_GATES: GateDef\[\] = (.*);\n$", prev, re.S).group(1)
 
 out = f"""// Generated from the operating model source (role pages, committee matrix, Gentiane's questions).
 // Same content as the validated canvas mockup of 25 Nov 2026. Edit the source model, then regenerate.
@@ -49,7 +52,7 @@ export interface Meeting {{
   id: string; name: string; cadence: string; status: string; tiers: string; note: string; others: string;
   cells: Partial<Record<string, Partial<Record<TierId, Partial<Record<RoleId, [MeetingCode, string]>>>>>>;
 }}
-export interface NavTarget {{ tab: TabId; anchor?: string; gate?: string; screen?: "role" | "tier" | "sheet"; role?: RoleId; tier?: AnyTier }}
+export interface NavTarget {{ tab: TabId; anchor?: string; miro?: string; gate?: string; screen?: "role" | "tier" | "sheet"; role?: RoleId; tier?: AnyTier }}
 export interface GentianeQuestion {{ text: string; s: "a" | "p" | "o"; answer: string; where: string; target: NavTarget | null }}
 export interface QuestionCategory {{ title: string; qs: GentianeQuestion[] }}
 export interface GateDef {{

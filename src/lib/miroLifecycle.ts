@@ -54,7 +54,7 @@ export const PATHS: Record<PathId, PathDef> = {
     entryRule: "Big bet, Butterfly core platforms or scope, or > €1m",
     routeLabel: "Q1 · yes",
     businessCaseName: "Full business case",
-    forum: "Portfolio board · per stream",
+    forum: "Portfolio board (weekly) · G3 then SteerCo",
     g4Label: "Mode selection",
     buildLabel: "Build · selected mode",
     color: "#0d3824",
@@ -69,7 +69,7 @@ export const PATHS: Record<PathId, PathDef> = {
     entryRule: "Pilot proven + reach, hub capacity or €200k–1m",
     routeLabel: "Q3 · yes",
     businessCaseName: "Light business case",
-    forum: "AI Portfolio Board · per stream",
+    forum: "Portfolio board (biweekly)",
     g4Label: "Mode selection",
     buildLabel: "Build · selected mode",
     color: "#0369a1",
@@ -84,7 +84,7 @@ export const PATHS: Record<PathId, PathDef> = {
     entryRule: "No proven pilot, value hypothesis to test, €50k–1m",
     routeLabel: "Otherwise",
     businessCaseName: "One-page canvas",
-    forum: "AI Portfolio Board · per stream",
+    forum: "Portfolio board (biweekly)",
     g4Label: "Mode selection",
     buildLabel: "Build · selected mode",
     color: "#b45309",
@@ -185,6 +185,7 @@ export const STEPS: StepDef[] = [
     bullets: [
       "Charter gathered by an agent",
       "Routed to T1, T2, T3 or self-service",
+      "Allocated to a Butterfly stream",
       "Business case, priority and mode",
     ],
     gates: [
@@ -355,7 +356,7 @@ export const DETAILS: Record<string, DetailItem> = {
     kind: "gate",
     badge: "G1",
     title: "Need validation",
-    subtitle: "Automatic gate · run by agents, checked by the AI catalyst",
+    subtitle: "Automatic gate · run by agents, confirmed by the Transformation Office",
     gateType: "agent",
     intro:
       "Agents read the charter and do the first review, so people only look at needs that are complete and new.",
@@ -383,14 +384,61 @@ export const DETAILS: Record<string, DetailItem> = {
       },
     ],
     meta: [
-      { label: "Owner", value: "AI catalyst, charter agent" },
-      { label: "Forum", value: "Charter agent; the AI Portfolio Board confirms T2 vs T3" },
+      { label: "Validated by", value: "The agent automatically, then the Transformation Office" },
+      { label: "Forum", value: "No meeting" },
       { label: "SLA", value: "5 working days" },
       { label: "If no-go", value: "Stop or park" },
-      { label: "Escalation", value: "AI Portfolio Board" },
+      { label: "Next", value: "Stream allocation (T1, T2, T3), then the business case" },
     ],
     exampleKey: "g1",
     source: "Slides 35, 46, 52",
+  },
+
+  stream: {
+    id: "stream",
+    kind: "activity",
+    badge: "SA",
+    title: "Stream allocation assessment",
+    subtitle: "After G1, once the tier is set · T1, T2 and T3",
+    intro:
+      "The Butterfly comitology is organised by stream. So each use case joins a stream before its business case: that stream's committees will then review it. No new committee is created.",
+    sections: [
+      {
+        label: "How it works",
+        items: [
+          "The charter agent proposes the stream from the charter",
+          "Part of a big bet: the bet's lead stream",
+          "Otherwise: the stream of the requester's function",
+          "The requester can correct it; the Transformation Office confirms it",
+          "A bet across several streams: one lead stream, plus the AmplifAI cross stream meeting (optional)",
+        ],
+      },
+      {
+        label: "Lead stream per big bet (slide 43, indicative)",
+        items: [
+          "1 · Win the Consumer Journey: CxA + E-com (65%)",
+          "2 · Win the Innovation: Science, proposal (55%)",
+          "3 · Win the Trade: CEX + RGM (55%)",
+          "4 · Forecast to planning: IBP (85%)",
+          "5 · Augmented plants: M&Q (85%)",
+          "6 · Business partner function process reshapes: Procurement + Finance + D&AI (50%)",
+        ],
+      },
+      {
+        label: "The 14 Butterfly streams",
+        items: [
+          "CxA · CEX · E-com · RGM · IBP · Procurement · Manufacturing & Quality",
+          "Science · Finance · Treasury · P&C · Data & AI · Technology, Architecture & Cyber · ERP",
+        ],
+      },
+    ],
+    meta: [
+      { label: "Done by", value: "Charter agent, then the Transformation Office" },
+      { label: "Forum", value: "No meeting" },
+      { label: "Self-service", value: "Skipped: no committee" },
+    ],
+    note: "Indicative mapping, to decide with Opella. CxA, CEX, RGM, IBP and ERP are kept as on the source slide, which does not spell them out.",
+    source: "Slide 43",
   },
 
   // ------------------------------------------------------------- T1
@@ -399,7 +447,7 @@ export const DETAILS: Record<string, DetailItem> = {
     kind: "doc",
     badge: "BC",
     title: "Full business case · T1",
-    subtitle: "Butterfly depth · built through iterations with the Portfolio board",
+    subtitle: "Butterfly depth · built through iterations with the support functions",
     path: "T1",
     sections: [
       {
@@ -430,7 +478,7 @@ export const DETAILS: Record<string, DetailItem> = {
     gateType: "human",
     path: "T1",
     intro:
-      "It works through iterations. Up to here, the AI catalyst or the requester gathers the information. The first Portfolio boards validate that the use case is a T1 and give the right resources to build the business case properly.",
+      "It works through iterations, with no meeting at this gate: each support function validates its part of the business case (value, people impact, adoption, risk, tech and data).",
     sections: [
       {
         label: "Confirm the T1 criteria",
@@ -451,8 +499,8 @@ export const DETAILS: Record<string, DetailItem> = {
       },
     ],
     meta: [
-      { label: "Reviewers", value: "Data & AI, Finance, OR.AI" },
-      { label: "Forum", value: "Portfolio board (per stream); TO SteerCo approves entry and funding" },
+      { label: "Validated by", value: "Value officer (with Finance), P&C, Adoption lead, LEX (OR.AI), Data & AI" },
+      { label: "Forum", value: "No meeting: outside meetings" },
       { label: "SLA", value: "To define" },
       { label: "If no-go", value: "Re-scope or stop" },
     ],
@@ -471,8 +519,8 @@ export const DETAILS: Record<string, DetailItem> = {
     sections: prioritisationSections("60% of hub capacity goes to big bets and their T1 / T2 use cases"),
     meta: [
       { label: "Owner", value: "Transformation Office" },
-      { label: "Forum", value: "Portfolio board; TO SteerCo for T1" },
-      { label: "Cadence", value: "Fortnightly" },
+      { label: "Forum", value: "Portfolio board, then SteerCo, which validates the use case; AmplifAI cross stream meeting if several streams (optional)" },
+      { label: "Cadence", value: "Portfolio board: weekly · SteerCo: monthly" },
       { label: "If no-go", value: "Stays in the backlog" },
     ],
     exampleKey: "g3",
@@ -497,9 +545,8 @@ export const DETAILS: Record<string, DetailItem> = {
       },
     ],
     meta: [
-      { label: "Owner", value: "Data & AI with the function" },
-      { label: "Forum", value: "Design Authority + TO SteerCo" },
-      { label: "SLA", value: "Design Authority: 5 days" },
+      { label: "Validated by", value: "Mainly the Transformation Office and the Data & AI office, supported by the other functions" },
+      { label: "Forum", value: "Portfolio board (weekly)" },
       { label: "If no-go", value: "Re-scope or stop" },
     ],
     exampleKey: "g4",
@@ -560,8 +607,8 @@ export const DETAILS: Record<string, DetailItem> = {
       },
     ],
     meta: [
-      { label: "Forum", value: "AI Portfolio Board advises" },
-      { label: "Approver", value: "Program Sponsors (CDO + CFO)" },
+      { label: "Validated by", value: "Value officer (with Finance), P&C, Adoption lead, LEX (OR.AI), Data & AI" },
+      { label: "Forum", value: "No meeting: outside meetings" },
       { label: "SLA", value: "To define" },
       { label: "If no-go", value: "Re-scope or stop" },
     ],
@@ -582,7 +629,7 @@ export const DETAILS: Record<string, DetailItem> = {
     ),
     meta: [
       { label: "Owner", value: "Transformation Office" },
-      { label: "Forum", value: "AI Portfolio Board" },
+      { label: "Forum", value: "Portfolio board" },
       { label: "Cadence", value: "Fortnightly" },
       { label: "If no-go", value: "Stays in the backlog" },
     ],
@@ -608,9 +655,8 @@ export const DETAILS: Record<string, DetailItem> = {
       },
     ],
     meta: [
-      { label: "Owner", value: "Data & AI with the function" },
-      { label: "Forum", value: "Design Authority + Program Sponsors" },
-      { label: "SLA", value: "Design Authority: 5 days" },
+      { label: "Validated by", value: "Mainly the Transformation Office and the Data & AI office, supported by the other functions" },
+      { label: "Forum", value: "Portfolio board (biweekly)" },
       { label: "If no-go", value: "Re-scope, change mode or stop" },
     ],
     exampleKey: "g4",
@@ -669,7 +715,8 @@ export const DETAILS: Record<string, DetailItem> = {
       },
     ],
     meta: [
-      { label: "Forum", value: "AI Portfolio Board (per stream)" },
+      { label: "Validated by", value: "Value officer, P&C (light impact scan), LEX (OR.AI), Data & AI" },
+      { label: "Forum", value: "No meeting: outside meetings" },
       { label: "SLA", value: "10 days from a complete canvas" },
       { label: "If no-go", value: "Re-scope or stop" },
     ],
@@ -689,7 +736,7 @@ export const DETAILS: Record<string, DetailItem> = {
     sections: prioritisationSections("25% of hub capacity: fast lane and T2 outside big bets"),
     meta: [
       { label: "Owner", value: "Transformation Office" },
-      { label: "Forum", value: "AI Portfolio Board" },
+      { label: "Forum", value: "Portfolio board" },
       { label: "Cadence", value: "Fortnightly" },
       { label: "If no-go", value: "Stays in the backlog" },
     ],
@@ -716,9 +763,8 @@ export const DETAILS: Record<string, DetailItem> = {
       { label: "Also decided", items: ["Make or buy", "Sprint funding from the AmplifAI envelope"] },
     ],
     meta: [
-      { label: "Owner", value: "Data & AI with the function" },
-      { label: "Forum", value: "Design Authority + AI Portfolio Board" },
-      { label: "SLA", value: "Design Authority: 5 days" },
+      { label: "Validated by", value: "Mainly the Transformation Office and the Data & AI office, supported by the other functions" },
+      { label: "Forum", value: "Portfolio board (biweekly)" },
       { label: "If no-go", value: "Re-scope, change mode or stop" },
     ],
     exampleKey: "g4",
@@ -951,8 +997,8 @@ export const EXAMPLES: ExampleCase[] = [
       ppc: "Quotes to SAP purchase orders in 48h instead of 7–10 days · 1,800 buyers in 3 regions.",
       g1: "Q1 = yes (big bet 6, SAP P2P core, €1.45m): T1. OR.AI: medium (write-back to SAP).",
       bc: "€3.8m recurring EBITDA, 11-month payback, ~24 FTE of capacity redirected to negotiations.",
-      g2: "The first board confirms the big bet and staffs Finance to baseline P2P costs; case approved after 2 iterations.",
-      g3: "Score 91 / 100 · first in the Procurement backlog · 60% big-bet capacity.",
+      g2: "The support functions validate their parts outside meetings; Finance baselines P2P costs; case validated after 2 iterations.",
+      g3: "Score 91 / 100 · first in the Procurement backlog · 60% big-bet capacity; then SteerCo validates.",
       g4: "Do it for me: the hub builds the agent, Procurement frames the rules and validates.",
       build: "Hub squad builds the MVP in France and Spain; target 75% touchless orders.",
       g5: "TO SteerCo checks the touchless rate vs baseline before the Europe roll-out.",
@@ -971,9 +1017,9 @@ export const EXAMPLES: ExampleCase[] = [
     whyMode: "Planners own the logic, the hub owns the pipelines",
     notes: {
       ppc: "Merge point-of-sale, orders and promo signals into SAP IBP · 400 planners.",
-      g1: "Pilot already proven, 2 regions, €650k: T2. The board confirms T2 rather than T3.",
+      g1: "Pilot already proven, 2 regions, €650k: T2. The Transformation Office confirms T2 rather than T3.",
       bc: "2 pages: €1.8m working capital, 15 h / week saved per planner, runs on the existing data platform.",
-      g2: "Program Sponsors (CDO + CFO) approve on the AI Portfolio Board's advice.",
+      g2: "Value officer, P&C, Adoption lead, LEX and Data & AI each validate their part, outside meetings.",
       g3: "Score 78 / 100 · linked to big bet 4 (Forecast to planning).",
       g4: "Do it with me: planning experts tune the models, the hub builds the data pipelines.",
       build: "Shared squad extends the pilot to 2 more markets.",
@@ -995,7 +1041,7 @@ export const EXAMPLES: ExampleCase[] = [
       ppc: "Flag risky clauses in supplier contracts before signature · 40 lawyers and buyers.",
       g1: "No pilot, one function, €160k: T3. OR.AI: medium (confidential contracts).",
       bc: "Canvas: review time −50%, 3 KPIs, 8-week MVP on 200 past contracts.",
-      g2: "Approved at the AI Portfolio Board in 10 days, with OR.AI conditions on contract data.",
+      g2: "Validated outside meetings within 10 days, with OR.AI conditions on contract data.",
       g3: "Score 70 / 100 · in the 25% fast-lane queue, slot next quarter.",
       g4: "Do it for me: Legal has no tech capacity and the integration is complex.",
       build: "The hub builds the MVP; lawyers validate outputs on real contracts.",
@@ -1017,7 +1063,7 @@ export const EXAMPLES: ExampleCase[] = [
       ppc: "Draft the monthly variance commentary from controlling reports · 60 controllers.",
       g1: "No pilot, one function, €120k: T3. OR.AI: low.",
       bc: "Canvas: 1 day instead of 4, 3 KPIs, 6-week sprint.",
-      g2: "AI Portfolio Board says go within 10 days.",
+      g2: "The support functions validate the canvas within 10 days, outside meetings.",
       g3: "Score 74 / 100 · 25% fast-lane capacity.",
       g4: "Do it with me: Finance builds prompts and templates, the hub connects the reporting data.",
       build: "Shared squad: Finance builds the agent, the hub plugs the data.",
@@ -1039,7 +1085,7 @@ export const EXAMPLES: ExampleCase[] = [
       ppc: "Screen packaging claims against health authority rules before legal review · 85 users.",
       g1: "No pilot, one function, €85k: T3. OR.AI: medium (light review in 5 days).",
       bc: "Canvas: review from 14 to 4 days, >98% first-time right, €240k agency saving; 8-week sprint.",
-      g2: "AI Portfolio Board says go within 10 days.",
+      g2: "The support functions validate the canvas within 10 days, outside meetings.",
       g3: "Score 82 / 100 · 25% fast-lane capacity.",
       g4: "Enable me: Science builds; the hub reviews and audits.",
       build: "Function builders build on the approved LLM platform, in the builder sandbox.",
@@ -1069,3 +1115,47 @@ export const EXAMPLES: ExampleCase[] = [
 
 export const exampleById = (id: string): ExampleCase =>
   EXAMPLES.find((e) => e.id === id) ?? EXAMPLES[0];
+
+// ---------------------------------------------------------------------
+// Gate outcomes: the possible decisions at G1 to G4, with one example each
+// (site examples, or real initiatives from the AI inventory of 217)
+// ---------------------------------------------------------------------
+
+export interface GateOutcome {
+  category: string;
+  color: string;
+  rule: string;
+  exampleLabel: string;
+  example: string;
+  why: string;
+}
+
+export const GATE_OUTCOMES: Record<"g1" | "g2" | "g3" | "g4", GateOutcome[]> = {
+  g1: [
+    { category: "Tier 1 · Transform", color: "#0d3824", rule: "Big bet, Butterfly core platform or scope, or more than €1m.", exampleLabel: "Example", example: "GIDE / BOWIE procurement agent", why: "Big bet 6, SAP P2P core, €1.45m." },
+    { category: "Tier 2 · Scale", color: "#0369a1", rule: "Pilot proven, needs reach, hub capacity or €200k to €1m.", exampleLabel: "Example", example: "Demand sensing for IBP", why: "Pilot already proven, 2 regions, €650k." },
+    { category: "Tier 3 · Fast lane", color: "#b45309", rule: "New idea or build with a value hypothesis to test.", exampleLabel: "Example", example: "Supplier contract review assistant", why: "No pilot, one function, €160k." },
+    { category: "Self-service", color: "#7c3aed", rule: "Approved tools only, configured, under €50k.", exampleLabel: "Example", example: "HR policy Q&A Copilot agent", why: "Copilot Studio, policies already on SharePoint, €12k, low risk." },
+    { category: "Not validated", color: "#6b7280", rule: "Duplicate or out of scope: stop, park or redirect.", exampleLabel: "From the inventory · UC-078", example: "AI for Promotional Document review/audit", why: "Inventory status: Deprioritized. Overlaps other promotional and MLR compliance-check initiatives (Lumen, Veeva Promo Mats agents)." },
+  ],
+  g2: [
+    { category: "Validated", color: "#15803d", rule: "Each support function has validated its part: value, people impact, adoption, risk, tech and data.", exampleLabel: "Example · T1", example: "GIDE / BOWIE procurement agent", why: "Finance baselines P2P costs; case validated after 2 iterations." },
+    { category: "Validated with conditions", color: "#d97706", rule: "Go, with conditions to meet before real data or build.", exampleLabel: "Example · T3", example: "Supplier contract review assistant", why: "Validated within 10 days, with OR.AI conditions on contract data." },
+    { category: "Re-scope or park", color: "#b91c1c", rule: "Value unclear, or foundations missing.", exampleLabel: "From the inventory · UC-031", example: "HAQA tool (Health Authorities Questions Answers)", why: "Inventory status: Parked. It needs Opella's own Veeva RIM environment, expected in October 2027." },
+  ],
+  g3: [
+    { category: "Prioritised: big bet capacity", color: "#0d3824", rule: "Top score; uses the 60% of hub capacity kept for big bets. T1: SteerCo then validates.", exampleLabel: "Example · T1", example: "GIDE / BOWIE procurement agent", why: "Score 91 / 100, first in the Procurement backlog." },
+    { category: "Prioritised: fast-lane capacity", color: "#b45309", rule: "Good score; uses the 25% fast-lane capacity.", exampleLabel: "Example · T3", example: "Regulatory claims validator", why: "Score 82 / 100, in the 25% fast-lane capacity." },
+    { category: "Stays in the backlog", color: "#6b7280", rule: "Validated, but no capacity yet: waits for the next slot.", exampleLabel: "Example · T3", example: "Supplier contract review assistant", why: "Score 70 / 100, slot next quarter." },
+  ],
+  g4: [
+    { category: "Mode 1 · Do it for me", color: "#0d3824", rule: "The hub builds and runs; the function frames and validates.", exampleLabel: "Example", example: "GIDE / BOWIE procurement agent", why: "The hub builds the agent, Procurement frames the rules and validates." },
+    { category: "Mode 2 · Do it with me", color: "#0369a1", rule: "Shared squad between the function and the hub.", exampleLabel: "Example", example: "Demand sensing for IBP", why: "Planners own the logic, the hub owns the pipelines." },
+    { category: "Mode 3 · Enable me", color: "#7c3aed", rule: "The function builds with the hub's platform and guardrails.", exampleLabel: "Example", example: "Regulatory claims validator", why: "Science has AI builders and its own budget." },
+  ],
+};
+
+export const gateOutcomesFor = (detailId: string): GateOutcome[] | undefined => {
+  const key = detailId.split("-")[0] as keyof typeof GATE_OUTCOMES;
+  return GATE_OUTCOMES[key];
+};

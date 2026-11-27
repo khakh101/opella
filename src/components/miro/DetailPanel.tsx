@@ -10,6 +10,7 @@ import {
   MODES,
   PATHS,
   businessCaseIdFor,
+  gateOutcomesFor,
 } from "@/lib/miroLifecycle";
 import { cx } from "./MiroPrimitives";
 
@@ -162,6 +163,29 @@ export const DetailPanel: React.FC<DetailPanelProps> = ({ detailId, example, onC
         <div className="flex-1 space-y-5 overflow-y-auto px-5 py-5">
           {tab === "bc" && bc && <p className="text-xs font-semibold text-gray-500">{bc.subtitle}</p>}
           <DetailBody item={shown} />
+
+          {tab === "gate" && gateOutcomesFor(gate.id) && (
+            <div>
+              <div className="mb-2 text-[11px] font-black uppercase tracking-wider text-gray-500">Possible outcomes, with an example each</div>
+              <div className="space-y-2">
+                {gateOutcomesFor(gate.id)!.map((o) => (
+                  <div key={o.category} className="rounded-lg border-[1.5px] bg-white p-3" style={{ borderColor: o.color }}>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="rounded px-1.5 py-0.5 text-xs font-black text-white" style={{ background: o.color }}>
+                        {o.category}
+                      </span>
+                      <span className="text-xs text-gray-600">{o.rule}</span>
+                    </div>
+                    <div className="mt-2 rounded-md border border-amber-200 bg-[#fffbea] px-2.5 py-1.5">
+                      <div className="text-[10px] font-black uppercase tracking-wider text-amber-800">{o.exampleLabel}</div>
+                      <div className="text-xs font-bold text-gray-900">{o.example}</div>
+                      <div className="text-xs leading-snug text-gray-700">{o.why}</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* Example (an activity without an example note has none to show) */}
           {!(gate.kind === "activity" && !shown.exampleKey) && (

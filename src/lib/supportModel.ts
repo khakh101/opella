@@ -18,7 +18,7 @@ export interface Meeting {
   id: string; name: string; cadence: string; status: string; tiers: string; note: string; others: string;
   cells: Partial<Record<string, Partial<Record<TierId, Partial<Record<RoleId, [MeetingCode, string]>>>>>>;
 }
-export interface NavTarget { tab: TabId; anchor?: string; gate?: string; screen?: "role" | "tier" | "sheet"; role?: RoleId; tier?: AnyTier }
+export interface NavTarget { tab: TabId; anchor?: string; miro?: string; gate?: string; screen?: "role" | "tier" | "sheet"; role?: RoleId; tier?: AnyTier }
 export interface GentianeQuestion { text: string; s: "a" | "p" | "o"; answer: string; where: string; target: NavTarget | null }
 export interface QuestionCategory { title: string; qs: GentianeQuestion[] }
 export interface GateDef {
@@ -54,53 +54,53 @@ const MODEL = {
     },
     "G2": {
      "T1": [
-      "v",
-      "Validate feasibility: full business case, technical feasibility, tier confirmed. The stream meeting pre-approves before SteerCo.",
-      "Stream lead, Value officer, Data & AI, LEX (ORAI)"
+      "w",
+      "No meeting: check that each support function has validated its part of the business case, then put it on the Portfolio board agenda.",
+      "Value officer, P&C, Adoption lead, LEX (ORAI), Data & AI"
      ],
      "T2": [
-      "v",
-      "Validate feasibility and confirm T2 rather than T3 at the AI Portfolio Board.",
-      "Value officer, Data & AI, LEX (ORAI)"
+      "w",
+      "No meeting: check that each support function has validated its part of the business case, then put it on the Portfolio board agenda.",
+      "Value officer, P&C, Adoption lead, LEX (ORAI), Data & AI"
      ],
      "T3": [
-      "v",
-      "Validate the one-page canvas within 10 days and confirm the fast lane.",
-      "Value officer, Data & AI, LEX (ORAI)"
+      "w",
+      "No meeting: check that each support function has validated its part of the business case, then put it on the Portfolio board agenda.",
+      "Value officer, P&C, LEX (ORAI), Data & AI"
      ]
     },
     "G3": {
      "T1": [
       "v",
-      "Present the bet at SteerCo, which approves its entry and funding.",
-      "SteerCo members, business owner, Data & AI"
+      "Prioritise the bet at the Portfolio board, then present it at SteerCo, which validates it. If it spans several streams, it can also go to the AmplifAI cross stream meeting (optional).",
+      "Portfolio board, SteerCo members, Value officer, Data & AI"
      ],
      "T2": [
       "v",
-      "Place the initiative in the enterprise backlog against value, fit and hub capacity.",
-      "AI Portfolio Board, Data & AI"
+      "Prioritise at the Portfolio board: place the initiative in the enterprise backlog against value, fit and hub capacity.",
+      "Portfolio board, Value officer, Data & AI"
      ],
      "T3": [
       "v",
-      "First pass of the fast lane at the board: yes or no.",
-      "AI Portfolio Board, Data & AI"
+      "Prioritise the fast lane at the Portfolio board: yes or no.",
+      "Portfolio board, Value officer, Data & AI"
      ]
     },
     "G4": {
      "T1": [
-      "i",
-      "Informed of the mode, make-or-buy and the budget release. Data & AI decides at the Design Authority.",
-      "Data & AI"
+      "v",
+      "Validate the mode with Data & AI at the Portfolio board, with the other functions in support.",
+      "Data & AI, Value officer, LEX (ORAI), Adoption lead"
      ],
      "T2": [
-      "i",
-      "Informed of the mode, make-or-buy and the budget release. Data & AI decides at the Design Authority.",
-      "Data & AI"
+      "v",
+      "Validate the mode with Data & AI at the Portfolio board, with the other functions in support.",
+      "Data & AI, Value officer, LEX (ORAI), Adoption lead"
      ],
      "T3": [
-      "i",
-      "Informed of the mode, make-or-buy and the budget release. Data & AI decides at the Design Authority.",
-      "Data & AI"
+      "v",
+      "Validate the mode with Data & AI at the Portfolio board, with the other functions in support.",
+      "Data & AI, Value officer, LEX (ORAI)"
      ]
     },
     "Build": {
@@ -174,7 +174,8 @@ const MODEL = {
    },
    "decide": [
     "The routing after the agent triage (G1)",
-    "Feasibility and priority (G2, G3)",
+    "Priority at the Portfolio board (G3)",
+    "The mode, with Data & AI (G4)",
     "The scale decision and continue or stop (G5, G6)"
    ],
    "produce": [
@@ -218,52 +219,52 @@ const MODEL = {
     },
     "G2": {
      "T1": [
-      "w",
-      "Build the value baseline of the full business case and how value will be measured. Finance validates.",
+      "v",
+      "No meeting: build and validate the value baseline of the full business case and how value will be measured. Finance validates the figures.",
       "Finance BP, requester"
      ],
      "T2": [
-      "w",
-      "Build the value range of the business case. Finance validates.",
+      "v",
+      "No meeting: build and validate the value range of the business case. Finance validates the figures.",
       "Finance BP, requester"
      ],
      "T3": [
-      "c",
-      "Check the value hypothesis on the one-page canvas.",
+      "v",
+      "No meeting: validate the value hypothesis on the one-page canvas.",
       "Requester"
      ]
     },
     "G3": {
      "T1": [
       "c",
-      "Provide the value score used in the prioritisation formula (30% value).",
-      "TO, AI Portfolio Board"
+      "Provide the value score used at the Portfolio board (30% value).",
+      "TO, Portfolio board"
      ],
      "T2": [
       "c",
-      "Provide the value score used in the prioritisation formula (30% value).",
-      "TO, AI Portfolio Board"
+      "Provide the value score used at the Portfolio board (30% value).",
+      "TO, Portfolio board"
      ],
      "T3": [
       "c",
-      "Provide the value score used in the prioritisation formula (30% value).",
-      "TO, AI Portfolio Board"
+      "Provide the value score used at the Portfolio board (30% value).",
+      "TO, Portfolio board"
      ]
     },
     "G4": {
      "T1": [
       "c",
-      "Check that funding follows the lane: full business case, tranches or sprint envelope.",
+      "At the Portfolio board, check that funding follows the lane: full business case, tranches or sprint envelope.",
       "Data & AI, TO"
      ],
      "T2": [
       "c",
-      "Check that funding follows the lane: full business case, tranches or sprint envelope.",
+      "At the Portfolio board, check that funding follows the lane: full business case, tranches or sprint envelope.",
       "Data & AI, TO"
      ],
      "T3": [
       "c",
-      "Check that funding follows the lane: full business case, tranches or sprint envelope.",
+      "At the Portfolio board, check that funding follows the lane: full business case, tranches or sprint envelope.",
       "Data & AI, TO"
      ]
     },
@@ -337,7 +338,7 @@ const MODEL = {
     }
    },
    "decide": [
-    "Whether the baseline is credible, with Finance (G2)",
+    "Whether the value case holds, with Finance (G2)",
     "Pilot KPIs against the baseline (G5)",
     "Realised value and retirement (G6)"
    ],
@@ -382,18 +383,18 @@ const MODEL = {
     },
     "G2": {
      "T1": [
-      "w",
-      "Run the full Change Impact Assessment: affected jobs, user count, skills, process redesign yes or no.",
+      "v",
+      "No meeting: run and validate the full Change Impact Assessment, on the Butterfly template adjusted for AI: affected jobs, user count, skills, process redesign yes or no.",
       "Requester, Adoption lead"
      ],
      "T2": [
-      "w",
-      "Run the full Change Impact Assessment: affected jobs, user count, skills, process redesign yes or no.",
+      "v",
+      "No meeting: run and validate the full Change Impact Assessment, on the Butterfly template adjusted for AI: affected jobs, user count, skills, process redesign yes or no.",
       "Requester, Adoption lead"
      ],
      "T3": [
-      "w",
-      "Run a light impact scan: affected jobs and user count.",
+      "v",
+      "No meeting: run and validate a light impact scan: affected jobs and user count.",
       "Requester"
      ]
     },
@@ -501,10 +502,11 @@ const MODEL = {
     }
    },
    "decide": [
+    "Whether the people impact of the business case is acceptable (G2)",
     "Whether the workforce impact is acceptable to scale (G5)"
    ],
    "produce": [
-    "Change Impact Assessment (G2)",
+    "Change Impact Assessment (G2), on the Butterfly template adjusted for AI",
     "HR workforce impact assessment (G5)",
     "Upskilling and social dialogue inputs (Scale)"
    ],
@@ -545,52 +547,52 @@ const MODEL = {
     "G2": {
      "T1": [
       "v",
-      "Assess tech and data readiness and flag foundation gaps at the Design Authority.",
-      "Design Authority, requester"
+      "No meeting: assess and validate tech and data readiness; flag foundation gaps.",
+      "Requester, architects"
      ],
      "T2": [
       "v",
-      "Assess tech and data readiness and flag foundation gaps at the Design Authority.",
-      "Design Authority, requester"
+      "No meeting: assess and validate tech and data readiness; flag foundation gaps.",
+      "Requester, architects"
      ],
      "T3": [
       "v",
-      "Assess tech and data readiness and flag foundation gaps at the Design Authority.",
-      "Design Authority, requester"
+      "No meeting: assess and validate tech and data readiness; flag foundation gaps.",
+      "Requester, architects"
      ]
     },
     "G3": {
      "T1": [
       "c",
-      "Confirm hub capacity in the quarterly plan.",
-      "TO, AI Portfolio Board"
+      "Confirm hub capacity at the Portfolio board.",
+      "TO, Portfolio board"
      ],
      "T2": [
       "c",
-      "Confirm hub capacity in the quarterly plan.",
-      "TO, AI Portfolio Board"
+      "Confirm hub capacity at the Portfolio board.",
+      "TO, Portfolio board"
      ],
      "T3": [
       "c",
-      "Confirm hub capacity in the quarterly plan.",
-      "TO, AI Portfolio Board"
+      "Confirm hub capacity at the Portfolio board.",
+      "TO, Portfolio board"
      ]
     },
     "G4": {
      "T1": [
       "v",
-      "Lock the mode, make-or-buy, architecture and squad, then release the build budget.",
-      "Design Authority, tier approver"
+      "Decide the mode with the TO at the Portfolio board; lock make-or-buy, architecture and squad, then release the build budget.",
+      "TO, Portfolio board"
      ],
      "T2": [
       "v",
-      "Lock the mode, make-or-buy, architecture and squad, then release the build budget.",
-      "Design Authority, tier approver"
+      "Decide the mode with the TO at the Portfolio board; lock make-or-buy, architecture and squad, then release the build budget.",
+      "TO, Portfolio board"
      ],
      "T3": [
       "v",
-      "Lock the mode, make-or-buy, architecture and squad, then release the build budget.",
-      "Design Authority, tier approver"
+      "Decide the mode with the TO at the Portfolio board; lock make-or-buy, architecture and squad, then release the build budget.",
+      "TO, Portfolio board"
      ]
     },
     "Build": {
@@ -664,7 +666,7 @@ const MODEL = {
    },
    "decide": [
     "Tech and data readiness (G2)",
-    "Mode, make-or-buy, architecture and budget release (G4)"
+    "The mode with the TO, make-or-buy, architecture and budget release (G4)"
    ],
    "produce": [
     "Architecture decision record",
@@ -708,17 +710,17 @@ const MODEL = {
     "G2": {
      "T1": [
       "v",
-      "Risk triage: confirm the OR.AI tier and set the pre-build conditions. Low: standard guardrails. Medium: light review in 5 days. High: full review before real data.",
+      "No meeting: risk triage: confirm the OR.AI tier and set the pre-build conditions. Low: standard guardrails. Medium: light review in 5 days. High: full review before real data.",
       "Legal counsel or DPO, Data & AI"
      ],
      "T2": [
       "v",
-      "Risk triage: confirm the OR.AI tier and set the pre-build conditions. Low: standard guardrails. Medium: light review in 5 days. High: full review before real data.",
+      "No meeting: risk triage: confirm the OR.AI tier and set the pre-build conditions. Low: standard guardrails. Medium: light review in 5 days. High: full review before real data.",
       "Legal counsel or DPO, Data & AI"
      ],
      "T3": [
       "v",
-      "Risk triage: confirm the OR.AI tier and set the pre-build conditions. Low: standard guardrails. Medium: light review in 5 days. High: full review before real data.",
+      "No meeting: risk triage: confirm the OR.AI tier and set the pre-build conditions. Low: standard guardrails. Medium: light review in 5 days. High: full review before real data.",
       "Legal counsel or DPO, Data & AI"
      ]
     },
@@ -742,18 +744,18 @@ const MODEL = {
     "G4": {
      "T1": [
       "c",
-      "Your guardrails are locked into the build plan at the Design Authority.",
-      "Data & AI"
+      "Your guardrails are locked into the build plan at the Portfolio board.",
+      "Data & AI, TO"
      ],
      "T2": [
       "c",
-      "Your guardrails are locked into the build plan at the Design Authority.",
-      "Data & AI"
+      "Your guardrails are locked into the build plan at the Portfolio board.",
+      "Data & AI, TO"
      ],
      "T3": [
       "c",
-      "Your guardrails are locked into the build plan at the Design Authority.",
-      "Data & AI"
+      "Your guardrails are locked into the build plan at the Portfolio board.",
+      "Data & AI, TO"
      ]
     },
     "Build": {
@@ -870,13 +872,13 @@ const MODEL = {
     },
     "G2": {
      "T1": [
-      "c",
-      "Add the adoption angle to the impact assessment: users, sites, adoption risk.",
+      "v",
+      "No meeting: validate the adoption angle of the business case: users, sites, adoption risk.",
       "P&C counterpart, requester"
      ],
      "T2": [
-      "c",
-      "Add the adoption angle to the impact assessment: users, sites, adoption risk.",
+      "v",
+      "No meeting: validate the adoption angle of the business case: users, sites, adoption risk.",
       "P&C counterpart, requester"
      ],
      "T3": [
@@ -905,12 +907,12 @@ const MODEL = {
     "G4": {
      "T1": [
       "c",
-      "Agree how adoption will be measured; start the adoption plan.",
+      "At the Portfolio board, agree how adoption will be measured; start the adoption plan.",
       "Data & AI, TO"
      ],
      "T2": [
       "c",
-      "Agree how adoption will be measured; start the adoption plan.",
+      "At the Portfolio board, agree how adoption will be measured; start the adoption plan.",
       "Data & AI, TO"
      ],
      "T3": [
@@ -989,6 +991,7 @@ const MODEL = {
     }
    },
    "decide": [
+    "The adoption angle of the business case (G2)",
     "Whether the adoption plan is ready to scale (you bring it; the TO decides)"
    ],
    "produce": [
@@ -1017,18 +1020,6 @@ const MODEL = {
    "note": "T2 and T3: no meeting.",
    "others": "Stream lead, business owners and product owners, AI catalysts, Finance BP",
    "cells": {
-    "G2": {
-     "T1": {
-      "TO": [
-       "D",
-       "Pre-approves the business case before SteerCo"
-      ],
-      "VO": [
-       "P",
-       "Presents the baseline"
-      ]
-     }
-    },
     "G5": {
      "T1": {
       "TO": [
@@ -1061,32 +1052,24 @@ const MODEL = {
    "cadence": "Weekly for T1, biweekly for T2 and T3",
    "status": "Exists",
    "tiers": "T1 T2 T3",
-   "note": "T1: weekly review of escalations from streams, at any gate.",
+   "note": "Decides G3 (priority) and G4 (mode) for every tier. T1: weekly, also reviews escalations from streams.",
    "others": "Stream lead, business owners and product owners, AI catalysts, Finance BP. T2: advice to Program Sponsors (CDO and CFO)",
    "cells": {
-    "G2": {
-     "T2": {
+    "G3": {
+     "T1": {
       "TO": [
        "D",
-       "Feasibility; T2 or T3"
+       "Prioritises the bet; SteerCo then validates"
       ],
       "VO": [
        "P",
-       "Value range"
+       "Value score"
+      ],
+      "DA": [
+       "A",
+       "Hub capacity"
       ]
      },
-     "T3": {
-      "TO": [
-       "D",
-       "Validates the canvas in 10 days"
-      ],
-      "VO": [
-       "P",
-       "Value hypothesis"
-      ]
-     }
-    },
-    "G3": {
      "T2": {
       "TO": [
        "D",
@@ -1113,6 +1096,70 @@ const MODEL = {
       "DA": [
        "A",
        "Hub capacity"
+      ]
+     }
+    },
+    "G4": {
+     "T1": {
+      "TO": [
+       "D",
+       "Mode, with Data & AI"
+      ],
+      "DA": [
+       "D",
+       "Mode, make-or-buy, architecture, budget"
+      ],
+      "VO": [
+       "A",
+       "Funding lane"
+      ],
+      "LEX": [
+       "A",
+       "Guardrails locked"
+      ],
+      "AL": [
+       "A",
+       "Adoption measures"
+      ]
+     },
+     "T2": {
+      "TO": [
+       "D",
+       "Mode, with Data & AI"
+      ],
+      "DA": [
+       "D",
+       "Mode, make-or-buy, architecture, budget"
+      ],
+      "VO": [
+       "A",
+       "Funding lane"
+      ],
+      "LEX": [
+       "A",
+       "Guardrails locked"
+      ],
+      "AL": [
+       "A",
+       "Adoption measures"
+      ]
+     },
+     "T3": {
+      "TO": [
+       "D",
+       "Mode, with Data & AI"
+      ],
+      "DA": [
+       "D",
+       "Mode, make-or-buy, architecture, budget"
+      ],
+      "VO": [
+       "A",
+       "Funding lane"
+      ],
+      "LEX": [
+       "A",
+       "Guardrails locked"
       ]
      }
     },
@@ -1207,7 +1254,7 @@ const MODEL = {
      "T1": {
       "TO": [
        "P",
-       "Presents the bet; SteerCo approves entry and funding"
+       "Presents the bet; SteerCo validates it (entry and funding)"
       ],
       "DA": [
        "A",
@@ -1275,14 +1322,14 @@ const MODEL = {
    "cadence": "Monthly (proposal, new)",
    "status": "New",
    "tiers": "T1",
-   "note": "Only for bets spanning several streams. T2 and T3: no meeting.",
+   "note": "Optional: only for bets spanning several streams. T2 and T3: no meeting.",
    "others": "Program Sponsors (CDO and CFO), C-level bet sponsors, Head of Transformation Program",
    "cells": {
     "G3": {
      "T1": {
       "TO": [
        "P",
-       "One decision for a multi-stream bet"
+       "Optional: one decision for a multi-stream bet"
       ]
      }
     }
@@ -1294,93 +1341,9 @@ const MODEL = {
    "cadence": "Weekly",
    "status": "Exists",
    "tiers": "T1 T2 T3",
-   "note": "Self-serve: only checks a new tool.",
+   "note": "Scale architecture sign-off (G5). Self-serve: only checks a new tool.",
    "others": "Architects, lead tech (participants to confirm)",
    "cells": {
-    "G2": {
-     "T1": {
-      "DA": [
-       "D",
-       "Tech and data readiness"
-      ]
-     },
-     "T2": {
-      "DA": [
-       "D",
-       "Tech and data readiness"
-      ]
-     },
-     "T3": {
-      "DA": [
-       "D",
-       "Tech and data readiness"
-      ]
-     }
-    },
-    "G4": {
-     "T1": {
-      "DA": [
-       "D",
-       "Mode, make-or-buy, architecture, budget"
-      ],
-      "TO": [
-       "I",
-       "Informed"
-      ],
-      "LEX": [
-       "A",
-       "Guardrails locked"
-      ],
-      "VO": [
-       "A",
-       "Funding lane"
-      ],
-      "AL": [
-       "A",
-       "Adoption measures"
-      ]
-     },
-     "T2": {
-      "DA": [
-       "D",
-       "Mode, make-or-buy, architecture, budget"
-      ],
-      "TO": [
-       "I",
-       "Informed"
-      ],
-      "LEX": [
-       "A",
-       "Guardrails locked"
-      ],
-      "VO": [
-       "A",
-       "Funding lane"
-      ],
-      "AL": [
-       "A",
-       "Adoption measures"
-      ]
-     },
-     "T3": {
-      "DA": [
-       "D",
-       "Mode, make-or-buy, architecture, budget"
-      ],
-      "TO": [
-       "I",
-       "Informed"
-      ],
-      "LEX": [
-       "A",
-       "Guardrails locked"
-      ],
-      "VO": [
-       "A",
-       "Funding lane"
-      ]
-     }
-    },
     "G5": {
      "T1": {
       "DA": [
@@ -1432,14 +1395,6 @@ const MODEL = {
       ]
      }
     },
-    "G3": {
-     "T1": {
-      "VO": [
-       "W",
-       "Value score for SteerCo"
-      ]
-     }
-    },
     "G4": {
      "T1": {
       "PC": [
@@ -1463,52 +1418,76 @@ const MODEL = {
     "G2": {
      "T1": {
       "VO": [
-       "W",
-       "Baseline"
+       "D",
+       "Validates the baseline"
       ],
       "PC": [
-       "W",
-       "Change Impact Assessment"
+       "D",
+       "Validates the Change Impact Assessment (Butterfly template)"
       ],
       "LEX": [
        "D",
        "Risk triage, conditions"
       ],
+      "DA": [
+       "D",
+       "Tech and data readiness"
+      ],
       "AL": [
+       "D",
+       "Validates the adoption angle"
+      ],
+      "TO": [
        "W",
-       "Adoption angle"
+       "Checks the case is complete"
       ]
      },
      "T2": {
       "VO": [
-       "W",
-       "Baseline"
+       "D",
+       "Validates the baseline"
       ],
       "PC": [
-       "W",
-       "Change Impact Assessment"
+       "D",
+       "Validates the Change Impact Assessment (Butterfly template)"
       ],
       "LEX": [
        "D",
        "Risk triage, conditions"
       ],
+      "DA": [
+       "D",
+       "Tech and data readiness"
+      ],
       "AL": [
+       "D",
+       "Validates the adoption angle"
+      ],
+      "TO": [
        "W",
-       "Adoption angle"
+       "Checks the case is complete"
       ]
      },
      "T3": {
       "VO": [
-       "W",
-       "Value hypothesis check"
+       "D",
+       "Validates the value hypothesis"
       ],
       "PC": [
-       "W",
-       "Light impact scan"
+       "D",
+       "Validates the light impact scan"
       ],
       "LEX": [
        "D",
        "Risk triage, conditions"
+      ],
+      "DA": [
+       "D",
+       "Tech and data readiness"
+      ],
+      "TO": [
+       "W",
+       "Checks the case is complete"
       ]
      }
     },
@@ -1653,24 +1632,24 @@ const MODEL = {
  ],
  "forum": {
   "G1": {
-   "T1": "No meeting (agent)",
-   "T2": "No meeting (agent)",
-   "T3": "No meeting (agent)"
+   "T1": "No meeting (agent, then TO)",
+   "T2": "No meeting (agent, then TO)",
+   "T3": "No meeting (agent, then TO)"
   },
   "G2": {
-   "T1": "Stream meeting (monthly), Design Authority",
-   "T2": "AI Portfolio Board (biweekly), Design Authority",
-   "T3": "AI Portfolio Board (biweekly, within 10 days)"
+   "T1": "No meeting: each support function validates its part",
+   "T2": "No meeting: each support function validates its part",
+   "T3": "No meeting: each support function validates its part"
   },
   "G3": {
-   "T1": "SteerCo (monthly)",
-   "T2": "AI Portfolio Board (biweekly)",
-   "T3": "AI Portfolio Board (biweekly)"
+   "T1": "Portfolio board (weekly), then SteerCo (monthly); cross stream meeting if several streams (optional)",
+   "T2": "Portfolio board (biweekly)",
+   "T3": "Portfolio board (biweekly)"
   },
   "G4": {
-   "T1": "Design Authority (weekly, 5 days)",
-   "T2": "Design Authority (weekly, 5 days)",
-   "T3": "Design Authority (weekly, 5 days)"
+   "T1": "Portfolio board (weekly)",
+   "T2": "Portfolio board (biweekly)",
+   "T3": "Portfolio board (biweekly)"
   },
   "Build": {
    "T1": "Stream meeting (monthly RAG), Portfolio board (weekly)",
@@ -1771,7 +1750,7 @@ export const GENTIANE_QUESTIONS: QuestionCategory[] = [
    {
     "text": "Digital support needs to follow these priorities, and teams already have more requests than they can support well. How do we match the demand we create with delivery capacity, so the intake doesn't turn into a bottleneck?",
     "s": "p",
-    "answer": "Quarterly capacity split (60% big bets, 25% fast lane, 15% enablement) and capacity arbitration at the AI Portfolio Board. Open: actual capacity figures.",
+    "answer": "Quarterly capacity split (60% big bets, 25% fast lane, 15% enablement) and capacity arbitration at the Portfolio board. Open: actual capacity figures.",
     "where": "Tab 3 · TO one-pager (G3)",
     "target": {
      "tab": "support",
@@ -1800,13 +1779,11 @@ export const GENTIANE_QUESTIONS: QuestionCategory[] = [
    {
     "text": "Which forums steer delivery, and how often (stream steercos, AmplifAI steerco)? What does each one decide, and what gets escalated?",
     "s": "a",
-    "answer": "The Where column of each role one-pager gives the forum at each gate and tier: stream meetings, Portfolio board, SteerCo, Design Authority. Escalation goes from stream to Portfolio board to SteerCo.",
-    "where": "Tab 3 · TO one-pager (Where column)",
+    "answer": "G2 is validated outside meetings by the support functions. The Portfolio board decides priority (G3) and mode (G4). T1 also needs SteerCo, plus the cross stream meeting (optional) for bets across several streams. Escalation goes from stream to Portfolio board to SteerCo.",
+    "where": "Tab 5 · committees",
     "target": {
-     "tab": "support",
-     "screen": "sheet",
-     "role": "TO",
-     "tier": "T1"
+     "tab": "tocockpit",
+     "anchor": "committees"
     }
    },
    {
@@ -1822,9 +1799,20 @@ export const GENTIANE_QUESTIONS: QuestionCategory[] = [
     }
    },
    {
+    "text": "How is Butterfly leveraged?",
+    "s": "a",
+    "answer": "Right after G1, each use case is allocated to a Butterfly stream (stream allocation assessment), then goes through the existing Butterfly committees: Portfolio board, SteerCo for T1. AmplifAI adds only one optional meeting: the cross stream meeting.",
+    "where": "Tab 1 · stream allocation",
+    "target": {
+     "tab": "overview",
+     "anchor": "what",
+     "miro": "stream"
+    }
+   },
+   {
     "text": "How are validated use cases funded and staffed? Who decides when they compete for the same Digital or data capacity?",
     "s": "p",
-    "answer": "Funding follows the lane at G4; Data & AI composes the squad; the AI Portfolio Board arbitrates capacity. Open: who funds the run.",
+    "answer": "Funding follows the lane at G4; Data & AI composes the squad; the Portfolio board arbitrates capacity. Open: who funds the run.",
     "where": "Tab 3 · Data & AI one-pager (G4)",
     "target": {
      "tab": "support",
@@ -1936,7 +1924,7 @@ export const GENTIANE_QUESTIONS: QuestionCategory[] = [
    {
     "text": "Can we have a light, fast lane for small and medium initiatives that still tracks value, without the full big bet process?",
     "s": "a",
-    "answer": "T3: one-page canvas, 6 to 8 week MVP, the AI Portfolio Board as the only forum, value checked at G5.",
+    "answer": "T3: one-page canvas, 6 to 8 week MVP, the Portfolio board as the only forum (G3, G4), value checked at G5.",
     "where": "Tab 3 · T3 one-pagers",
     "target": {
      "tab": "support",

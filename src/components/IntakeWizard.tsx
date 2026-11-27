@@ -4,6 +4,7 @@ import React, { useState, useEffect } from "react";
 import { Details } from "@/components/ui/Details";
 import { IntakeHome } from "@/components/intake/IntakeHome";
 import { NextStepOnePager } from "@/components/intake/NextStepOnePager";
+import { HandoffScreen, HandoffKind, G2_VALIDATORS, BOARD } from "@/components/intake/HandoffScreen";
 import { ModeId } from "@/lib/miroLifecycle";
 import {
   Sparkles,
@@ -95,6 +96,8 @@ export const IntakeWizard: React.FC<IntakeWizardProps> = ({
   const [view, setView] = useState<"home" | "step" | "next">(rescopingUseCase ? "step" : "home");
   const [nextMode, setNextMode] = useState<ModeId>("for-me");
   const [nextBack, setNextBack] = useState<"home" | "step">("home");
+  // Screen shown after a submit: who validates next, and where
+  const [handoff, setHandoff] = useState<HandoffKind | null>(null);
 
   // Form State
   const [answers, setAnswers] = useState<IntakeAnswers>({
@@ -902,17 +905,16 @@ export const IntakeWizard: React.FC<IntakeWizardProps> = ({
     await saveUseCase(newCase);
     onUseCaseCreated(newCase);
 
-    // Trigger celebration confetti
-    try {
-      confetti({
-        particleCount: 90,
-        spread: 70,
-        origin: { y: 0.6 },
-      });
-    } catch (e) {}
-
-    // Navigate to lifecycle simulator
+    // No celebration here: the mode is only submitted for approval
+    // Register the new use case
     onNavigateToLifecycle(newCase.id);
+  };
+
+  const APPROVAL_FORUM: Record<string, string> = {
+    T1: "G2 outside meetings (support functions) · G3 and G4 at the Portfolio board (weekly) · SteerCo validates",
+    T2: "G2 outside meetings (support functions) · G3 and G4 at the Portfolio board (biweekly)",
+    T3: "G2 outside meetings (support functions, 10 days) · G3 and G4 at the Portfolio board (biweekly)",
+    "Self-Serve": "No meeting: one registry line, guardrails apply",
   };
 
   const modeToId = (m: DeliveryMode): ModeId =>
@@ -973,9 +975,9 @@ export const IntakeWizard: React.FC<IntakeWizardProps> = ({
         <ol className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
           {([
             [1, "1. Preliminary project charter"],
-            [2, "2. Autonomous Agent Triage (Tier & Speed)"],
-            [3, "3. Business case filled"],
-            [4, "4. Mode selection"],
+            [2, "2. Agent triage (G1)"],
+            [3, "3. Business case (G2, G3)"],
+            [4, "4. Mode selection (G4)"],
           ] as [1 | 2 | 3 | 4, string][]).map(([s, label]) => {
             const automated = s === 2;
             const isCurrent = s === step;
@@ -1029,26 +1031,49 @@ export const IntakeWizard: React.FC<IntakeWizardProps> = ({
         </ol>
       </nav>
 
+      {handoff && (
+        <HandoffScreen
+          kind={handoff}
+          tier={decision.tier as "T1" | "T2" | "T3" | "Self-Serve"}
+          bet={answers.mappedBigBet}
+          functionName={answers.functionName}
+          modeLabel={chosenMode}
+          onBack={() => setHandoff(null)}
+          onNext={() => {
+            const k = handoff;
+            setHandoff(null);
+            if (k === "g1") setStep(3);
+            else if (k === "g2") setStep(4);
+            else {
+              setNextMode(modeToId(chosenMode));
+              setNextBack("step");
+              setView("next");
+            }
+            window.scrollTo({ top: 0 });
+          }}
+        />
+      )}
+
       {/* ================= STEP 1: THE 4 QUESTIONS ASSESSMENT & ACTIVE INTAKE COLLECTION ================= */}
-      {step === 1 && (
+      {!handoff && step === 1 && (
         <div className="space-y-6">
           {/* 📍 YOU ARE HERE & INTERACTIVE COLLECTION STATION */}
-          <div className="bg-gradient-to-br from-[#0d2818] via-[#0b3d1c] to-[#04471c] rounded-2xl p-6 text-white shadow-lg space-y-6 border border-emerald-700/50">
+          <div className="bg-white rounded-2xl p-6 text-gray-900 shadow-sm space-y-6 border border-opella-border">
             {/* Station Header */}
-            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 border-b border-white/20 pb-4">
+            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 border-b border-[#9FC3AC] pb-4">
               <div className="flex items-start gap-3">
                 <span className="px-3 py-1 rounded-lg bg-amber-400 text-gray-950 font-black text-xs flex items-center gap-1.5 shadow-md shrink-0 mt-0.5">
                   <span>📍</span>
                   <span>YOU ARE HERE</span>
                 </span>
                 <div>
-                  <div className="text-[11px] font-mono uppercase tracking-wider text-emerald-300 font-bold">
+                  <div className="text-[11px] font-mono uppercase tracking-wider text-emerald-700 font-bold">
                     Phase 1: Framing · Gate G1 Candidate Station
                   </div>
-                  <h3 className="text-xl font-black text-white mt-0.5">
+                  <h3 className="text-xl font-black text-gray-900 mt-0.5">
                     Front Door Intake & 4-Questions Assessment
                   </h3>
-                  <p className="text-xs text-white/70 mt-0.5 max-w-2xl">
+                  <p className="text-xs text-gray-600 mt-0.5 max-w-2xl">
                     Actively collect and verify the 5 mandatory governance items below before the autonomous AI Charter Agent can formulate the comitology triage.
                   </p>
                 </div>
@@ -1056,9 +1081,9 @@ export const IntakeWizard: React.FC<IntakeWizardProps> = ({
 
               {/* Demo Quick-Fill Presets & Reset */}
               <div className="flex flex-wrap items-center gap-2 self-start lg:self-center shrink-0">
-                <div className="flex items-center gap-1.5 bg-black/30 border border-emerald-400/30 rounded-xl p-1 text-xs">
-                  <span className="text-[11px] font-bold text-amber-300 px-2 flex items-center gap-1">
-                    <Zap className="w-3.5 h-3.5 text-amber-300" /> Quick-Fill Demo:
+                <div className="flex items-center gap-1.5 bg-white border border-[#5B7A64] rounded-xl p-1 text-xs">
+                  <span className="text-[11px] font-bold text-amber-700 px-2 flex items-center gap-1">
+                    <Zap className="w-3.5 h-3.5 text-amber-700" /> Quick-Fill Demo:
                   </span>
                   <button
                     type="button"
@@ -1097,7 +1122,7 @@ export const IntakeWizard: React.FC<IntakeWizardProps> = ({
                 <button
                   type="button"
                   onClick={handleResetIntake}
-                  className="px-3 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-white/90 text-xs font-semibold flex items-center gap-1.5 transition-all border border-white/10 shadow-sm"
+                  className="px-3 py-1.5 rounded-xl bg-[#F7F5EF] hover:bg-[#E4EFE7] text-gray-800 text-xs font-semibold flex items-center gap-1.5 transition-all border border-[#5B7A64] shadow-sm"
                   title="Reset to 0/5 collected to demonstrate step-by-step collection"
                 >
                   <RotateCcw className="w-3.5 h-3.5" />
@@ -1107,11 +1132,11 @@ export const IntakeWizard: React.FC<IntakeWizardProps> = ({
             </div>
 
             {/* Live Progress Meter */}
-            <div className="bg-black/30 rounded-xl p-4 border border-white/10 space-y-2.5">
+            <div className="bg-white rounded-xl p-4 border border-[#5B7A64] space-y-2.5">
               <div className="flex items-center justify-between text-xs">
-                <span className="font-bold text-emerald-200 flex items-center gap-2">
+                <span className="font-bold text-emerald-800 flex items-center gap-2">
                   <span>Intake Collection Progress:</span>
-                  <span className="font-mono text-white text-sm font-black">
+                  <span className="font-mono text-gray-900 text-sm font-black">
                     {collectedCount} of {totalCount} Items Collected ({collectionPercent}%)
                   </span>
                 </span>
@@ -1119,7 +1144,7 @@ export const IntakeWizard: React.FC<IntakeWizardProps> = ({
                   className={`text-[11px] font-bold px-3 py-1 rounded-full flex items-center gap-1.5 ${
                     isStep1Valid
                       ? "bg-emerald-400 text-emerald-950 shadow-sm"
-                      : "bg-amber-400/25 text-amber-200 border border-amber-400/40"
+                      : "bg-amber-50 text-amber-800 border border-amber-500/70"
                   }`}
                 >
                   {isStep1Valid ? (
@@ -1129,7 +1154,7 @@ export const IntakeWizard: React.FC<IntakeWizardProps> = ({
                     </>
                   ) : (
                     <>
-                      <Clock className="w-3.5 h-3.5 text-amber-300" />
+                      <Clock className="w-3.5 h-3.5 text-amber-700" />
                       <span>{totalCount - collectedCount} Mandatory Items Required</span>
                     </>
                   )}
@@ -1137,7 +1162,7 @@ export const IntakeWizard: React.FC<IntakeWizardProps> = ({
               </div>
 
               {/* Progress Bar */}
-              <div className="w-full bg-white/10 rounded-full h-2.5 overflow-hidden p-0.5">
+              <div className="w-full bg-[#F7F5EF] rounded-full h-2.5 overflow-hidden p-0.5">
                 <div
                   className={`h-full rounded-full transition-all duration-300 ${
                     isStep1Valid ? "bg-emerald-400" : "bg-gradient-to-r from-amber-400 to-emerald-400"
@@ -1148,19 +1173,19 @@ export const IntakeWizard: React.FC<IntakeWizardProps> = ({
 
               {/* Quick Status Pill Bar */}
               <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 pt-1 text-[11px]">
-                <div className={`px-2 py-1 rounded-lg border text-center font-semibold truncate ${item1Collected ? "bg-emerald-400/20 text-emerald-200 border-emerald-400/30" : "bg-white/5 text-white/50 border-white/10"}`}>
+                <div className={`px-2 py-1 rounded-lg border text-center font-semibold truncate ${item1Collected ? "bg-emerald-50 text-emerald-800 border-[#5B7A64]" : "bg-[#F7F5EF] text-gray-500 border-[#5B7A64]"}`}>
                   1. Title {item1Collected ? "✓" : "●"}
                 </div>
-                <div className={`px-2 py-1 rounded-lg border text-center font-semibold truncate ${item2Collected ? "bg-emerald-400/20 text-emerald-200 border-emerald-400/30" : "bg-white/5 text-white/50 border-white/10"}`}>
+                <div className={`px-2 py-1 rounded-lg border text-center font-semibold truncate ${item2Collected ? "bg-emerald-50 text-emerald-800 border-[#5B7A64]" : "bg-[#F7F5EF] text-gray-500 border-[#5B7A64]"}`}>
                   2. Description {item2Collected ? "✓" : "●"}
                 </div>
-                <div className={`px-2 py-1 rounded-lg border text-center font-semibold truncate ${item3Collected ? "bg-emerald-400/20 text-emerald-200 border-emerald-400/30" : "bg-white/5 text-white/50 border-white/10"}`}>
+                <div className={`px-2 py-1 rounded-lg border text-center font-semibold truncate ${item3Collected ? "bg-emerald-50 text-emerald-800 border-[#5B7A64]" : "bg-[#F7F5EF] text-gray-500 border-[#5B7A64]"}`}>
                   3. Users {item3Collected ? "✓" : "●"}
                 </div>
-                <div className={`px-2 py-1 rounded-lg border text-center font-semibold truncate ${item4Collected ? "bg-emerald-400/20 text-emerald-200 border-emerald-400/30" : "bg-white/5 text-white/50 border-white/10"}`}>
+                <div className={`px-2 py-1 rounded-lg border text-center font-semibold truncate ${item4Collected ? "bg-emerald-50 text-emerald-800 border-[#5B7A64]" : "bg-[#F7F5EF] text-gray-500 border-[#5B7A64]"}`}>
                   4. 4 Questions {item4Collected ? "✓" : "●"}
                 </div>
-                <div className={`px-2 py-1 rounded-lg border text-center font-semibold truncate ${item5Collected ? "bg-emerald-400/20 text-emerald-200 border-emerald-400/30" : "bg-white/5 text-white/50 border-white/10"}`}>
+                <div className={`px-2 py-1 rounded-lg border text-center font-semibold truncate ${item5Collected ? "bg-emerald-50 text-emerald-800 border-[#5B7A64]" : "bg-[#F7F5EF] text-gray-500 border-[#5B7A64]"}`}>
                   5. ORAI Screening {item5Collected ? "✓" : "●"}
                 </div>
               </div>
@@ -1170,12 +1195,12 @@ export const IntakeWizard: React.FC<IntakeWizardProps> = ({
             {/* PREREQUISITE COLLECTION WORKSPACE: 5 MANDATORY ITEMS + OPTIONAL */}
             {/* ----------------------------------------------------------------- */}
             <div className="space-y-4">
-              <div className="flex items-center justify-between text-xs text-white/80 border-b border-white/15 pb-2">
-                <span className="font-bold uppercase tracking-wider text-emerald-200 flex items-center gap-1.5">
+              <div className="flex items-center justify-between text-xs text-gray-800 border-b border-[#9FC3AC] pb-2">
+                <span className="font-bold uppercase tracking-wider text-emerald-800 flex items-center gap-1.5">
                   <FileText className="w-4 h-4 text-amber-400" />
                   Mandatory Prerequisites to Collect (Gate G1 Comitology Readiness):
                 </span>
-                <span className="text-[11px] text-white/60">
+                <span className="text-[11px] text-gray-600">
                   Fill fields below to verify and complete each item
                 </span>
               </div>
@@ -1184,19 +1209,19 @@ export const IntakeWizard: React.FC<IntakeWizardProps> = ({
               <div
                 className={`rounded-xl p-5 transition-all border ${
                   item1Collected
-                    ? "bg-white/10 border-emerald-400/40 shadow-sm"
-                    : "bg-black/30 border-amber-400/50 shadow-md ring-1 ring-amber-400/20"
+                    ? "bg-[#F7F5EF] border-[#5B7A64] shadow-sm"
+                    : "bg-white border-amber-500/70 shadow-md ring-1 ring-amber-500/30"
                 } space-y-3.5`}
               >
                 <div className="flex items-start justify-between gap-3">
                   <div>
                     <div className="flex items-center gap-2 mb-1 flex-wrap">
-                      <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-white/15 text-emerald-200 border border-white/10">
+                      <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-[#E4EFE7] text-emerald-800 border border-[#5B7A64]">
                         Business Owner / AI Catalyst
                       </span>
-                      <span className="text-[10px] text-white/60">Front Door Identity</span>
+                      <span className="text-[10px] text-gray-600">Front Door Identity</span>
                     </div>
-                    <h4 className="font-bold text-white text-base">
+                    <h4 className="font-bold text-gray-900 text-base">
                       1. Initiative Title & Organizational Scope *
                     </h4>
                   </div>
@@ -1205,7 +1230,7 @@ export const IntakeWizard: React.FC<IntakeWizardProps> = ({
                       <Check className="w-3.5 h-3.5 stroke-[3]" /> Collected & Verified
                     </span>
                   ) : (
-                    <span className="px-3 py-1 rounded-full bg-amber-400/20 text-amber-200 border border-amber-400/40 font-bold text-xs flex items-center gap-1 shrink-0">
+                    <span className="px-3 py-1 rounded-full bg-amber-50 text-amber-800 border border-amber-500/70 font-bold text-xs flex items-center gap-1 shrink-0">
                       <AlertTriangle className="w-3.5 h-3.5" /> Action Required (Mandatory)
                     </span>
                   )}
@@ -1213,26 +1238,26 @@ export const IntakeWizard: React.FC<IntakeWizardProps> = ({
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
                   <div className="md:col-span-2">
-                    <label className="block text-[11px] font-bold text-emerald-200 uppercase tracking-wider mb-1">
-                      Initiative Title / Name * <span className="text-amber-300">(Mandatory)</span>
+                    <label className="block text-[11px] font-bold text-emerald-800 uppercase tracking-wider mb-1">
+                      Initiative Title / Name * <span className="text-amber-700">(Mandatory)</span>
                     </label>
                     <input
                       type="text"
                       placeholder="e.g. GIDE / BOWIE Procurement Agent, Content Localization Engine, Demand Forecast Bot"
                       value={answers.initiativeTitle}
                       onChange={(e) => setAnswers({ ...answers, initiativeTitle: e.target.value })}
-                      className="w-full px-3.5 py-2.5 rounded-lg border border-gray-300 bg-white text-gray-900 text-xs font-semibold focus:ring-2 focus:ring-emerald-400 focus:outline-none placeholder:text-gray-400"
+                      className="w-full px-3.5 py-2.5 rounded-lg border border-gray-300 bg-white text-gray-900 text-xs font-semibold focus:ring-2 focus:ring-emerald-600 focus:outline-none placeholder:text-gray-400"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-[11px] font-bold text-emerald-200 uppercase tracking-wider mb-1">
+                    <label className="block text-[11px] font-bold text-emerald-800 uppercase tracking-wider mb-1">
                       Business Function
                     </label>
                     <select
                       value={answers.functionName}
                       onChange={(e) => setAnswers({ ...answers, functionName: e.target.value })}
-                      className="w-full px-3.5 py-2.5 rounded-lg border border-gray-300 bg-white text-gray-900 text-xs font-semibold focus:ring-2 focus:ring-emerald-400 focus:outline-none"
+                      className="w-full px-3.5 py-2.5 rounded-lg border border-gray-300 bg-white text-gray-900 text-xs font-semibold focus:ring-2 focus:ring-emerald-600 focus:outline-none"
                     >
                       <option value="Procurement">Procurement</option>
                       <option value="M&S">Marketing & Sales (M&S)</option>
@@ -1246,13 +1271,13 @@ export const IntakeWizard: React.FC<IntakeWizardProps> = ({
                   </div>
 
                   <div>
-                    <label className="block text-[11px] font-bold text-emerald-200 uppercase tracking-wider mb-1">
+                    <label className="block text-[11px] font-bold text-emerald-800 uppercase tracking-wider mb-1">
                       Geographic Region
                     </label>
                     <select
                       value={answers.region}
                       onChange={(e) => setAnswers({ ...answers, region: e.target.value })}
-                      className="w-full px-3.5 py-2.5 rounded-lg border border-gray-300 bg-white text-gray-900 text-xs font-semibold focus:ring-2 focus:ring-emerald-400 focus:outline-none"
+                      className="w-full px-3.5 py-2.5 rounded-lg border border-gray-300 bg-white text-gray-900 text-xs font-semibold focus:ring-2 focus:ring-emerald-600 focus:outline-none"
                     >
                       <option value="Global">Global Enterprise</option>
                       <option value="EULA">Europe (EULA)</option>
@@ -1263,7 +1288,7 @@ export const IntakeWizard: React.FC<IntakeWizardProps> = ({
                   </div>
 
                   <div className="md:col-span-2">
-                    <label className="block text-[11px] font-bold text-emerald-200 uppercase tracking-wider mb-1">
+                    <label className="block text-[11px] font-bold text-emerald-800 uppercase tracking-wider mb-1">
                       Accountable Business Owner (BO / PO)
                     </label>
                     <input
@@ -1271,7 +1296,7 @@ export const IntakeWizard: React.FC<IntakeWizardProps> = ({
                       placeholder="e.g. Sarah Chen (Global Head of S2P) or Named Functional Lead"
                       value={answers.businessOwnerName}
                       onChange={(e) => setAnswers({ ...answers, businessOwnerName: e.target.value })}
-                      className="w-full px-3.5 py-2.5 rounded-lg border border-gray-300 bg-white text-gray-900 text-xs font-semibold focus:ring-2 focus:ring-emerald-400 focus:outline-none placeholder:text-gray-400"
+                      className="w-full px-3.5 py-2.5 rounded-lg border border-gray-300 bg-white text-gray-900 text-xs font-semibold focus:ring-2 focus:ring-emerald-600 focus:outline-none placeholder:text-gray-400"
                     />
                   </div>
                 </div>
@@ -1281,19 +1306,19 @@ export const IntakeWizard: React.FC<IntakeWizardProps> = ({
               <div
                 className={`rounded-xl p-5 transition-all border ${
                   item2Collected
-                    ? "bg-white/10 border-emerald-400/40 shadow-sm"
-                    : "bg-black/30 border-amber-400/50 shadow-md ring-1 ring-amber-400/20"
+                    ? "bg-[#F7F5EF] border-[#5B7A64] shadow-sm"
+                    : "bg-white border-amber-500/70 shadow-md ring-1 ring-amber-500/30"
                 } space-y-3.5`}
               >
                 <div className="flex items-start justify-between gap-3">
                   <div>
                     <div className="flex items-center gap-2 mb-1 flex-wrap">
-                      <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-white/15 text-emerald-200 border border-white/10">
+                      <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-[#E4EFE7] text-emerald-800 border border-[#5B7A64]">
                         Function Domain Lead
                       </span>
-                      <span className="text-[10px] text-white/60">Business Friction Context</span>
+                      <span className="text-[10px] text-gray-600">Business Friction Context</span>
                     </div>
-                    <h4 className="font-bold text-white text-base">
+                    <h4 className="font-bold text-gray-900 text-base">
                       2. Operational Problem & Intended Solution (Description) *
                     </h4>
                   </div>
@@ -1302,7 +1327,7 @@ export const IntakeWizard: React.FC<IntakeWizardProps> = ({
                       <Check className="w-3.5 h-3.5 stroke-[3]" /> Collected & Verified
                     </span>
                   ) : (
-                    <span className="px-3 py-1 rounded-full bg-amber-400/20 text-amber-200 border border-amber-400/40 font-bold text-xs flex items-center gap-1 shrink-0">
+                    <span className="px-3 py-1 rounded-full bg-amber-50 text-amber-800 border border-amber-500/70 font-bold text-xs flex items-center gap-1 shrink-0">
                       <AlertTriangle className="w-3.5 h-3.5" /> Action Required (Mandatory)
                     </span>
                   )}
@@ -1310,10 +1335,10 @@ export const IntakeWizard: React.FC<IntakeWizardProps> = ({
 
                 <div>
                   <div className="flex items-center justify-between mb-1.5">
-                    <label className="block text-[11px] font-bold text-emerald-200 uppercase tracking-wider">
-                      Detailed Use Case Description * <span className="text-amber-300">(Mandatory)</span>
+                    <label className="block text-[11px] font-bold text-emerald-800 uppercase tracking-wider">
+                      Detailed Use Case Description * <span className="text-amber-700">(Mandatory)</span>
                     </label>
-                    <span className="text-[11px] text-white/60">
+                    <span className="text-[11px] text-gray-600">
                       Current manual friction, baseline latency, and intended AI mechanism
                     </span>
                   </div>
@@ -1322,7 +1347,7 @@ export const IntakeWizard: React.FC<IntakeWizardProps> = ({
                     placeholder="e.g. Shifts Opella procurement from manual S2P steps to agentic execution. BOWIE agent automatically evaluates supplier quotes against commercial contracts, checks internal compliance rules, and creates SAP Purchase Orders within 48 hours."
                     value={answers.description || ""}
                     onChange={(e) => setAnswers({ ...answers, description: e.target.value })}
-                    className="w-full px-3.5 py-2.5 rounded-lg border border-gray-300 bg-white text-gray-900 text-xs font-normal leading-relaxed focus:ring-2 focus:ring-emerald-400 focus:outline-none placeholder:text-gray-400"
+                    className="w-full px-3.5 py-2.5 rounded-lg border border-gray-300 bg-white text-gray-900 text-xs font-normal leading-relaxed focus:ring-2 focus:ring-emerald-600 focus:outline-none placeholder:text-gray-400"
                   />
                 </div>
               </div>
@@ -1331,19 +1356,19 @@ export const IntakeWizard: React.FC<IntakeWizardProps> = ({
               <div
                 className={`rounded-xl p-5 transition-all border ${
                   item3Collected
-                    ? "bg-white/10 border-emerald-400/40 shadow-sm"
-                    : "bg-black/30 border-amber-400/50 shadow-md ring-1 ring-amber-400/20"
+                    ? "bg-[#F7F5EF] border-[#5B7A64] shadow-sm"
+                    : "bg-white border-amber-500/70 shadow-md ring-1 ring-amber-500/30"
                 } space-y-3.5`}
               >
                 <div className="flex items-start justify-between gap-3">
                   <div>
                     <div className="flex items-center gap-2 mb-1 flex-wrap">
-                      <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-white/15 text-emerald-200 border border-white/10">
+                      <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-[#E4EFE7] text-emerald-800 border border-[#5B7A64]">
                         Business Function & Change Lead
                       </span>
-                      <span className="text-[10px] text-white/60">User Community & Adoption</span>
+                      <span className="text-[10px] text-gray-600">User Community & Adoption</span>
                     </div>
-                    <h4 className="font-bold text-white text-base">
+                    <h4 className="font-bold text-gray-900 text-base">
                       3. Target User Personas & Enterprise Reach (Who are the users?) *
                     </h4>
                   </div>
@@ -1352,7 +1377,7 @@ export const IntakeWizard: React.FC<IntakeWizardProps> = ({
                       <Check className="w-3.5 h-3.5 stroke-[3]" /> Collected & Verified
                     </span>
                   ) : (
-                    <span className="px-3 py-1 rounded-full bg-amber-400/20 text-amber-200 border border-amber-400/40 font-bold text-xs flex items-center gap-1 shrink-0">
+                    <span className="px-3 py-1 rounded-full bg-amber-50 text-amber-800 border border-amber-500/70 font-bold text-xs flex items-center gap-1 shrink-0">
                       <AlertTriangle className="w-3.5 h-3.5" /> Action Required (Mandatory)
                     </span>
                   )}
@@ -1360,20 +1385,20 @@ export const IntakeWizard: React.FC<IntakeWizardProps> = ({
 
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
                   <div className="sm:col-span-2">
-                    <label className="block text-[11px] font-bold text-emerald-200 uppercase tracking-wider mb-1">
-                      Who Are The Users? * <span className="text-amber-300">(Mandatory)</span>
+                    <label className="block text-[11px] font-bold text-emerald-800 uppercase tracking-wider mb-1">
+                      Who Are The Users? * <span className="text-amber-700">(Mandatory)</span>
                     </label>
                     <input
                       type="text"
                       placeholder="e.g. 1,800 Procurement buyers, category directors, and functional spenders across EULA, NA, and AMEA regions"
                       value={answers.targetUserGroupDescription || ""}
                       onChange={(e) => setAnswers({ ...answers, targetUserGroupDescription: e.target.value })}
-                      className="w-full px-3.5 py-2.5 rounded-lg border border-gray-300 bg-white text-gray-900 text-xs font-semibold focus:ring-2 focus:ring-emerald-400 focus:outline-none placeholder:text-gray-400"
+                      className="w-full px-3.5 py-2.5 rounded-lg border border-gray-300 bg-white text-gray-900 text-xs font-semibold focus:ring-2 focus:ring-emerald-600 focus:outline-none placeholder:text-gray-400"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-[11px] font-bold text-emerald-200 uppercase tracking-wider mb-1">
+                    <label className="block text-[11px] font-bold text-emerald-800 uppercase tracking-wider mb-1">
                       Estimated User Headcount
                     </label>
                     <div className="relative">
@@ -1381,7 +1406,7 @@ export const IntakeWizard: React.FC<IntakeWizardProps> = ({
                         type="number"
                         value={answers.targetUserCount}
                         onChange={(e) => setAnswers({ ...answers, targetUserCount: Number(e.target.value) })}
-                        className="w-full pl-8 pr-3 py-2.5 rounded-lg border border-gray-300 bg-white text-gray-900 text-xs font-semibold focus:ring-2 focus:ring-emerald-400 focus:outline-none"
+                        className="w-full pl-8 pr-3 py-2.5 rounded-lg border border-gray-300 bg-white text-gray-900 text-xs font-semibold focus:ring-2 focus:ring-emerald-600 focus:outline-none"
                       />
                       <Users className="w-3.5 h-3.5 text-gray-400 absolute left-3 top-3.5" />
                     </div>
@@ -1393,19 +1418,19 @@ export const IntakeWizard: React.FC<IntakeWizardProps> = ({
               <div
                 className={`rounded-xl p-5 transition-all border ${
                   item4Collected
-                    ? "bg-white/10 border-emerald-400/40 shadow-sm"
-                    : "bg-black/30 border-amber-400/50 shadow-md ring-1 ring-amber-400/20"
+                    ? "bg-[#F7F5EF] border-[#5B7A64] shadow-sm"
+                    : "bg-white border-amber-500/70 shadow-md ring-1 ring-amber-500/30"
                 } space-y-4`}
               >
                 <div className="flex items-start justify-between gap-3">
                   <div>
                     <div className="flex items-center gap-2 mb-1 flex-wrap">
-                      <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-white/15 text-emerald-200 border border-white/10">
+                      <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-[#E4EFE7] text-emerald-800 border border-[#5B7A64]">
                         Transformation Office Lead
                       </span>
-                      <span className="text-[10px] text-white/60">Slide 35 Triage</span>
+                      <span className="text-[10px] text-gray-600">Slide 35 Triage</span>
                     </div>
-                    <h4 className="font-bold text-white text-base">
+                    <h4 className="font-bold text-gray-900 text-base">
                       4. Opella 4-Questions Assessment *
                     </h4>
                   </div>
@@ -1414,7 +1439,7 @@ export const IntakeWizard: React.FC<IntakeWizardProps> = ({
                       <Check className="w-3.5 h-3.5 stroke-[3]" /> Evaluated · Routes to {decision.tier}
                     </span>
                   ) : (
-                    <span className="px-3 py-1 rounded-full bg-amber-400/20 text-amber-200 border border-amber-400/40 font-bold text-xs flex items-center gap-1 shrink-0">
+                    <span className="px-3 py-1 rounded-full bg-amber-50 text-amber-800 border border-amber-500/70 font-bold text-xs flex items-center gap-1 shrink-0">
                       <AlertTriangle className="w-3.5 h-3.5" /> Pending Evaluation
                     </span>
                   )}
@@ -1423,15 +1448,15 @@ export const IntakeWizard: React.FC<IntakeWizardProps> = ({
                 {/* The 4 Question Blocks */}
                 <div className="space-y-2.5 text-xs">
                   {/* Q1 */}
-                  <div className={`p-3 rounded-lg border transition-all ${answers.q1_bigBetOrOver1m ? "bg-emerald-950/60 border-emerald-400 text-white" : "bg-black/25 border-white/10 text-white/80"}`}>
+                  <div className={`p-3 rounded-lg border transition-all ${answers.q1_bigBetOrOver1m ? "bg-emerald-50 border-[#2F6B4F] text-gray-900" : "bg-white border-[#5B7A64] text-gray-800"}`}>
                     <div className="flex items-start justify-between gap-3">
                       <div className="flex-1">
                         <div className="flex items-center gap-2 mb-1">
                           <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-emerald-600 text-white font-mono">Q1</span>
-                          <span className="font-bold text-white">AmplifAI big bet, Butterfly platform change, or &gt;€1M?</span>
+                          <span className="font-bold text-gray-900">AmplifAI big bet, Butterfly platform change, or &gt;€1M?</span>
                         </div>
-                        <p className="text-[11px] text-white/70 ml-6">
-                          If YES: Routes immediately to <strong>T1 · Transform</strong> (Full Business Case, Transformation SteerCo).
+                        <p className="text-[11px] text-gray-600 ml-6">
+                          If YES: Routes immediately to <strong>T1 · Transform</strong> (Full Business Case, Portfolio board then SteerCo).
                         </p>
                       </div>
                       <div className="flex items-center gap-1.5 shrink-0">
@@ -1447,7 +1472,7 @@ export const IntakeWizard: React.FC<IntakeWizardProps> = ({
                             });
                             setQQuestionsConfirmed(true);
                           }}
-                          className={`px-3 py-1 rounded-md text-xs font-bold transition-all ${answers.q1_bigBetOrOver1m ? "bg-emerald-500 text-emerald-950 shadow-sm" : "bg-white/10 text-white hover:bg-white/20"}`}
+                          className={`px-3 py-1 rounded-md text-xs font-bold transition-all ${answers.q1_bigBetOrOver1m ? "bg-emerald-500 text-emerald-950 shadow-sm" : "bg-[#F7F5EF] text-gray-900 hover:bg-[#E4EFE7]"}`}
                         >
                           YES
                         </button>
@@ -1461,7 +1486,7 @@ export const IntakeWizard: React.FC<IntakeWizardProps> = ({
                             });
                             setQQuestionsConfirmed(true);
                           }}
-                          className={`px-3 py-1 rounded-md text-xs font-bold transition-all ${!answers.q1_bigBetOrOver1m ? "bg-gray-700 text-white shadow-sm" : "bg-white/10 text-white hover:bg-white/20"}`}
+                          className={`px-3 py-1 rounded-md text-xs font-bold transition-all ${!answers.q1_bigBetOrOver1m ? "bg-gray-700 text-white shadow-sm" : "bg-[#F7F5EF] text-gray-900 hover:bg-[#E4EFE7]"}`}
                         >
                           NO
                         </button>
@@ -1470,14 +1495,14 @@ export const IntakeWizard: React.FC<IntakeWizardProps> = ({
                   </div>
 
                   {/* Q2 */}
-                  <div className={`p-3 rounded-lg border transition-all ${answers.q2_approvedToolsUnder50k ? "bg-purple-950/60 border-purple-400 text-white" : "bg-black/25 border-white/10 text-white/80"}`}>
+                  <div className={`p-3 rounded-lg border transition-all ${answers.q2_approvedToolsUnder50k ? "bg-purple-50 border-purple-400 text-gray-900" : "bg-white border-[#5B7A64] text-gray-800"}`}>
                     <div className="flex items-start justify-between gap-3">
                       <div className="flex-1">
                         <div className="flex items-center gap-2 mb-1">
                           <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-purple-600 text-white font-mono">Q2</span>
-                          <span className="font-bold text-white">Approved tools only, configured rather than built, &lt;€50k?</span>
+                          <span className="font-bold text-gray-900">Approved tools only, configured rather than built, &lt;€50k?</span>
                         </div>
-                        <p className="text-[11px] text-white/70 ml-6">
+                        <p className="text-[11px] text-gray-600 ml-6">
                           If YES: Routes to <strong>Self-Serve · Register & Go</strong> (Immediate speed, skips G2–G4).
                         </p>
                       </div>
@@ -1497,7 +1522,7 @@ export const IntakeWizard: React.FC<IntakeWizardProps> = ({
                             });
                             setQQuestionsConfirmed(true);
                           }}
-                          className={`px-3 py-1 rounded-md text-xs font-bold transition-all ${answers.q2_approvedToolsUnder50k ? "bg-purple-400 text-purple-950 shadow-sm" : "bg-white/10 text-white hover:bg-white/20"}`}
+                          className={`px-3 py-1 rounded-md text-xs font-bold transition-all ${answers.q2_approvedToolsUnder50k ? "bg-purple-400 text-purple-950 shadow-sm" : "bg-[#F7F5EF] text-gray-900 hover:bg-[#E4EFE7]"}`}
                         >
                           YES
                         </button>
@@ -1510,7 +1535,7 @@ export const IntakeWizard: React.FC<IntakeWizardProps> = ({
                             });
                             setQQuestionsConfirmed(true);
                           }}
-                          className={`px-3 py-1 rounded-md text-xs font-bold transition-all ${!answers.q2_approvedToolsUnder50k ? "bg-gray-700 text-white shadow-sm" : "bg-white/10 text-white hover:bg-white/20"}`}
+                          className={`px-3 py-1 rounded-md text-xs font-bold transition-all ${!answers.q2_approvedToolsUnder50k ? "bg-gray-700 text-white shadow-sm" : "bg-[#F7F5EF] text-gray-900 hover:bg-[#E4EFE7]"}`}
                         >
                           NO
                         </button>
@@ -1519,15 +1544,15 @@ export const IntakeWizard: React.FC<IntakeWizardProps> = ({
                   </div>
 
                   {/* Q3 */}
-                  <div className={`p-3 rounded-lg border transition-all ${answers.q3_provenPilotOrReach ? "bg-blue-950/60 border-blue-400 text-white" : "bg-black/25 border-white/10 text-white/80"}`}>
+                  <div className={`p-3 rounded-lg border transition-all ${answers.q3_provenPilotOrReach ? "bg-blue-50 border-blue-400 text-gray-900" : "bg-white border-[#5B7A64] text-gray-800"}`}>
                     <div className="flex items-start justify-between gap-3">
                       <div className="flex-1">
                         <div className="flex items-center gap-2 mb-1">
                           <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-blue-600 text-white font-mono">Q3</span>
-                          <span className="font-bold text-white">Proven pilot, enterprise reach (500+ users), or €200k–€1m?</span>
+                          <span className="font-bold text-gray-900">Proven pilot, enterprise reach (500+ users), or €200k–€1m?</span>
                         </div>
-                        <p className="text-[11px] text-white/70 ml-6">
-                          If YES: Routes to <strong>T2 · Scale</strong> (Light business case, AI Portfolio Board).
+                        <p className="text-[11px] text-gray-600 ml-6">
+                          If YES: Routes to <strong>T2 · Scale</strong> (Light business case, Portfolio board).
                         </p>
                       </div>
                       <div className="flex items-center gap-1.5 shrink-0">
@@ -1544,7 +1569,7 @@ export const IntakeWizard: React.FC<IntakeWizardProps> = ({
                             });
                             setQQuestionsConfirmed(true);
                           }}
-                          className={`px-3 py-1 rounded-md text-xs font-bold transition-all ${answers.q3_provenPilotOrReach ? "bg-blue-400 text-blue-950 shadow-sm" : "bg-white/10 text-white hover:bg-white/20"}`}
+                          className={`px-3 py-1 rounded-md text-xs font-bold transition-all ${answers.q3_provenPilotOrReach ? "bg-blue-400 text-blue-950 shadow-sm" : "bg-[#F7F5EF] text-gray-900 hover:bg-[#E4EFE7]"}`}
                         >
                           YES
                         </button>
@@ -1557,7 +1582,7 @@ export const IntakeWizard: React.FC<IntakeWizardProps> = ({
                             });
                             setQQuestionsConfirmed(true);
                           }}
-                          className={`px-3 py-1 rounded-md text-xs font-bold transition-all ${!answers.q3_provenPilotOrReach ? "bg-gray-700 text-white shadow-sm" : "bg-white/10 text-white hover:bg-white/20"}`}
+                          className={`px-3 py-1 rounded-md text-xs font-bold transition-all ${!answers.q3_provenPilotOrReach ? "bg-gray-700 text-white shadow-sm" : "bg-[#F7F5EF] text-gray-900 hover:bg-[#E4EFE7]"}`}
                         >
                           NO
                         </button>
@@ -1578,19 +1603,19 @@ export const IntakeWizard: React.FC<IntakeWizardProps> = ({
                       });
                       setQQuestionsConfirmed(true);
                     }}
-                    className={`p-3 rounded-lg border transition-all cursor-pointer ${!answers.q1_bigBetOrOver1m && !answers.q2_approvedToolsUnder50k && !answers.q3_provenPilotOrReach ? "bg-amber-950/60 border-amber-400 text-white ring-1 ring-amber-400/40" : "bg-black/25 border-white/10 text-white/80 hover:bg-black/40"}`}
+                    className={`p-3 rounded-lg border transition-all cursor-pointer ${!answers.q1_bigBetOrOver1m && !answers.q2_approvedToolsUnder50k && !answers.q3_provenPilotOrReach ? "bg-amber-50 border-amber-400 text-gray-900 ring-1 ring-amber-500/30" : "bg-white border-[#5B7A64] text-gray-800 hover:bg-white"}`}
                   >
                     <div className="flex items-start justify-between gap-3">
                       <div className="flex-1">
                         <div className="flex items-center gap-2 mb-1">
                           <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-amber-600 text-white font-mono">Q4</span>
-                          <span className="font-bold text-white">Otherwise: New idea or build with a value hypothesis to test?</span>
+                          <span className="font-bold text-gray-900">Otherwise: New idea or build with a value hypothesis to test?</span>
                         </div>
-                        <p className="text-[11px] text-white/70 ml-6">
+                        <p className="text-[11px] text-gray-600 ml-6">
                           Routes to <strong>T3 · Fast Lane</strong> (1-page canvas, 10-day decision SLA, 6–8 week MVP sprint).
                         </p>
                       </div>
-                      <span className="text-[10px] font-bold text-amber-200 bg-amber-400/20 px-2 py-0.5 rounded border border-amber-400/30">
+                      <span className="text-[10px] font-bold text-amber-800 bg-amber-50 px-2 py-0.5 rounded border border-amber-500/70">
                         Default Fallback
                       </span>
                     </div>
@@ -1598,25 +1623,25 @@ export const IntakeWizard: React.FC<IntakeWizardProps> = ({
                 </div>
 
                 {/* Live Speed Lane Routing Banner */}
-                <div className="p-3 rounded-lg bg-black/40 border border-white/15 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs">
+                <div className="p-3 rounded-lg bg-white border border-[#9FC3AC] flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs">
                   <div className="flex items-center gap-2">
-                    <span className="text-white/60">Calculated Speed Lane:</span>
-                    <span className="font-bold text-white px-2 py-0.5 rounded bg-white/15 border border-white/20">
+                    <span className="text-gray-600">Calculated Speed Lane:</span>
+                    <span className="font-bold text-gray-900 px-2 py-0.5 rounded bg-[#E4EFE7] border border-[#9FC3AC]">
                       {tierConfig.name} · {tierConfig.subtitle}
                     </span>
                   </div>
-                  <div className="text-[11px] text-emerald-300">
-                    SLA: <strong>{decision.speedSummary.decisionSLA}</strong> · Forum: <strong>{tierConfig.approvalForum}</strong>
+                  <div className="text-[11px] text-emerald-700">
+                    SLA: <strong>{decision.speedSummary.decisionSLA}</strong> · Forum: <strong>{APPROVAL_FORUM[decision.tier]}</strong>
                   </div>
                 </div>
 
                 {/* Explicit confirmation toggle */}
-                <label className="flex items-center gap-2 text-xs font-semibold text-emerald-200 cursor-pointer pt-1">
+                <label className="flex items-center gap-2 text-xs font-semibold text-emerald-800 cursor-pointer pt-1">
                   <input
                     type="checkbox"
                     checked={qQuestionsConfirmed}
                     onChange={(e) => setQQuestionsConfirmed(e.target.checked)}
-                    className="rounded text-emerald-600 focus:ring-emerald-400 h-4 w-4 bg-white/20 border-white/30"
+                    className="rounded text-emerald-600 focus:ring-emerald-600 h-4 w-4 bg-[#E4EFE7] border-[#9FC3AC]"
                   />
                   <span>Confirm: The 4-Questions Assessment has been actively evaluated for this intake</span>
                 </label>
@@ -1626,19 +1651,19 @@ export const IntakeWizard: React.FC<IntakeWizardProps> = ({
               <div
                 className={`rounded-xl p-5 transition-all border ${
                   item5Collected
-                    ? "bg-white/10 border-emerald-400/40 shadow-sm"
-                    : "bg-black/30 border-amber-400/50 shadow-md ring-1 ring-amber-400/20"
+                    ? "bg-[#F7F5EF] border-[#5B7A64] shadow-sm"
+                    : "bg-white border-amber-500/70 shadow-md ring-1 ring-amber-500/30"
                 } space-y-4`}
               >
                 <div className="flex items-start justify-between gap-3">
                   <div>
                     <div className="flex items-center gap-2 mb-1 flex-wrap">
-                      <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-white/15 text-emerald-200 border border-white/10">
+                      <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-[#E4EFE7] text-emerald-800 border border-[#5B7A64]">
                         CISO & AI Governance Lead
                       </span>
-                      <span className="text-[10px] text-white/60">EU AI Act & Compliance Screening</span>
+                      <span className="text-[10px] text-gray-600">EU AI Act & Compliance Screening</span>
                     </div>
-                    <h4 className="font-bold text-white text-base">
+                    <h4 className="font-bold text-gray-900 text-base">
                       5. ORAI Responsible AI Self-Screening *
                     </h4>
                   </div>
@@ -1647,7 +1672,7 @@ export const IntakeWizard: React.FC<IntakeWizardProps> = ({
                       <Check className="w-3.5 h-3.5 stroke-[3]" /> Certified · {decision.riskTier} Risk
                     </span>
                   ) : (
-                    <span className="px-3 py-1 rounded-full bg-amber-400/20 text-amber-200 border border-amber-400/40 font-bold text-xs flex items-center gap-1 shrink-0">
+                    <span className="px-3 py-1 rounded-full bg-amber-50 text-amber-800 border border-amber-500/70 font-bold text-xs flex items-center gap-1 shrink-0">
                       <AlertTriangle className="w-3.5 h-3.5" /> Review Required
                     </span>
                   )}
@@ -1655,7 +1680,7 @@ export const IntakeWizard: React.FC<IntakeWizardProps> = ({
 
                 {/* 5 Risk Flags */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
-                  <label className="flex items-start gap-2.5 p-2.5 rounded-lg bg-black/25 border border-white/10 hover:bg-black/40 cursor-pointer">
+                  <label className="flex items-start gap-2.5 p-2.5 rounded-lg bg-white border border-[#5B7A64] hover:bg-white cursor-pointer">
                     <input
                       type="checkbox"
                       checked={answers.risk_personalHealthData}
@@ -1663,14 +1688,14 @@ export const IntakeWizard: React.FC<IntakeWizardProps> = ({
                         setAnswers({ ...answers, risk_personalHealthData: e.target.checked });
                         setOraiConfirmed(true);
                       }}
-                      className="mt-0.5 rounded text-emerald-600 focus:ring-emerald-400 h-4 w-4 bg-white/20 border-white/30"
+                      className="mt-0.5 rounded text-emerald-600 focus:ring-emerald-600 h-4 w-4 bg-[#E4EFE7] border-[#9FC3AC]"
                     />
-                    <span className="text-white/90">
+                    <span className="text-gray-800">
                       Processes employee personal, health, patient or confidential data (EU AI Act High Risk)
                     </span>
                   </label>
 
-                  <label className="flex items-start gap-2.5 p-2.5 rounded-lg bg-black/25 border border-white/10 hover:bg-black/40 cursor-pointer">
+                  <label className="flex items-start gap-2.5 p-2.5 rounded-lg bg-white border border-[#5B7A64] hover:bg-white cursor-pointer">
                     <input
                       type="checkbox"
                       checked={answers.risk_autonomousDecisions}
@@ -1678,14 +1703,14 @@ export const IntakeWizard: React.FC<IntakeWizardProps> = ({
                         setAnswers({ ...answers, risk_autonomousDecisions: e.target.checked });
                         setOraiConfirmed(true);
                       }}
-                      className="mt-0.5 rounded text-emerald-600 focus:ring-emerald-400 h-4 w-4 bg-white/20 border-white/30"
+                      className="mt-0.5 rounded text-emerald-600 focus:ring-emerald-600 h-4 w-4 bg-[#E4EFE7] border-[#9FC3AC]"
                     />
-                    <span className="text-white/90">
+                    <span className="text-gray-800">
                       Makes autonomous decisions impacting hiring, credit, clinical or regulatory safety
                     </span>
                   </label>
 
-                  <label className="flex items-start gap-2.5 p-2.5 rounded-lg bg-black/25 border border-white/10 hover:bg-black/40 cursor-pointer">
+                  <label className="flex items-start gap-2.5 p-2.5 rounded-lg bg-white border border-[#5B7A64] hover:bg-white cursor-pointer">
                     <input
                       type="checkbox"
                       checked={answers.risk_coreProdWriteBack}
@@ -1693,14 +1718,14 @@ export const IntakeWizard: React.FC<IntakeWizardProps> = ({
                         setAnswers({ ...answers, risk_coreProdWriteBack: e.target.checked });
                         setOraiConfirmed(true);
                       }}
-                      className="mt-0.5 rounded text-emerald-600 focus:ring-emerald-400 h-4 w-4 bg-white/20 border-white/30"
+                      className="mt-0.5 rounded text-emerald-600 focus:ring-emerald-600 h-4 w-4 bg-[#E4EFE7] border-[#9FC3AC]"
                     />
-                    <span className="text-white/90">
+                    <span className="text-gray-800">
                       Direct automated write-back to core ERP / SAP production databases
                     </span>
                   </label>
 
-                  <label className="flex items-start gap-2.5 p-2.5 rounded-lg bg-black/25 border border-white/10 hover:bg-black/40 cursor-pointer">
+                  <label className="flex items-start gap-2.5 p-2.5 rounded-lg bg-white border border-[#5B7A64] hover:bg-white cursor-pointer">
                     <input
                       type="checkbox"
                       checked={answers.risk_externalOutputNoReview}
@@ -1708,14 +1733,14 @@ export const IntakeWizard: React.FC<IntakeWizardProps> = ({
                         setAnswers({ ...answers, risk_externalOutputNoReview: e.target.checked });
                         setOraiConfirmed(true);
                       }}
-                      className="mt-0.5 rounded text-emerald-600 focus:ring-emerald-400 h-4 w-4 bg-white/20 border-white/30"
+                      className="mt-0.5 rounded text-emerald-600 focus:ring-emerald-600 h-4 w-4 bg-[#E4EFE7] border-[#9FC3AC]"
                     />
-                    <span className="text-white/90">
+                    <span className="text-gray-800">
                       Generates external customer-facing content without human-in-the-loop review
                     </span>
                   </label>
 
-                  <label className="flex items-start gap-2.5 p-2.5 rounded-lg bg-black/25 border border-white/10 hover:bg-black/40 cursor-pointer sm:col-span-2">
+                  <label className="flex items-start gap-2.5 p-2.5 rounded-lg bg-white border border-[#5B7A64] hover:bg-white cursor-pointer sm:col-span-2">
                     <input
                       type="checkbox"
                       checked={answers.risk_unapprovedSaaSOrCustomModel}
@@ -1723,65 +1748,65 @@ export const IntakeWizard: React.FC<IntakeWizardProps> = ({
                         setAnswers({ ...answers, risk_unapprovedSaaSOrCustomModel: e.target.checked });
                         setOraiConfirmed(true);
                       }}
-                      className="mt-0.5 rounded text-emerald-600 focus:ring-emerald-400 h-4 w-4 bg-white/20 border-white/30"
+                      className="mt-0.5 rounded text-emerald-600 focus:ring-emerald-600 h-4 w-4 bg-[#E4EFE7] border-[#9FC3AC]"
                     />
-                    <span className="text-white/90">
+                    <span className="text-gray-800">
                       Uses unapproved external SaaS, custom third-party foundation models, or non-standard cloud tenants
                     </span>
                   </label>
                 </div>
 
                 {/* Risk Evaluation Summary */}
-                <div className="p-3 rounded-lg bg-black/40 border border-white/15 flex items-center justify-between gap-3 text-xs">
+                <div className="p-3 rounded-lg bg-white border border-[#9FC3AC] flex items-center justify-between gap-3 text-xs">
                   <div className="flex items-center gap-2">
-                    <Shield className="w-4 h-4 text-emerald-400" />
-                    <span className="text-white/70">Calculated ORAI Risk Classification:</span>
+                    <Shield className="w-4 h-4 text-emerald-600" />
+                    <span className="text-gray-600">Calculated ORAI Risk Classification:</span>
                     <span
                       className={`font-bold px-2.5 py-0.5 rounded-full text-[11px] ${
                         decision.riskTier === "High"
-                          ? "bg-rose-500/20 text-rose-200 border border-rose-400/40"
+                          ? "bg-rose-50 text-rose-700 border border-rose-400"
                           : decision.riskTier === "Medium"
-                          ? "bg-amber-500/20 text-amber-200 border border-amber-400/40"
-                          : "bg-emerald-500/20 text-emerald-200 border border-emerald-400/40"
+                          ? "bg-amber-50 text-amber-800 border border-amber-500/70"
+                          : "bg-emerald-50 text-emerald-800 border border-[#5B7A64]"
                       }`}
                     >
                       {decision.riskTier} Risk Tier
                     </span>
                   </div>
-                  <span className="text-[11px] text-white/60 hidden sm:inline">
+                  <span className="text-[11px] text-gray-600 hidden sm:inline">
                     {decision.riskReasons[0] || "Compliant with standard AI sandbox guardrails"}
                   </span>
                 </div>
 
                 {/* Confirmation Checkbox */}
-                <label className="flex items-center gap-2 text-xs font-semibold text-emerald-200 cursor-pointer pt-1">
+                <label className="flex items-center gap-2 text-xs font-semibold text-emerald-800 cursor-pointer pt-1">
                   <input
                     type="checkbox"
                     checked={oraiConfirmed}
                     onChange={(e) => setOraiConfirmed(e.target.checked)}
-                    className="rounded text-emerald-600 focus:ring-emerald-400 h-4 w-4 bg-white/20 border-white/30"
+                    className="rounded text-emerald-600 focus:ring-emerald-600 h-4 w-4 bg-[#E4EFE7] border-[#9FC3AC]"
                   />
                   <span>Confirm: I certify that this initial ORAI Responsible AI screening has been reviewed</span>
                 </label>
               </div>
 
               {/* CARD 6: OPTIONAL VALUE & TECHNOLOGY CONTEXT */}
-              <div className="rounded-xl p-5 bg-white/5 border border-white/10 space-y-3.5">
+              <div className="rounded-xl p-5 bg-[#F7F5EF] border border-[#5B7A64] space-y-3.5">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-white/10 text-white/70 border border-white/10">
+                    <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-[#F7F5EF] text-gray-600 border border-[#5B7A64]">
                       Context Enablers
                     </span>
-                    <h4 className="font-bold text-white/90 text-sm">
+                    <h4 className="font-bold text-gray-800 text-sm">
                       6. Estimated Value & Proposed Technology (Optional)
                     </h4>
                   </div>
-                  <span className="text-[10px] text-white/50">Recommended for Business Case</span>
+                  <span className="text-[10px] text-gray-500">Recommended for Business Case</span>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
                   <div>
-                    <label className="block text-[11px] font-semibold text-white/80 mb-1">
+                    <label className="block text-[11px] font-semibold text-gray-800 mb-1">
                       Estimated Value / ROI
                     </label>
                     <input
@@ -1789,12 +1814,12 @@ export const IntakeWizard: React.FC<IntakeWizardProps> = ({
                       placeholder="e.g. €3.8M net run-rate EBITDA savings; 42k hours repurposed"
                       value={answers.estimatedValueDescription || ""}
                       onChange={(e) => setAnswers({ ...answers, estimatedValueDescription: e.target.value })}
-                      className="w-full px-3 py-2 rounded-lg border border-gray-300 bg-white text-gray-900 text-xs focus:ring-2 focus:ring-emerald-400 focus:outline-none placeholder:text-gray-400"
+                      className="w-full px-3 py-2 rounded-lg border border-gray-300 bg-white text-gray-900 text-xs focus:ring-2 focus:ring-emerald-600 focus:outline-none placeholder:text-gray-400"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-[11px] font-semibold text-white/80 mb-1">
+                    <label className="block text-[11px] font-semibold text-gray-800 mb-1">
                       Proposed Technology
                     </label>
                     <input
@@ -1802,12 +1827,12 @@ export const IntakeWizard: React.FC<IntakeWizardProps> = ({
                       placeholder="e.g. Azure GenAI, LangChain, SAP OData APIs, Databricks"
                       value={answers.technologyProposed || ""}
                       onChange={(e) => setAnswers({ ...answers, technologyProposed: e.target.value })}
-                      className="w-full px-3 py-2 rounded-lg border border-gray-300 bg-white text-gray-900 text-xs focus:ring-2 focus:ring-emerald-400 focus:outline-none placeholder:text-gray-400"
+                      className="w-full px-3 py-2 rounded-lg border border-gray-300 bg-white text-gray-900 text-xs focus:ring-2 focus:ring-emerald-600 focus:outline-none placeholder:text-gray-400"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-[11px] font-semibold text-white/80 mb-1">
+                    <label className="block text-[11px] font-semibold text-gray-800 mb-1">
                       Estimated Budget Envelope (€)
                     </label>
                     <div className="relative">
@@ -1816,7 +1841,7 @@ export const IntakeWizard: React.FC<IntakeWizardProps> = ({
                         step="10000"
                         value={answers.estimatedCost}
                         onChange={(e) => setAnswers({ ...answers, estimatedCost: Number(e.target.value) })}
-                        className="w-full pl-7 pr-3 py-2 rounded-lg border border-gray-300 bg-white text-gray-900 text-xs focus:ring-2 focus:ring-emerald-400 focus:outline-none font-semibold"
+                        className="w-full pl-7 pr-3 py-2 rounded-lg border border-gray-300 bg-white text-gray-900 text-xs focus:ring-2 focus:ring-emerald-600 focus:outline-none font-semibold"
                       />
                       <Euro className="w-3.5 h-3.5 text-gray-400 absolute left-2.5 top-2.5" />
                     </div>
@@ -1826,17 +1851,17 @@ export const IntakeWizard: React.FC<IntakeWizardProps> = ({
             </div>
 
             {/* GATE G1 COMITOLOGY ADVANCE BAR */}
-            <div className="pt-4 border-t border-white/20 flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div className="pt-4 border-t border-[#9FC3AC] flex flex-col sm:flex-row items-center justify-between gap-4">
               {!isStep1Valid ? (
-                <div className="flex items-center gap-2 text-xs bg-amber-400/20 text-amber-200 border border-amber-400/40 px-3.5 py-2 rounded-xl">
-                  <AlertTriangle className="w-4 h-4 text-amber-300 shrink-0" />
+                <div className="flex items-center gap-2 text-xs bg-amber-50 text-amber-800 border border-amber-500/70 px-3.5 py-2 rounded-xl">
+                  <AlertTriangle className="w-4 h-4 text-amber-700 shrink-0" />
                   <span>
                     <strong>Mandatory Intake Dossier Incomplete:</strong> Please complete all 5 required items above before running autonomous agent triage.
                   </span>
                 </div>
               ) : (
-                <div className="flex items-center gap-2 text-xs bg-emerald-400/20 text-emerald-200 border border-emerald-400/40 px-3.5 py-2 rounded-xl">
-                  <Check className="w-4 h-4 text-emerald-400 stroke-[3] shrink-0" />
+                <div className="flex items-center gap-2 text-xs bg-emerald-50 text-emerald-800 border border-[#5B7A64] px-3.5 py-2 rounded-xl">
+                  <Check className="w-4 h-4 text-emerald-600 stroke-[3] shrink-0" />
                   <span>
                     <strong>All 5 Mandatory Items Collected & Verified!</strong> The intake dossier is complete and ready for Gate G1 triage.
                   </span>
@@ -1850,7 +1875,7 @@ export const IntakeWizard: React.FC<IntakeWizardProps> = ({
                 className="px-6 py-3 bg-amber-400 hover:bg-amber-300 text-gray-950 font-black text-xs sm:text-sm rounded-xl flex items-center gap-2 transition-all shadow-md hover:scale-[1.02] disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:scale-100 whitespace-nowrap self-end sm:self-auto"
               >
                 <Bot className="w-4 h-4 text-gray-950" />
-                <span>Launch Autonomous Agent Triage (Gate G1)</span>
+                <span>Send the preliminary project charter to the agent</span>
                 <ArrowRight className="w-4 h-4 text-gray-950" />
               </button>
             </div>
@@ -1859,7 +1884,7 @@ export const IntakeWizard: React.FC<IntakeWizardProps> = ({
       )}
 
       {/* ================= STEP 2: AUTONOMOUS AGENT TRIAGE ================= */}
-      {step === 2 && (
+      {!handoff && step === 2 && (
         <div className="bg-white rounded-2xl p-7 shadow-sm border border-opella-border space-y-6">
           <div className="border-b border-opella-border pb-4 flex items-center justify-between">
             <div>
@@ -1935,7 +1960,7 @@ export const IntakeWizard: React.FC<IntakeWizardProps> = ({
               </div>
               <div className="bg-white/80 p-3 rounded-xl border border-gray-200">
                 <span className="text-gray-500 block font-semibold">Approval Forum</span>
-                <span className="font-bold text-gray-900">{tierConfig.approvalForum}</span>
+                <span className="font-bold text-gray-900">{APPROVAL_FORUM[decision.tier]}</span>
               </div>
             </div>
 
@@ -2003,9 +2028,9 @@ export const IntakeWizard: React.FC<IntakeWizardProps> = ({
                     </div>
                     <div className="text-[10px] text-white/70">Need Validation</div>
                     <div className="text-[11px] font-bold text-emerald-300 pt-0.5 border-t border-white/10">
-                      Automatic
+                      Agent, then TO
                     </div>
-                    <div className="text-[9px] text-white/60">Charter Agent (OpellaGPT)</div>
+                    <div className="text-[9px] text-white/60">No meeting</div>
                   </div>
 
                   <div className="p-2.5 rounded-lg bg-black/30 border border-purple-400/40 space-y-1">
@@ -2013,11 +2038,11 @@ export const IntakeWizard: React.FC<IntakeWizardProps> = ({
                       <span className="font-bold text-white text-[11px]">Gate G2</span>
                       <span className="text-[9px] bg-purple-500/20 text-purple-300 px-1 py-0.2 rounded font-mono font-semibold">Feasibility</span>
                     </div>
-                    <div className="text-[10px] text-white/70">Pre-Approval</div>
+                    <div className="text-[10px] text-white/70">Business case</div>
                     <div className="text-[11px] font-bold text-purple-300 pt-0.5 border-t border-white/10">
-                      Transformation Office
+                      Support functions
                     </div>
-                    <div className="text-[9px] text-white/60">Stream Approvers & DDA</div>
+                    <div className="text-[9px] text-white/60">No meeting</div>
                   </div>
 
                   <div className="p-2.5 rounded-lg bg-black/30 border border-purple-400/40 space-y-1">
@@ -2029,7 +2054,7 @@ export const IntakeWizard: React.FC<IntakeWizardProps> = ({
                     <div className="text-[11px] font-bold text-purple-300 pt-0.5 border-t border-white/10">
                       Transformation Office
                     </div>
-                    <div className="text-[9px] text-white/60">TO Lead & SteerCo / Board</div>
+                    <div className="text-[9px] text-white/60">Portfolio board (T1: then SteerCo)</div>
                   </div>
 
                   <div className="p-2.5 rounded-lg bg-black/30 border border-blue-400/40 space-y-1">
@@ -2039,9 +2064,9 @@ export const IntakeWizard: React.FC<IntakeWizardProps> = ({
                     </div>
                     <div className="text-[10px] text-white/70">Mode & Tech Unlock</div>
                     <div className="text-[11px] font-bold text-blue-300 pt-0.5 border-t border-white/10">
-                      Data & AI
+                      TO and Data & AI office
                     </div>
-                    <div className="text-[9px] text-white/60">DDA & Tech Architecture</div>
+                    <div className="text-[9px] text-white/60">Portfolio board</div>
                   </div>
 
                   <div className="p-2.5 rounded-lg bg-black/30 border border-purple-400/40 space-y-1">
@@ -2079,104 +2104,114 @@ export const IntakeWizard: React.FC<IntakeWizardProps> = ({
                   You will have the following meetings for review:
                 </div>
                 <p className="text-[11px] text-white/70">
-                  Per the Opella comitology rules in Tab 1, your initiative will convene with the following governance bodies:
+                  No new committee: your use case goes through the existing Butterfly committees of its stream.
                 </p>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-3 pt-1 text-xs">
                   {decision.tier === "T1" ? (
                     <>
                       <div className="p-3 rounded-lg bg-black/30 border border-emerald-400/30 space-y-1">
                         <div className="font-bold text-white text-xs flex items-center justify-between">
-                          <span>1. Stream Portfolio Board</span>
+                          <span>1. No meeting · G2 Feasible</span>
                           <span className="text-[9px] bg-emerald-900/80 text-emerald-200 px-1.5 py-0.2 rounded font-mono">
-                            Fortnightly
+                            Outside meetings
                           </span>
                         </div>
-                        <div className="text-emerald-300 text-[11px] font-semibold">Dedicated Stream Approvers</div>
+                        <div className="text-emerald-300 text-[11px] font-semibold">Each support function</div>
                         <p className="text-white/70 text-[11px] leading-snug">
-                          Validates the business problem statement, endorses T1 classification, and allocates initial functional squad resources.
+                          Value officer (value, with Finance), P&C (change impact, Butterfly template adjusted for AI), Adoption lead, LEX (OR.AI risk) and Data &amp; AI (tech and data) each validate their part of the business case.
                         </p>
                       </div>
-
+                      <div className="p-3 rounded-lg bg-black/30 border border-sky-400/30 space-y-1">
+                        <div className="font-bold text-white text-xs flex items-center justify-between">
+                          <span>2. Portfolio board · G3 and G4</span>
+                          <span className="text-[9px] bg-emerald-900/80 text-emerald-200 px-1.5 py-0.2 rounded font-mono">
+                            Weekly
+                          </span>
+                        </div>
+                        <div className="text-emerald-300 text-[11px] font-semibold">Transformation Office and Data &amp; AI office</div>
+                        <p className="text-white/70 text-[11px] leading-snug">
+                          Butterfly committee. Prioritises the use case (G3), then validates the delivery mode (G4), with the other functions in support.
+                        </p>
+                      </div>
                       <div className="p-3 rounded-lg bg-black/30 border border-purple-400/30 space-y-1">
                         <div className="font-bold text-white text-xs flex items-center justify-between">
-                          <span>2. TO SteerCo (Monthly)</span>
-                          <span className="text-[9px] bg-purple-900/80 text-purple-200 px-1.5 py-0.2 rounded font-mono">
+                          <span>3. SteerCo · G3</span>
+                          <span className="text-[9px] bg-emerald-900/80 text-emerald-200 px-1.5 py-0.2 rounded font-mono">
                             Monthly
                           </span>
                         </div>
-                        <div className="text-purple-300 text-[11px] font-semibold">Chaired by TO Lead & ExCo Sponsors</div>
+                        <div className="text-emerald-300 text-[11px] font-semibold">Butterfly committee</div>
                         <p className="text-white/70 text-[11px] leading-snug">
-                          Approves corporate portfolio entry, signs off on multi-year budget envelope, and monitors enterprise P&L impact.
-                        </p>
-                      </div>
-
-                      <div className="p-3 rounded-lg bg-black/30 border border-blue-400/30 space-y-1">
-                        <div className="font-bold text-white text-xs flex items-center justify-between">
-                          <span>3. Digital Design Authority</span>
-                          <span className="text-[9px] bg-blue-900/80 text-blue-200 px-1.5 py-0.2 rounded font-mono">
-                            5-Day SLA
-                          </span>
-                        </div>
-                        <div className="text-blue-300 text-[11px] font-semibold">Architecture, Data & Cyber Leads</div>
-                        <p className="text-white/70 text-[11px] leading-snug">
-                          Reviews Architecture Decision Record (ADR), SAP S/4HANA OData connectors, private AI tenant endpoints, and data isolation.
+                          Validates the T1 use case after the Portfolio board. A bet across several streams can also go to the AmplifAI cross stream meeting (optional, the only new meeting).
                         </p>
                       </div>
                     </>
                   ) : decision.tier === "T2" ? (
                     <>
-                      <div className="p-3 rounded-lg bg-black/30 border border-sky-400/30 space-y-1">
-                        <div className="font-bold text-white text-xs flex items-center justify-between">
-                          <span>1. AI Portfolio Board</span>
-                          <span className="text-[9px] bg-sky-900/80 text-sky-200 px-1.5 py-0.2 rounded font-mono">
-                            Fortnightly
-                          </span>
-                        </div>
-                        <div className="text-sky-300 text-[11px] font-semibold">Stream Leadership & CDO Proxy</div>
-                        <p className="text-white/70 text-[11px] leading-snug">
-                          Validates pilot performance metrics and confirms reach across multiple business units.
-                        </p>
-                      </div>
-
                       <div className="p-3 rounded-lg bg-black/30 border border-emerald-400/30 space-y-1">
                         <div className="font-bold text-white text-xs flex items-center justify-between">
-                          <span>2. Program Sponsors (CDO + CFO)</span>
+                          <span>1. No meeting · G2 Feasible</span>
                           <span className="text-[9px] bg-emerald-900/80 text-emerald-200 px-1.5 py-0.2 rounded font-mono">
-                            Bi-weekly
+                            Outside meetings
                           </span>
                         </div>
-                        <div className="text-emerald-300 text-[11px] font-semibold">Executive Sponsoring Body</div>
+                        <div className="text-emerald-300 text-[11px] font-semibold">Each support function</div>
                         <p className="text-white/70 text-[11px] leading-snug">
-                          Releases co-funded budget in tranches and signs off on builder day allocations.
+                          Value officer (value, with Finance), P&C (change impact, Butterfly template adjusted for AI), Adoption lead, LEX (OR.AI risk) and Data &amp; AI (tech and data) each validate their part of the business case.
                         </p>
                       </div>
-
-                      <div className="p-3 rounded-lg bg-black/30 border border-purple-400/30 space-y-1">
+                      <div className="p-3 rounded-lg bg-black/30 border border-sky-400/30 space-y-1">
                         <div className="font-bold text-white text-xs flex items-center justify-between">
-                          <span>3. Digital Design Authority</span>
-                          <span className="text-[9px] bg-purple-900/80 text-purple-200 px-1.5 py-0.2 rounded font-mono">
-                            Weekly
+                          <span>2. Portfolio board · G3 and G4</span>
+                          <span className="text-[9px] bg-emerald-900/80 text-emerald-200 px-1.5 py-0.2 rounded font-mono">
+                            Biweekly
                           </span>
                         </div>
-                        <div className="text-purple-300 text-[11px] font-semibold">Architecture & ORAI Review</div>
+                        <div className="text-emerald-300 text-[11px] font-semibold">Transformation Office and Data &amp; AI office</div>
                         <p className="text-white/70 text-[11px] leading-snug">
-                          Validates platform fit and data privacy controls before scaling.
+                          Butterfly committee. Prioritises the use case (G3), then validates the delivery mode (G4), with the other functions in support.
+                        </p>
+                      </div>
+                      <div className="p-3 rounded-lg bg-black/30 border border-purple-400/30 space-y-1">
+                        <div className="font-bold text-white text-xs flex items-center justify-between">
+                          <span>Later · G5 Scale</span>
+                          <span className="text-[9px] bg-emerald-900/80 text-emerald-200 px-1.5 py-0.2 rounded font-mono">
+                            At the scale gate
+                          </span>
+                        </div>
+                        <div className="text-emerald-300 text-[11px] font-semibold">Program Sponsors (CDO + CFO)</div>
+                        <p className="text-white/70 text-[11px] leading-snug">
+                          Approve the scale of a T2 use case, on the Portfolio board&apos;s recommendation.
                         </p>
                       </div>
                     </>
                   ) : decision.tier === "T3" ? (
-                    <div className="p-3 rounded-lg bg-black/30 border border-amber-400/30 space-y-1 md:col-span-3">
-                      <div className="font-bold text-white text-xs flex items-center justify-between">
-                        <span>1. AI Portfolio Board (The ONLY Forum Seen)</span>
-                        <span className="text-[9px] bg-amber-900/80 text-amber-200 px-1.5 py-0.2 rounded font-mono">
-                          10-Day SLA
-                        </span>
+                    <>
+                      <div className="p-3 rounded-lg bg-black/30 border border-emerald-400/30 space-y-1">
+                        <div className="font-bold text-white text-xs flex items-center justify-between">
+                          <span>1. No meeting · G2 Feasible</span>
+                          <span className="text-[9px] bg-emerald-900/80 text-emerald-200 px-1.5 py-0.2 rounded font-mono">
+                            10-day SLA
+                          </span>
+                        </div>
+                        <div className="text-emerald-300 text-[11px] font-semibold">Each support function</div>
+                        <p className="text-white/70 text-[11px] leading-snug">
+                          Value officer, P&amp;C (light impact scan), LEX (OR.AI risk) and Data &amp; AI validate the one-page canvas, outside meetings.
+                        </p>
                       </div>
-                      <div className="text-amber-300 text-[11px] font-semibold">Streamlined Fast-Lane Comitology</div>
-                      <p className="text-white/70 text-[11px] leading-snug">
-                        A single agile review forum with a guaranteed 10-day decision SLA. No committee escalation or multi-layer steerco required. Evaluates the one-page canvas and unlocks the 6–8 week sprint budget.
-                      </p>
-                    </div>
+                      <div className="p-3 rounded-lg bg-black/30 border border-sky-400/30 space-y-1">
+                        <div className="font-bold text-white text-xs flex items-center justify-between">
+                          <span>2. Portfolio board · G3 and G4</span>
+                          <span className="text-[9px] bg-emerald-900/80 text-emerald-200 px-1.5 py-0.2 rounded font-mono">
+                            Biweekly
+                          </span>
+                        </div>
+                        <div className="text-emerald-300 text-[11px] font-semibold">Transformation Office and Data &amp; AI office</div>
+                        <p className="text-white/70 text-[11px] leading-snug">
+                          Butterfly committee. Prioritises the use case (G3), then validates the delivery mode (G4), with the other functions in support.
+                        </p>
+                      </div>
+                    </>
                   ) : (
                     <div className="p-3 rounded-lg bg-black/30 border border-purple-400/30 space-y-1 md:col-span-3">
                       <div className="font-bold text-white text-xs flex items-center justify-between">
@@ -2453,18 +2488,19 @@ export const IntakeWizard: React.FC<IntakeWizardProps> = ({
                     budgetEnvelope: answers.estimatedCost,
                   }));
                 }
-                setStep(3);
+                setHandoff("g1");
+                window.scrollTo({ top: 0 });
               }}
               className="px-6 py-2.5 bg-opella-forest text-white rounded-lg font-bold text-sm flex items-center gap-2 hover:bg-opella-emerald shadow-sm"
             >
-              Go to step 3: Business case filled ({decision.tier}) <ArrowRight className="w-4 h-4" />
+              Submit the triage for validation by the Transformation Office (G1) <ArrowRight className="w-4 h-4" />
             </button>
           </div>
         </div>
       )}
 
       {/* ================= STEP 3: FILL RELEVANT BUSINESS CASE ================= */}
-      {step === 3 && (
+      {!handoff && step === 3 && (
         <div className="bg-white rounded-2xl p-7 shadow-sm border border-opella-border space-y-6">
           {/* RE-SCOPING ACTIVE NOTICE BANNER */}
           {rescopingUseCase && (
@@ -2497,95 +2533,97 @@ export const IntakeWizard: React.FC<IntakeWizardProps> = ({
           )}
 
           {/* USER JOURNEY STATION: STAGE 2 (GATE G1 APPROVED -> G2 BUSINESS CASE BRIEFING) */}
-          <div className="rounded-2xl p-6 bg-gradient-to-br from-[#0c2a1a] via-[#093c1f] to-[#044c23] text-white border-2 border-emerald-400 shadow-xl space-y-5">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-white/20 pb-4">
+          <div className="rounded-2xl p-6 bg-white text-gray-900 border-2 border-[#2F6B4F] shadow-sm space-y-5">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[#9FC3AC] pb-4">
               <div className="flex items-start gap-3">
                 <span className="px-3 py-1.5 rounded-lg bg-emerald-400 text-gray-950 font-black text-xs flex items-center gap-1.5 shadow-md shrink-0 mt-0.5">
-                  <span>🎉</span>
-                  <span>GATE G1 APPROVED</span>
+                  <span>G1</span>
+                  <span>VALIDATED</span>
                 </span>
                 <div>
-                  <div className="text-[11px] font-mono uppercase tracking-wider text-emerald-300 font-bold">
-                    User Journey Stage 2 · Need Validated & Triage Approved
+                  <div className="text-[11px] font-mono uppercase tracking-wider text-emerald-700 font-bold">
+                    Need validated by the agent and the Transformation Office
                   </div>
-                  <h3 className="text-xl font-black text-white mt-0.5">
-                    Great! You were approved at Gate G1. Here is what this means:
+                  <h3 className="text-xl font-black text-gray-900 mt-0.5">
+                    Your use case passed G1. Here is what comes next:
                   </h3>
                 </div>
               </div>
-              <span className="text-xs font-bold px-3 py-1 rounded-full bg-emerald-950/80 text-emerald-200 border border-emerald-400/40">
-                Gate G1 Passed · G2 In-Flight
+              <span className="text-xs font-bold px-3 py-1 rounded-full bg-emerald-50 text-emerald-800 border border-[#5B7A64]">
+                G1 passed · G2 in progress
               </span>
             </div>
 
-            <Details tone="dark" title={"What it means"}>
+            <Details tone="light" title={"What it means"}>
             {/* What it means (1, 2, 3) */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-              <div className="p-3.5 rounded-xl bg-white/10 border border-emerald-400/30 space-y-1.5">
+              <div className="p-3.5 rounded-xl bg-[#F7F5EF] border border-[#5B7A64] space-y-1.5">
                 <div className="flex items-center gap-2">
                   <span className="w-6 h-6 rounded-full bg-amber-400 text-gray-950 font-black text-xs flex items-center justify-center shrink-0">
                     1
                   </span>
-                  <span className="font-bold text-white text-xs">
+                  <span className="font-bold text-gray-900 text-xs">
                     Formally Registered in Pipeline
                   </span>
                 </div>
-                <p className="text-[11px] text-white/80 leading-relaxed">
+                <p className="text-[11px] text-gray-800 leading-relaxed">
                   Your initiative is formally cataloged in the Opella AI Registry and linked to the Butterfly transformation portfolio with an active tracking ID.
                 </p>
               </div>
 
-              <div className="p-3.5 rounded-xl bg-white/10 border border-emerald-400/30 space-y-1.5">
+              <div className="p-3.5 rounded-xl bg-[#F7F5EF] border border-[#5B7A64] space-y-1.5">
                 <div className="flex items-center gap-2">
                   <span className="w-6 h-6 rounded-full bg-emerald-400 text-gray-950 font-black text-xs flex items-center justify-center shrink-0">
                     2
                   </span>
-                  <span className="font-bold text-white text-xs">
+                  <span className="font-bold text-gray-900 text-xs">
                     Co-Building Squad Mobilized
                   </span>
                 </div>
-                <p className="text-[11px] text-white/80 leading-relaxed">
+                <p className="text-[11px] text-gray-800 leading-relaxed">
                   Dedicated delivery partners are mobilized—including your AI Catalyst, Business Architect, and Lead Data Engineer to support your Business Owner.
                 </p>
               </div>
 
-              <div className="p-3.5 rounded-xl bg-white/10 border border-emerald-400/30 space-y-1.5">
+              <div className="p-3.5 rounded-xl bg-[#F7F5EF] border border-[#5B7A64] space-y-1.5">
                 <div className="flex items-center gap-2">
                   <span className="w-6 h-6 rounded-full bg-sky-400 text-gray-950 font-black text-xs flex items-center justify-center shrink-0">
                     3
                   </span>
-                  <span className="font-bold text-white text-xs">
-                    Locked Comitology Schedule
+                  <span className="font-bold text-gray-900 text-xs">
+                    Who validates next
                   </span>
                 </div>
-                <p className="text-[11px] text-white/80 leading-relaxed">
-                  Your Gate G2 Feasibility slot is officially locked on the agenda of the Stream Portfolio Board and SteerCo with dedicated review time.
+                <p className="text-[11px] text-gray-800 leading-relaxed">
+                  {decision.tier === "Self-Serve"
+                    ? "Self-serve: no meeting. Your registry line is enough; guardrails and the cost cap apply."
+                    : `G2: each support function validates its part, outside meetings. G3 and G4: the ${BOARD(decision.tier as "T1")}${decision.tier === "T1" ? ", then SteerCo for G3" : ""}.`}
                 </p>
               </div>
             </div>
             </Details>
 
-            <Details tone="dark" title={`Information to collect for your business case (${decision.tier})`}>
+            <Details tone="light" title={`Information to collect for your business case (${decision.tier})`}>
             {/* Information you will need to collect for the business case */}
-            <div className="bg-black/30 rounded-xl p-4 border border-white/15 space-y-2">
-              <div className="text-xs font-bold uppercase tracking-wider text-amber-300 flex items-center gap-2">
-                <FileText className="w-4 h-4 text-amber-300" />
+            <div className="bg-white rounded-xl p-4 border border-[#9FC3AC] space-y-2">
+              <div className="text-xs font-bold uppercase tracking-wider text-amber-700 flex items-center gap-2">
+                <FileText className="w-4 h-4 text-amber-700" />
                 Because you are in {decision.tier} ({tierConfig.name}), you will need to collect all the following information for your business case:
               </div>
               {decision.tier === "T1" ? (
-                <p className="text-xs text-white/80 leading-relaxed">
+                <p className="text-xs text-gray-800 leading-relaxed">
                   Per Slide 37 and Tab 1, a Tier 1 initiative requires the <strong>Full Business Case (Butterfly Depth)</strong> structured into 6 mandatory sections: Recurring items, SI non-staff, Resource people costs, BI non-staff, Project plan & KPIs, and Executive dashboard sign-offs. Complete and verify each section below:
                 </p>
               ) : decision.tier === "T2" ? (
-                <p className="text-xs text-white/80 leading-relaxed">
+                <p className="text-xs text-gray-800 leading-relaxed">
                   Per Slide 38 and Tab 1, a Tier 2 initiative requires the <strong>Light Business Case (1–2 Pages)</strong> covering problem statement, directional value, build mode, builder sizing, token consumption, and existing data fit.
                 </p>
               ) : decision.tier === "T3" ? (
-                <p className="text-xs text-white/80 leading-relaxed">
+                <p className="text-xs text-gray-800 leading-relaxed">
                   Per Slide 39 and Tab 1, a Tier 3 initiative requires the <strong>One-Page Canvas (Fast Lane)</strong> with a value hypothesis, 3 measurable KPIs + baseline, 6–8 week sprint commitment, and a clear kill/scale date.
                 </p>
               ) : (
-                <p className="text-xs text-white/80 leading-relaxed">
+                <p className="text-xs text-gray-800 leading-relaxed">
                   Per Slide 40 and Tab 1, Self-Service AI requires an <strong>AI Registry Line & Guardrail Certification</strong> confirming approved tools, cost caps, and data safety.
                 </p>
               )}
@@ -2679,16 +2717,26 @@ export const IntakeWizard: React.FC<IntakeWizardProps> = ({
           </div>
           </Details>
 
+          {decision.tier !== "Self-Serve" && (
+            <div className="flex items-start gap-3 rounded-xl border border-violet-300 bg-violet-50 px-4 py-3 text-sm leading-relaxed text-violet-950">
+              <strong className="shrink-0">Simulation.</strong>
+              <span>
+                Your tier and value are a first estimate, to be validated. <strong>G2 (feasible):</strong> outside meetings, each support function validates its part: {G2_VALIDATORS(decision.tier as "T1")}.{" "}
+                <strong>G3 (priority):</strong> {BOARD(decision.tier as "T1")}{decision.tier === "T1" ? ", then SteerCo (monthly); AmplifAI cross stream meeting if several streams (optional)" : ""}.
+              </span>
+            </div>
+          )}
+
           {/* DYNAMIC FORMS BASED ON TIER */}
 
           {/* 1. T1 FULL BUSINESS CASE (6 FULL SECTIONS FROM SLIDE 37) */}
           {decision.tier === "T1" && (
             <div className="space-y-6 text-sm">
               {/* Section 1: Recurring Items */}
-              <div className="bg-emerald-50/60 p-5 rounded-xl border border-emerald-200 space-y-4">
-                <div className="flex items-center justify-between border-b border-emerald-200/80 pb-2">
+              <div className="bg-white p-5 rounded-xl border-[1.5px] border-[#5B7A64] space-y-4">
+                <div className="flex items-center justify-between -mx-5 -mt-5 mb-1 rounded-t-xl border-b-[1.5px] border-[#5B7A64] bg-[#E4EFE7] px-5 py-2.5">
                   <h4 className="font-bold text-emerald-950 flex items-center gap-2 text-sm">
-                    <span className="w-5 h-5 rounded-full bg-emerald-800 text-white text-xs flex items-center justify-center font-mono">1</span>
+                    <span className="w-5 h-5 rounded-full bg-opella-forest text-white text-xs flex items-center justify-center font-mono">1</span>
                     1. Recurring Items (FY25–30 Bottom-Up Benefits & Run Costs)
                   </h4>
                   <span className="text-[11px] bg-emerald-200/80 text-emerald-900 font-bold px-2 py-0.5 rounded">
@@ -2798,10 +2846,10 @@ export const IntakeWizard: React.FC<IntakeWizardProps> = ({
               </div>
 
               {/* Section 2: SI Non-Staff Enablers */}
-              <div className="bg-gray-50 p-5 rounded-xl border border-gray-200 space-y-4">
-                <div className="flex items-center justify-between border-b border-gray-200 pb-2">
+              <div className="bg-white p-5 rounded-xl border-[1.5px] border-[#5B7A64] space-y-4">
+                <div className="flex items-center justify-between -mx-5 -mt-5 mb-1 rounded-t-xl border-b-[1.5px] border-[#5B7A64] bg-[#E4EFE7] px-5 py-2.5">
                   <h4 className="font-bold text-gray-900 flex items-center gap-2 text-sm">
-                    <span className="w-5 h-5 rounded-full bg-gray-800 text-white text-xs flex items-center justify-center font-mono">2</span>
+                    <span className="w-5 h-5 rounded-full bg-opella-forest text-white text-xs flex items-center justify-center font-mono">2</span>
                     2. SI Non-Staff Enablers (System, Infra, Cyber, Data Enablers)
                   </h4>
                   <span className="text-[11px] text-gray-500 font-mono">No Double Counting</span>
@@ -2881,10 +2929,10 @@ export const IntakeWizard: React.FC<IntakeWizardProps> = ({
               </div>
 
               {/* Section 3: Resource People Costs */}
-              <div className="bg-gray-50 p-5 rounded-xl border border-gray-200 space-y-4">
-                <div className="flex items-center justify-between border-b border-gray-200 pb-2">
+              <div className="bg-white p-5 rounded-xl border-[1.5px] border-[#5B7A64] space-y-4">
+                <div className="flex items-center justify-between -mx-5 -mt-5 mb-1 rounded-t-xl border-b-[1.5px] border-[#5B7A64] bg-[#E4EFE7] px-5 py-2.5">
                   <h4 className="font-bold text-gray-900 flex items-center gap-2 text-sm">
-                    <span className="w-5 h-5 rounded-full bg-gray-800 text-white text-xs flex items-center justify-center font-mono">3</span>
+                    <span className="w-5 h-5 rounded-full bg-opella-forest text-white text-xs flex items-center justify-center font-mono">3</span>
                     3. Resource People Costs (Named Internal Roles & Skill Gaps)
                   </h4>
                   <span className="text-[11px] text-gray-500">Internal Priority</span>
@@ -2964,10 +3012,10 @@ export const IntakeWizard: React.FC<IntakeWizardProps> = ({
               </div>
 
               {/* Section 4: BI Non-Staff (Vendors / RFP) */}
-              <div className="bg-gray-50 p-5 rounded-xl border border-gray-200 space-y-4">
-                <div className="flex items-center justify-between border-b border-gray-200 pb-2">
+              <div className="bg-white p-5 rounded-xl border-[1.5px] border-[#5B7A64] space-y-4">
+                <div className="flex items-center justify-between -mx-5 -mt-5 mb-1 rounded-t-xl border-b-[1.5px] border-[#5B7A64] bg-[#E4EFE7] px-5 py-2.5">
                   <h4 className="font-bold text-gray-900 flex items-center gap-2 text-sm">
-                    <span className="w-5 h-5 rounded-full bg-gray-800 text-white text-xs flex items-center justify-center font-mono">4</span>
+                    <span className="w-5 h-5 rounded-full bg-opella-forest text-white text-xs flex items-center justify-center font-mono">4</span>
                     4. BI Non-Staff (Supplier Spend, Scope & RFP Status)
                   </h4>
                   <span className="text-[11px] text-gray-500">No PO Before Approval</span>
@@ -3023,10 +3071,10 @@ export const IntakeWizard: React.FC<IntakeWizardProps> = ({
               </div>
 
               {/* Section 5: Project Plan, Risks & KPIs */}
-              <div className="bg-gray-50 p-5 rounded-xl border border-gray-200 space-y-4">
-                <div className="flex items-center justify-between border-b border-gray-200 pb-2">
+              <div className="bg-white p-5 rounded-xl border-[1.5px] border-[#5B7A64] space-y-4">
+                <div className="flex items-center justify-between -mx-5 -mt-5 mb-1 rounded-t-xl border-b-[1.5px] border-[#5B7A64] bg-[#E4EFE7] px-5 py-2.5">
                   <h4 className="font-bold text-gray-900 flex items-center gap-2 text-sm">
-                    <span className="w-5 h-5 rounded-full bg-gray-800 text-white text-xs flex items-center justify-center font-mono">5</span>
+                    <span className="w-5 h-5 rounded-full bg-opella-forest text-white text-xs flex items-center justify-center font-mono">5</span>
                     5. Project Plan, Risks & KPIs (Milestones & Stage Gates)
                   </h4>
                   <span className="text-[11px] text-gray-500">Every 4–6 Weeks</span>
@@ -3111,10 +3159,10 @@ export const IntakeWizard: React.FC<IntakeWizardProps> = ({
               </div>
 
               {/* Section 6: Executive Dashboard & 4-Way Sign-offs */}
-              <div className="bg-emerald-50/60 p-5 rounded-xl border border-emerald-300 space-y-4">
-                <div className="flex items-center justify-between border-b border-emerald-200/80 pb-2">
+              <div className="bg-white p-5 rounded-xl border-[1.5px] border-[#5B7A64] space-y-4">
+                <div className="flex items-center justify-between -mx-5 -mt-5 mb-1 rounded-t-xl border-b-[1.5px] border-[#5B7A64] bg-[#E4EFE7] px-5 py-2.5">
                   <h4 className="font-bold text-emerald-950 flex items-center gap-2 text-sm">
-                    <span className="w-5 h-5 rounded-full bg-emerald-800 text-white text-xs flex items-center justify-center font-mono">6</span>
+                    <span className="w-5 h-5 rounded-full bg-opella-forest text-white text-xs flex items-center justify-center font-mono">6</span>
                     6. Executive Dashboard & 4-Way Sign-Offs (Slide 37)
                   </h4>
                   <span className="text-[11px] bg-emerald-200/80 text-emerald-900 font-bold px-2 py-0.5 rounded">
@@ -3226,10 +3274,10 @@ export const IntakeWizard: React.FC<IntakeWizardProps> = ({
           {decision.tier === "T2" && (
             <div className="space-y-6 text-sm">
               {/* Module 1: Problem Statement & Directional Value */}
-              <div className="bg-sky-50/60 p-5 rounded-xl border border-sky-200 space-y-4">
-                <div className="flex items-center justify-between border-b border-sky-200/80 pb-2">
+              <div className="bg-white p-5 rounded-xl border-[1.5px] border-[#5B7A64] space-y-4">
+                <div className="flex items-center justify-between -mx-5 -mt-5 mb-1 rounded-t-xl border-b-[1.5px] border-[#5B7A64] bg-[#E4EFE7] px-5 py-2.5">
                   <h4 className="font-bold text-sky-950 flex items-center gap-2 text-sm">
-                    <span className="w-5 h-5 rounded-full bg-sky-800 text-white text-xs flex items-center justify-center font-mono">1</span>
+                    <span className="w-5 h-5 rounded-full bg-opella-forest text-white text-xs flex items-center justify-center font-mono">1</span>
                     1. Problem Statement & Directional Value
                   </h4>
                   <span className="text-[11px] bg-sky-200/80 text-sky-900 font-bold px-2 py-0.5 rounded">
@@ -3277,10 +3325,10 @@ export const IntakeWizard: React.FC<IntakeWizardProps> = ({
               </div>
 
               {/* Module 2: Build Mode & Rough Effort / Token Sizing */}
-              <div className="bg-gray-50 p-5 rounded-xl border border-gray-200 space-y-4">
-                <div className="flex items-center justify-between border-b border-gray-200 pb-2">
+              <div className="bg-white p-5 rounded-xl border-[1.5px] border-[#5B7A64] space-y-4">
+                <div className="flex items-center justify-between -mx-5 -mt-5 mb-1 rounded-t-xl border-b-[1.5px] border-[#5B7A64] bg-[#E4EFE7] px-5 py-2.5">
                   <h4 className="font-bold text-gray-900 flex items-center gap-2 text-sm">
-                    <span className="w-5 h-5 rounded-full bg-gray-800 text-white text-xs flex items-center justify-center font-mono">2</span>
+                    <span className="w-5 h-5 rounded-full bg-opella-forest text-white text-xs flex items-center justify-center font-mono">2</span>
                     2. Build Mode & Rough Effort / Token Sizing
                   </h4>
                   <span className="text-[11px] text-gray-500 font-mono">Budget Envelope Fit</span>
@@ -3326,10 +3374,10 @@ export const IntakeWizard: React.FC<IntakeWizardProps> = ({
               </div>
 
               {/* Module 3: Existing Data & Platform Fit */}
-              <div className="bg-gray-50 p-5 rounded-xl border border-gray-200 space-y-4">
-                <div className="flex items-center justify-between border-b border-gray-200 pb-2">
+              <div className="bg-white p-5 rounded-xl border-[1.5px] border-[#5B7A64] space-y-4">
+                <div className="flex items-center justify-between -mx-5 -mt-5 mb-1 rounded-t-xl border-b-[1.5px] border-[#5B7A64] bg-[#E4EFE7] px-5 py-2.5">
                   <h4 className="font-bold text-gray-900 flex items-center gap-2 text-sm">
-                    <span className="w-5 h-5 rounded-full bg-gray-800 text-white text-xs flex items-center justify-center font-mono">3</span>
+                    <span className="w-5 h-5 rounded-full bg-opella-forest text-white text-xs flex items-center justify-center font-mono">3</span>
                     3. Existing Data & Platform Fit
                   </h4>
                   <span className="text-[11px] text-gray-500 font-mono">Approved Sources</span>
@@ -3398,13 +3446,13 @@ export const IntakeWizard: React.FC<IntakeWizardProps> = ({
               </div>
 
               {/* Module 4: Named Owner & Single-Step Triage */}
-              <div className="bg-gray-50 p-5 rounded-xl border border-gray-200 space-y-4">
-                <div className="flex items-center justify-between border-b border-gray-200 pb-2">
+              <div className="bg-white p-5 rounded-xl border-[1.5px] border-[#5B7A64] space-y-4">
+                <div className="flex items-center justify-between -mx-5 -mt-5 mb-1 rounded-t-xl border-b-[1.5px] border-[#5B7A64] bg-[#E4EFE7] px-5 py-2.5">
                   <h4 className="font-bold text-gray-900 flex items-center gap-2 text-sm">
-                    <span className="w-5 h-5 rounded-full bg-gray-800 text-white text-xs flex items-center justify-center font-mono">4</span>
+                    <span className="w-5 h-5 rounded-full bg-opella-forest text-white text-xs flex items-center justify-center font-mono">4</span>
                     4. Named Owner & Single-Step Triage
                   </h4>
-                  <span className="text-[11px] text-gray-500 font-mono">Fortnightly AI Portfolio Board</span>
+                  <span className="text-[11px] text-gray-500 font-mono">G2 outside meetings · G3 at the Portfolio board</span>
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                   <div>
@@ -3454,16 +3502,16 @@ export const IntakeWizard: React.FC<IntakeWizardProps> = ({
                   </div>
                 </div>
                 <div className="p-2.5 rounded-lg bg-sky-50 border border-sky-200 text-sky-950 text-xs flex items-center justify-between">
-                  <span>✓ Validated in a single pass at the fortnightly AI Portfolio Board with CDO + CFO sponsors</span>
-                  <span className="font-mono font-bold text-sky-700 text-[11px]">Fortnightly Session</span>
+                  <span>✓ G2 validated outside meetings by the support functions; priority (G3) at the biweekly Portfolio board</span>
+                  <span className="font-mono font-bold text-sky-700 text-[11px]">Portfolio board, biweekly</span>
                 </div>
               </div>
 
               {/* Module 5: ORAI Risk Tier Screening */}
-              <div className="bg-gray-50 p-5 rounded-xl border border-gray-200 space-y-4">
-                <div className="flex items-center justify-between border-b border-gray-200 pb-2">
+              <div className="bg-white p-5 rounded-xl border-[1.5px] border-[#5B7A64] space-y-4">
+                <div className="flex items-center justify-between -mx-5 -mt-5 mb-1 rounded-t-xl border-b-[1.5px] border-[#5B7A64] bg-[#E4EFE7] px-5 py-2.5">
                   <h4 className="font-bold text-gray-900 flex items-center gap-2 text-sm">
-                    <span className="w-5 h-5 rounded-full bg-gray-800 text-white text-xs flex items-center justify-center font-mono">5</span>
+                    <span className="w-5 h-5 rounded-full bg-opella-forest text-white text-xs flex items-center justify-center font-mono">5</span>
                     5. ORAI Risk Tier Screening
                   </h4>
                   <span className="text-[11px] text-gray-500 font-mono">ORAI Clearance</span>
@@ -3639,17 +3687,17 @@ export const IntakeWizard: React.FC<IntakeWizardProps> = ({
               <ArrowLeft className="w-4 h-4" /> Back to Triage
             </button>
             <button
-              onClick={() => setStep(4)}
+              onClick={() => { setHandoff("g2"); window.scrollTo({ top: 0 }); }}
               className="px-6 py-2.5 bg-opella-forest text-white rounded-lg font-bold text-sm flex items-center gap-2 hover:bg-opella-emerald shadow-sm"
             >
-              Proceed to Mode Selection <ArrowRight className="w-4 h-4" />
+              {decision.tier === "Self-Serve" ? "Submit the registry line" : "Submit the business case for validation (G2)"} <ArrowRight className="w-4 h-4" />
             </button>
           </div>
         </div>
       )}
 
       {/* ================= STEP 4: MODE SELECTION (G4 DECISION) ================= */}
-      {step === 4 && (
+      {!handoff && step === 4 && (
         <div className="bg-white rounded-2xl p-7 shadow-sm border border-opella-border space-y-6">
           <div className="border-b border-opella-border pb-4 flex items-center justify-between">
             <div>
@@ -3658,7 +3706,7 @@ export const IntakeWizard: React.FC<IntakeWizardProps> = ({
                   Gate G4 Decision
                 </span>
                 <span className="text-xs font-bold px-2.5 py-0.5 rounded bg-blue-100 text-blue-900 border border-blue-300">
-                  Decision Authority: Data & AI
+                  Validated at the Portfolio board: Transformation Office and Data &amp; AI office
                 </span>
                 <h2 className="text-xl font-bold text-opella-forest">
                   Sourcing & Delivery Mode Selection (Slides 10 & 46)
@@ -4400,6 +4448,15 @@ export const IntakeWizard: React.FC<IntakeWizardProps> = ({
             </div>
           </div>
 
+          {decision.tier !== "Self-Serve" && (
+            <div className="flex items-start gap-3 rounded-xl border border-violet-300 bg-violet-50 px-4 py-3 text-sm leading-relaxed text-violet-950">
+              <strong className="shrink-0">Simulation.</strong>
+              <span>
+                The recommended mode is a proposal. It is validated at the <strong>{BOARD(decision.tier as "T1")}</strong> (G4), mainly by the Transformation Office and the Data &amp; AI office, supported by the other functions.
+              </span>
+            </div>
+          )}
+
           <div className="flex justify-between pt-4 border-t border-opella-border">
             <button
               onClick={() => setStep(3)}
@@ -4420,11 +4477,15 @@ export const IntakeWizard: React.FC<IntakeWizardProps> = ({
               <span aria-hidden="true">🚀</span> See the next step for {chosenMode}
             </button>
             <button
-              onClick={handleCreateUseCase}
+              onClick={async () => {
+                await handleCreateUseCase();
+                setHandoff("g4");
+                window.scrollTo({ top: 0 });
+              }}
               className="px-7 py-3 bg-opella-forest text-white rounded-xl font-bold text-sm flex items-center gap-2 hover:bg-opella-emerald shadow-md transition-all hover:scale-[1.01]"
             >
               <Send className="w-4 h-4" />
-              Launch into Real-Time Lifecycle Simulator
+              Ask approval for mode selection
             </button>
             </div>
           </div>

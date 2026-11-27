@@ -19,9 +19,9 @@ const KIND: Record<Kind, { label: string; bg: string; fg: string; bd: string; da
 };
 
 const TIERS: Record<AnyTier, { title: string; short: string; color: string; rule: string; note: string }> = {
-  T1: { title: "T1 · Transform", short: "T1", color: "#0D3824", rule: "Big bet, Butterfly core platforms or scope, or more than €1m.", note: "Full business case. Butterfly governance applies: stream meeting, Portfolio board and SteerCo." },
-  T2: { title: "T2 · Scale", short: "T2", color: "#0369A1", rule: "Value proven in a pilot, and it needs reach (2+ functions or regions, 500+ users), hub capacity or €200k to €1m.", note: "Light business case at the scale gate. The AI Portfolio Board advises; Program Sponsors (CDO and CFO) approve." },
-  T3: { title: "T3 · Fast lane", short: "T3", color: "#B45309", rule: "A new idea or build with a value hypothesis to test.", note: "One-page canvas, 6 to 8 week MVP, then the scale gate. The AI Portfolio Board is the only forum." },
+  T1: { title: "T1 · Transform", short: "T1", color: "#0D3824", rule: "Big bet, Butterfly core platforms or scope, or more than €1m.", note: "Full business case, validated outside meetings by the support functions (G2). Priority and mode at the Portfolio board; SteerCo validates the use case; cross stream meeting if several streams (optional)." },
+  T2: { title: "T2 · Scale", short: "T2", color: "#0369A1", rule: "Value proven in a pilot, and it needs reach (2+ functions or regions, 500+ users), hub capacity or €200k to €1m.", note: "Light business case, validated outside meetings by the support functions (G2). Priority and mode at the Portfolio board. At the scale gate, Program Sponsors (CDO and CFO) approve." },
+  T3: { title: "T3 · Fast lane", short: "T3", color: "#B45309", rule: "A new idea or build with a value hypothesis to test.", note: "One-page canvas, validated outside meetings (G2), 6 to 8 week MVP, then the scale gate. The Portfolio board is the only forum." },
   SS: { title: "Self-serve · register and go", short: "Self-serve", color: "#7C3AED", rule: "Only approved tools and data, configured rather than built, for under €50k.", note: "The function owns it. One registry line. Guardrails apply." },
 };
 
@@ -53,6 +53,28 @@ export const SupportView: React.FC<{ preset?: SupportPreset }> = ({ preset }) =>
   const [forcedTier, setForcedTier] = useState<AnyTier | null>(preset?.tier ?? null);
   const [mode, setMode] = useState(1);
   const [info, setInfo] = useState(false);
+  const [tierInfo, setTierInfo] = useState(false);
+
+  const tierInfoButton = (
+    <button onClick={() => setTierInfo(!tierInfo)} aria-label="Explain the four tiers" aria-expanded={tierInfo}
+      className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-full ${tierInfo ? "border border-opella-forest bg-opella-forest text-white" : "border border-[#B9BDB5] bg-white text-opella-forest"}`}>
+      <Info className="h-[18px] w-[18px]" aria-hidden="true" />
+    </button>
+  );
+  const tierInfoPanel = tierInfo && (
+    <div className="flex flex-col gap-2.5">
+      <p className="text-sm leading-normal text-[#33403A]">The tier says how much governance a use case needs. It is set at G1 by the three routing questions, and decides the business case, the committees and the speed.</p>
+      <div className="grid grid-cols-1 gap-2.5 md:grid-cols-2 xl:grid-cols-4">
+        {(["T1", "T2", "T3", "SS"] as AnyTier[]).map((k) => (
+          <div key={k} className="flex flex-col gap-2 rounded-xl border border-opella-border bg-[#FAF9F5] px-4 py-3.5" style={{ borderTop: `4px solid ${TIERS[k].color}` }}>
+            <span className="self-start rounded-md px-2 py-0.5 text-[13px] font-extrabold text-white" style={{ background: TIERS[k].color }}>{TIERS[k].title}</span>
+            <p className="text-sm leading-snug"><strong>When:</strong> {TIERS[k].rule}</p>
+            <p className="text-sm leading-snug text-[#55605A]">{TIERS[k].note}</p>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
 
   let tier: AnyTier | null = forcedTier;
   if (!tier) {
@@ -124,9 +146,14 @@ export const SupportView: React.FC<{ preset?: SupportPreset }> = ({ preset }) =>
         {screen === "tier" && (
           <section aria-label="Find the tier" className="flex flex-col gap-5">
             <div className="flex flex-wrap items-center justify-between gap-3">
-              <h2 className="text-[22px] font-bold tracking-tight">2. What is the tier of the use case?</h2>
+              <div className="flex items-center gap-3">
+                <h2 className="text-[22px] font-bold tracking-tight">2. What is the tier of the use case?</h2>
+                {tierInfoButton}
+                <span className="text-[13px] text-[#55605A]">What is a tier?</span>
+              </div>
               <span className="text-sm text-[#55605A]">Role: <strong className="text-[#14261D]">{R.name}</strong></span>
             </div>
+            {tierInfoPanel}
             <div className="flex flex-col gap-3">
               {QUESTIONS.map((q, i) => visible[i] && (
                 <div key={q.key} className="flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-opella-border bg-white px-6 py-[22px]">
@@ -186,7 +213,11 @@ export const SupportView: React.FC<{ preset?: SupportPreset }> = ({ preset }) =>
                   </span>
                 </div>
               </div>
-              <p className="rounded-[10px] bg-[#F4F3EE] px-4 py-3 text-sm leading-normal"><strong>{T.short}:</strong> {T.note}</p>
+              <div className="flex items-start gap-3">
+                <p className="flex-1 rounded-[10px] bg-[#F4F3EE] px-4 py-3 text-sm leading-normal"><strong>{T.short}:</strong> {T.note}</p>
+                {tierInfoButton}
+              </div>
+              {tierInfoPanel}
               {tier !== "SS" && (
                 <div className="flex flex-col gap-3">
                   <div className="flex flex-wrap items-center gap-3">

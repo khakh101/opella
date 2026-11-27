@@ -13,17 +13,21 @@ interface FramingCanvasProps {
 }
 
 // Fixed Miro-like canvas: absolute positions + one SVG layer for connectors.
-const W = 1560;
+const W = 1680;
 const H = 840;
 const LANE_Y: Record<PathId, number> = { T1: 115, T2: 330, T3: 545, SS: 755 };
 const G1_X = 490;
 const G1_Y = 435;
-const BC_X = 625;
-const BC_W = 190;
-const BOARD_X = 865;
-const BOARD_W = 440;
-const BUILD_X = 1345;
-const BUILD_W = 190;
+// After the fork: stream allocation, business case, G2 (no meeting), Portfolio board (G3, G4), build
+const SA_X = 625;
+const SA_W = 160;
+const BC_X = 815;
+const BC_W = 180;
+const G2_CX = 1062;
+const BOARD_X = 1130;
+const BOARD_W = 310;
+const BUILD_X = 1475;
+const BUILD_W = 180;
 
 const curve = (x1: number, y1: number, x2: number, y2: number) => {
   const mx = (x1 + x2) / 2;
@@ -107,7 +111,7 @@ export const FramingCanvas: React.FC<FramingCanvasProps> = ({ example, onOpenDet
         {PATH_ORDER.map((p) => (
           <path
             key={`b-${p}`}
-            d={curve(G1_X + 48, G1_Y, BC_X - 4, LANE_Y[p])}
+            d={curve(G1_X + 48, G1_Y, SA_X - 4, LANE_Y[p])}
             stroke={lineColor(p)}
             strokeWidth={lineWidth(p)}
             fill="none"
@@ -119,7 +123,19 @@ export const FramingCanvas: React.FC<FramingCanvasProps> = ({ example, onOpenDet
         {(["T1", "T2", "T3"] as PathId[]).map((p) => (
           <g key={`l-${p}`}>
             <path
-              d={`M ${BC_X + BC_W} ${LANE_Y[p]} L ${BOARD_X - 4} ${LANE_Y[p]}`}
+              d={`M ${SA_X + SA_W} ${LANE_Y[p]} L ${BC_X - 4} ${LANE_Y[p]}`}
+              stroke={lineColor(p)}
+              strokeWidth={lineWidth(p)}
+              markerEnd={markerFor(p)}
+            />
+            <path
+              d={`M ${BC_X + BC_W} ${LANE_Y[p]} L ${G2_CX - 32} ${LANE_Y[p]}`}
+              stroke={lineColor(p)}
+              strokeWidth={lineWidth(p)}
+              markerEnd={markerFor(p)}
+            />
+            <path
+              d={`M ${G2_CX + 30} ${LANE_Y[p]} L ${BOARD_X - 4} ${LANE_Y[p]}`}
               stroke={lineColor(p)}
               strokeWidth={lineWidth(p)}
               markerEnd={markerFor(p)}
@@ -135,7 +151,7 @@ export const FramingCanvas: React.FC<FramingCanvasProps> = ({ example, onOpenDet
 
         {/* Self-service skip */}
         <path
-          d={`M ${BC_X + BC_W} ${LANE_Y.SS} L ${BUILD_X - 4} ${LANE_Y.SS}`}
+          d={`M ${SA_X + SA_W + 20} ${LANE_Y.SS} L ${BUILD_X - 4} ${LANE_Y.SS}`}
           stroke={lineColor("SS")}
           strokeWidth={lineWidth("SS")}
           strokeDasharray="8 6"
@@ -161,9 +177,9 @@ export const FramingCanvas: React.FC<FramingCanvasProps> = ({ example, onOpenDet
       {/* Self-service skip label */}
       <div
         className="absolute rounded-full border border-violet-300 bg-white px-2 py-0.5 text-[11px] font-bold text-violet-800 shadow-sm"
-        style={{ left: (BC_X + BC_W + BUILD_X) / 2 - 70, top: LANE_Y.SS - 12 }}
+        style={{ left: (SA_X + SA_W + BUILD_X) / 2 - 120, top: LANE_Y.SS - 12 }}
       >
-        Skips G2 to G4
+        No stream allocation, no meeting: skips G2 to G4
       </div>
 
       {/* ----------------------------------------------------------- */}
@@ -208,6 +224,19 @@ export const FramingCanvas: React.FC<FramingCanvasProps> = ({ example, onOpenDet
         return (
           <React.Fragment key={p}>
             <MiroCard
+              kicker="Stream allocation assessment"
+              title="Butterfly stream"
+              onOpen={() => onOpenDetail("stream")}
+              className="absolute"
+              style={{ left: SA_X, top: LANE_Y[p] - 52, width: SA_W }}
+              accent={def.color}
+              highlight={!dim}
+              dimmed={dim}
+            >
+              Joins a stream: its committees review the use case
+            </MiroCard>
+
+            <MiroCard
               kicker="Business case"
               title={def.businessCaseName}
               onOpen={() => onOpenDetail(`bc-${p}`)}
@@ -222,7 +251,12 @@ export const FramingCanvas: React.FC<FramingCanvasProps> = ({ example, onOpenDet
               {p === "T3" && "1 page: hypothesis, 3 KPIs, sprint"}
             </MiroCard>
 
-            {/* Portfolio board frame: only the gates are visible */}
+            {/* G2: no meeting, each support function validates its part */}
+            <div className={cx("absolute", dim && "opacity-60")} style={{ left: G2_CX - 48, top: LANE_Y[p] - 52 }}>
+              <GateDiamond id="G2" type="human" size={40} label="Approval" caption="No meeting · support functions" onOpen={() => onOpenDetail(`g2-${p}`)} />
+            </div>
+
+            {/* Portfolio board frame: G3 and G4 */}
             <div
               className={cx(
                 "absolute rounded-xl border-2 bg-white/95 shadow-md transition-opacity",
@@ -235,11 +269,8 @@ export const FramingCanvas: React.FC<FramingCanvasProps> = ({ example, onOpenDet
                 style={{ background: def.color }}
               >
                 <span>{def.forum}</span>
-                <span className="text-[10px] font-semibold opacity-80">Double-click a gate</span>
               </div>
               <div className="flex items-start justify-around px-2 pt-1">
-                <GateDiamond id="G2" type="human" size={40} label="Approval" onOpen={() => onOpenDetail(`g2-${p}`)} />
-                <ArrowRight className="mt-11 h-4 w-4 shrink-0 text-gray-400" />
                 <GateDiamond id="G3" type="human" size={40} label="Prioritisation" onOpen={() => onOpenDetail(`g3-${p}`)} />
                 <ArrowRight className="mt-11 h-4 w-4 shrink-0 text-gray-400" />
                 <GateDiamond id="G4" type="human" size={40} label={def.g4Label} onOpen={() => onOpenDetail(`g4-${p}`)} />
@@ -265,7 +296,7 @@ export const FramingCanvas: React.FC<FramingCanvasProps> = ({ example, onOpenDet
       {/* ----------------------------------------------------------- */}
       {/* Self-service lane */}
       {/* ----------------------------------------------------------- */}
-      <div className={cx("absolute", active !== "SS" && "opacity-60")} style={{ left: BC_X, top: LANE_Y.SS - 34, width: BC_W }}>
+      <div className={cx("absolute", active !== "SS" && "opacity-60")} style={{ left: SA_X, top: LANE_Y.SS - 34, width: SA_W + 20 }}>
         <Sticky color="violet" title="Agent check" onOpen={() => onOpenDetail("ss-check")}>
           Value below €50k, approved tools and data.
           <div className="mt-1 text-[10px] font-semibold opacity-70">Double-click to open</div>

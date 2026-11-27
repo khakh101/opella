@@ -79,7 +79,7 @@ export const PIPELINE: PipelineUseCase[] = [
   "h": "a",
   "entered": "2026-11-01",
   "days": 25,
-  "waiting": "AI Portfolio Board, 2 Dec (10-day SLA)",
+  "waiting": "Support functions, outside meetings (10-day SLA: 2 Dec)",
   "done": [
    "Charter submitted",
    "Agent triage: T3, OR.AI low risk",
@@ -87,9 +87,9 @@ export const PIPELINE: PipelineUseCase[] = [
   ],
   "next": [
    "Value hypothesis check by the Value officer",
-   "Feasibility decision at the AI Portfolio Board"
+   "Light impact scan (P&C) and OR.AI check (LEX)"
   ],
-  "blocker": "Over the 10-day SLA: waiting for a board slot."
+  "blocker": "Over the 10-day SLA: the Value officer has not validated yet."
  },
  {
   "id": "UC-207",
@@ -103,15 +103,15 @@ export const PIPELINE: PipelineUseCase[] = [
   "h": "g",
   "entered": "2026-11-24",
   "days": 2,
-  "waiting": "AI Portfolio Board, 3 Dec",
+  "waiting": "Support functions, outside meetings",
   "done": [
    "Charter submitted",
    "Agent triage: T2"
   ],
   "next": [
-   "Change Impact Assessment (P&C)",
+   "Change Impact Assessment (P&C, Butterfly template)",
    "Value range with Finance BP",
-   "Tech readiness at the Design Authority"
+   "Tech and data readiness (Data & AI)"
   ],
   "blocker": "None."
  },
@@ -134,7 +134,7 @@ export const PIPELINE: PipelineUseCase[] = [
   ],
   "next": [
    "Full OR.AI review before any real data",
-   "Feasibility decision"
+   "Validation by each support function"
   ],
   "blocker": "OR.AI high risk: no reviewer slot before mid-December."
  },
@@ -150,7 +150,7 @@ export const PIPELINE: PipelineUseCase[] = [
   "h": "g",
   "entered": "2026-11-23",
   "days": 3,
-  "waiting": "AI Portfolio Board, 3 Dec",
+  "waiting": "Support functions, outside meetings",
   "done": [
    "Charter submitted",
    "Agent triage: T3"
@@ -173,7 +173,7 @@ export const PIPELINE: PipelineUseCase[] = [
   "h": "a",
   "entered": "2026-09-02",
   "days": 21,
-  "waiting": "AI Portfolio Board, 3 Dec",
+  "waiting": "Portfolio board, 3 Dec",
   "done": [
    "Charter",
    "Feasibility validated (G2)",
@@ -196,7 +196,7 @@ export const PIPELINE: PipelineUseCase[] = [
   "h": "g",
   "entered": "2026-10-28",
   "days": 6,
-  "waiting": "AI Portfolio Board, 3 Dec",
+  "waiting": "Portfolio board, 3 Dec",
   "done": [
    "Charter",
    "Feasibility validated (G2)"
@@ -218,13 +218,14 @@ export const PIPELINE: PipelineUseCase[] = [
   "h": "a",
   "entered": "2026-10-15",
   "days": 18,
-  "waiting": "SteerCo, 10 Dec",
+  "waiting": "Portfolio board, then SteerCo, 10 Dec",
   "done": [
    "Charter",
-   "Full business case, pre-approved at the stream meeting"
+   "Full business case, validated by the support functions (G2)"
   ],
   "next": [
-   "SteerCo approval of entry and funding"
+   "Priority at the Portfolio board",
+   "SteerCo validation of entry and funding"
   ],
   "blocker": "SteerCo pre-read due 3 Dec."
  },
@@ -240,14 +241,14 @@ export const PIPELINE: PipelineUseCase[] = [
   "h": "r",
   "entered": "2026-08-20",
   "days": 34,
-  "waiting": "Design Authority",
+  "waiting": "Portfolio board (weekly)",
   "done": [
    "Charter",
    "Feasibility (G2)",
-   "Priority and funding approved by SteerCo (G3)"
+   "Priority at the Portfolio board, validated by SteerCo (G3)"
   ],
   "next": [
-   "Mode, architecture and squad at the Design Authority"
+   "Mode, architecture and squad at the Portfolio board (TO and Data & AI office)"
   ],
   "blocker": "Data foundations not ready: depends on the data platform migration."
  },
@@ -263,7 +264,7 @@ export const PIPELINE: PipelineUseCase[] = [
   "h": "g",
   "entered": "2026-10-06",
   "days": 4,
-  "waiting": "Design Authority, 2 Dec",
+  "waiting": "Portfolio board, 3 Dec",
   "done": [
    "Charter",
    "Feasibility (G2)",
@@ -403,7 +404,7 @@ export const PIPELINE: PipelineUseCase[] = [
   "h": "g",
   "entered": "2026-07-01",
   "days": 5,
-  "waiting": "AI Portfolio Board, 3 Dec",
+  "waiting": "Portfolio board, 3 Dec",
   "done": [
    "MVP validated",
    "Light business case",
@@ -471,7 +472,7 @@ export const PIPELINE: PipelineUseCase[] = [
   "h": "r",
   "entered": "2026-04-02",
   "days": 45,
-  "waiting": "AI Portfolio Board, 3 Dec",
+  "waiting": "Portfolio board, 3 Dec",
   "done": [
    "Live in production"
   ],

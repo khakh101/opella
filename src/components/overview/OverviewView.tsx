@@ -33,9 +33,10 @@ const PartHeader: React.FC<{ n: number; id: string; title: string; lede: string 
 
 interface OverviewViewProps {
   onGoToSupport: () => void;
+  miroFocus?: string; // detail to open on the Miro board (deep link from the Q&A)
 }
 
-export const OverviewView: React.FC<OverviewViewProps> = ({ onGoToSupport }) => {
+export const OverviewView: React.FC<OverviewViewProps> = ({ onGoToSupport, miroFocus }) => {
   const jump = (id: string) => document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" });
   return (
     <div className="bg-[#F4F3EE] text-[#14261D]">
@@ -106,7 +107,7 @@ export const OverviewView: React.FC<OverviewViewProps> = ({ onGoToSupport }) => 
         </section>
       </div>
       <div className="border-y border-opella-border bg-[#f7f5ef]">
-        <MiroBoardView />
+        <MiroBoardView initialView={miroFocus === "stream" ? "framing" : undefined} initialDetail={miroFocus} />
       </div>
       <div className="mx-auto max-w-[1160px] px-6 py-6 text-[13px] text-[#55605A]">
         Previous version of the site: <a href="/legacy" className="font-semibold text-opella-forest underline">available on a separate legacy route</a>.

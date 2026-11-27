@@ -12,12 +12,14 @@ import { PreScaleCanvas } from "@/components/miro/PreScaleCanvas";
 import { BuildCanvas } from "@/components/miro/BuildCanvas";
 import { DetailPanel } from "@/components/miro/DetailPanel";
 
+type View = "overview" | StepId;
+
 interface MiroBoardViewProps {
   onNavigateToWizard?: () => void;
   onNavigateToLifecycle?: () => void;
+  initialView?: View;
+  initialDetail?: string;
 }
-
-type View = "overview" | StepId;
 
 const CONTENT_WIDTH: Record<View, number> = {
   overview: 1400,
@@ -30,10 +32,10 @@ const CONTENT_WIDTH: Record<View, number> = {
 
 const FRAME_PADDING = 64;
 
-export const MiroBoardView: React.FC<MiroBoardViewProps> = () => {
-  const [view, setView] = useState<View>("overview");
+export const MiroBoardView: React.FC<MiroBoardViewProps> = ({ initialView, initialDetail }) => {
+  const [view, setView] = useState<View>(initialView ?? "overview");
   const [exampleId, setExampleId] = useState<string>(EXAMPLES[0].id);
-  const [detailId, setDetailId] = useState<string | null>(null);
+  const [detailId, setDetailId] = useState<string | null>(initialDetail ?? null);
   const [zoom, setZoom] = useState<number>(1);
   // Set when Framing is opened from Pre-scale: the T2 lane is the one to look at
   const [framingFocus, setFramingFocus] = useState<PathId | null>(null);

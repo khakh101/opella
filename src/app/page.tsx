@@ -23,6 +23,7 @@ export default function Home() {
   // Deep links between tabs (Gentiane's questions, Tab 1 shortcut)
   const [supportPreset, setSupportPreset] = useState<SupportPreset | undefined>(undefined);
   const [navKey, setNavKey] = useState(0);
+  const [miroFocus, setMiroFocus] = useState<string | undefined>(undefined);
 
   useEffect(() => {
     (async () => {
@@ -42,6 +43,7 @@ export default function Home() {
 
   const goTab = (tab: TabId) => {
     setSupportPreset(undefined);
+    setMiroFocus(undefined);
     setNavKey((k) => k + 1);
     setActiveTab(tab);
     window.scrollTo({ top: 0 });
@@ -50,6 +52,7 @@ export default function Home() {
   const navigate = (t: NavTarget) => {
     setNavKey((k) => k + 1);
     setSupportPreset(t.tab === "support" ? { screen: t.screen, role: t.role, tier: t.tier } : undefined);
+    setMiroFocus(t.miro);
     setActiveTab(t.tab);
     if (t.anchor) {
       setTimeout(() => document.getElementById(t.anchor!)?.scrollIntoView({ behavior: "smooth", block: "start" }), 80);
@@ -69,7 +72,7 @@ export default function Home() {
           </div>
         ) : (
           <>
-            {activeTab === "overview" && <OverviewView onGoToSupport={() => goTab("support")} />}
+            {activeTab === "overview" && <OverviewView key={`overview-${navKey}`} miroFocus={miroFocus} onGoToSupport={() => goTab("support")} />}
             {activeTab === "user" && (
               <div className="bg-[#f7f5ef]">
                 <IntakeWizard
@@ -83,7 +86,7 @@ export default function Home() {
             )}
             {activeTab === "support" && <SupportView key={`support-${navKey}`} preset={supportPreset} />}
             {activeTab === "cockpit" && <QAView key={`qa-${navKey}`} onNavigate={navigate} />}
-            {activeTab === "tocockpit" && <TOCockpitView />}
+            {activeTab === "tocockpit" && <TOCockpitView key={`to-${navKey}`} />}
           </>
         )}
       </main>

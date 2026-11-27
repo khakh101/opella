@@ -1,6 +1,6 @@
 # Gentiane's questions, verbatim, with where the site answers them.
 # status: a = answered, p = partly, o = open. href: artboard of the answer (the real site: tab + section anchor)
-T1, T2, T3, T4 = "Tab1.dc.html", "Tab2.dc.html", "Tab3.dc.html", "Tab4.dc.html"
+T1, T2, T3, T4, T5 = "Tab1.dc.html", "Tab2.dc.html", "Tab3.dc.html", "Tab4.dc.html", "Tab5.dc.html"
 CATS = [
  ("Intake: what comes into AmplifAI, and what happens to the rest", [
   ("How do we govern incoming AI initiatives?", "a", "One charter, an agent triage at G1, then the 6 gates.", "Tab 2 · the 4 steps", T2),
@@ -17,17 +17,19 @@ CATS = [
   ("The big bets set the enterprise-level priorities. For AI initiatives outside the big bets, how do we decide which ones get enterprise priority and support, and which stay with the functions?", "a",
    "G3 prioritisation formula: 30% value, 20% strategic fit, 20% reach and reuse, risk scored inversely. Self-serve stays with the functions.", "Tab 3 · TO one-pager (G3)", T3),
   ("Digital support needs to follow these priorities, and teams already have more requests than they can support well. How do we match the demand we create with delivery capacity, so the intake doesn't turn into a bottleneck?", "p",
-   "Quarterly capacity split (60% big bets, 25% fast lane, 15% enablement) and capacity arbitration at the AI Portfolio Board. Open: actual capacity figures.", "Tab 3 · TO one-pager (G3)", T3),
+   "Quarterly capacity split (60% big bets, 25% fast lane, 15% enablement) and capacity arbitration at the Portfolio board. Open: actual capacity figures.", "Tab 3 · TO one-pager (G3)", T3),
  ]),
  ("Governance of use cases validated within AmplifAI", [
   ("Once a use case is validated, who owns it: the business sponsor, the use case owner, the delivery lead (Digital, Artefact, a partner)? How does this connect to the bet sponsor and owner model we are working on?", "p",
    "One accountable business owner; the run owner is named at G5. Open: the link to the bet sponsor and owner model.", "Tab 3 · TO one-pager (G5)", T3),
   ("Which forums steer delivery, and how often (stream steercos, AmplifAI steerco)? What does each one decide, and what gets escalated?", "a",
-   "The Where column of each role one-pager gives the forum at each gate and tier: stream meetings, Portfolio board, SteerCo, Design Authority. Escalation goes from stream to Portfolio board to SteerCo.", "Tab 3 · TO one-pager (Where column)", T3),
+   "G2 is validated outside meetings by the support functions. The Portfolio board decides priority (G3) and mode (G4). T1 also needs SteerCo, plus the cross stream meeting (optional) for bets across several streams. Escalation goes from stream to Portfolio board to SteerCo.", "Tab 5 · committees", T5),
   ("What are the gates after validation (design, pilot, scale, run)? What are the criteria to go ahead, pause or stop a use case?", "a",
    "G4 (mode and budget), G5 (scale) and G6 (run), each with value, complexity, risk and adoption criteria. Pause is not defined as a separate outcome.", "Tab 3 · TO one-pager (G4 to G6)", T3),
+  ("How is Butterfly leveraged?", "a",
+   "Right after G1, each use case is allocated to a Butterfly stream (stream allocation assessment), then goes through the existing Butterfly committees: Portfolio board, SteerCo for T1. AmplifAI adds only one optional meeting: the cross stream meeting.", "Tab 1 · stream allocation", T1),
   ("How are validated use cases funded and staffed? Who decides when they compete for the same Digital or data capacity?", "p",
-   "Funding follows the lane at G4; Data & AI composes the squad; the AI Portfolio Board arbitrates capacity. Open: who funds the run.", "Tab 3 · Data & AI one-pager (G4)", T3),
+   "Funding follows the lane at G4; Data & AI composes the squad; the Portfolio board arbitrates capacity. Open: who funds the run.", "Tab 3 · Data & AI one-pager (G4)", T3),
   ("What happens when the data or tech foundations are not ready yet? Do we set a cut-off, or start with a version that works without them?", "o",
    "Foundation gaps are flagged at G2, but there is no cut-off rule.", "", ""),
   ("How do we track value against the business case once the use case is live (baseline, KPIs, link to the value creation plan)? Who signs off that the value was delivered?", "p",
@@ -53,7 +55,7 @@ CATS = [
   ("How do we make sure we don't focus only on big bets, and leave room for smaller initiatives that bring value quickly?", "a",
    "T3 fast lane and self-serve, with 25% of hub capacity kept for the fast lane.", "Tab 1 · what it is", T1),
   ("Can we have a light, fast lane for small and medium initiatives that still tracks value, without the full big bet process?", "a",
-   "T3: one-page canvas, 6 to 8 week MVP, the AI Portfolio Board as the only forum, value checked at G5.", "Tab 3 · T3 one-pagers", T3),
+   "T3: one-page canvas, 6 to 8 week MVP, the Portfolio board as the only forum (G3, G4), value checked at G5.", "Tab 3 · T3 one-pagers", T3),
  ]),
  ("Sharing and reuse", [
   ("How do we share what has been built in the sandbox so others can use it?", "o",

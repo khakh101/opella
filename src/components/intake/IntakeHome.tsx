@@ -21,6 +21,7 @@ interface HomeStep {
   oneLiner: string;
   bullets: string[];
   noAction?: boolean;
+  validation: { label: string; lines: { gate: string; agent?: boolean; where: string; who: string }[] };
   gates: HomeGate[];
   gateNote?: string;
 }
@@ -44,24 +45,27 @@ const NEXT_MODES: { id: ModeId; mode: string }[] = [
 // Home screen of tab 2: the 4 intake steps, in the same template as the
 // 5 lifecycle steps of the Miro board (tab 1). Click a step to zoom in.
 export const IntakeHome: React.FC<IntakeHomeProps> = ({ tier, onOpenStep, onOpenNextStep }) => {
+  const ss = tier === "Self-Serve";
+  const board = `Portfolio board (${tier === "T1" ? "weekly" : "biweekly"})`;
   const steps: HomeStep[] = [
     {
       n: 1,
       emoji: "📝",
       name: "Preliminary project charter",
-      oneLiner: "Front Door Intake & 4-Questions Assessment",
+      oneLiner: "Front door intake and the 4-question assessment",
       bullets: [
         "Collect the 5 mandatory items: title, description, users, 4 questions, ORAI screening",
         "Filled by the business owner with the AI catalyst",
       ],
+      validation: { label: "Sent to", lines: [{ gate: "Next", agent: true, where: "Directly to the charter agent (step 2)", who: "No human validation at this step" }] },
       gates: [],
       gateNote: "Charter form before G1",
     },
     {
       n: 2,
       emoji: "🤖",
-      name: "Autonomous Agent Triage (Tier & Speed)",
-      oneLiner: "OpellaGPT Charter Agent Automated Triage",
+      name: "Agent triage",
+      oneLiner: "OpellaGPT charter agent: tier and speed",
       bullets: [
         "Scans the AI Registry for duplicate solutions",
         "Checks budget and scope against Big Bet boundaries",
@@ -69,12 +73,13 @@ export const IntakeHome: React.FC<IntakeHomeProps> = ({ tier, onOpenStep, onOpen
         "Assigns the tier: T1, T2, T3 or Self-Serve",
       ],
       noAction: true,
+      validation: { label: "Validated by · where", lines: [{ gate: "G1", agent: true, where: "No meeting", who: "The agent automatically, then the Transformation Office" }] },
       gates: [{ id: "G1", label: "Need validated", type: "agent" }],
     },
     {
       n: 3,
       emoji: "📊",
-      name: "Business case filled",
+      name: "Business case",
       oneLiner: `The business case depends on the tier (current: ${tier})`,
       bullets: [
         "T1: Full Business Case",
@@ -82,6 +87,15 @@ export const IntakeHome: React.FC<IntakeHomeProps> = ({ tier, onOpenStep, onOpen
         "T3: One-Page Canvas",
         "Self-Serve: Registry Line",
       ],
+      validation: ss
+        ? { label: "Validated by · where", lines: [{ gate: "–", where: "No meeting", who: "Self-serve: one registry line; guardrails apply" }] }
+        : {
+            label: "Validated by · where",
+            lines: [
+              { gate: "G2", where: "No meeting", who: "Each support function validates its part: Value officer, P&C, Adoption lead, LEX, Data & AI" },
+              { gate: "G3", where: tier === "T1" ? `${board}, then SteerCo` : board, who: tier === "T1" ? "Transformation Office; SteerCo validates. Cross stream meeting if several streams (optional)" : "Transformation Office" },
+            ],
+          },
       gates: [
         { id: "G2", label: "Feasible", type: "human" },
         { id: "G3", label: "Priority", type: "human" },
@@ -97,6 +111,9 @@ export const IntakeHome: React.FC<IntakeHomeProps> = ({ tier, onOpenStep, onOpen
         "Mode 2 · Do it with me: “We ride together”",
         "Mode 3 · Enable me: “We give you the right bike and the map”",
       ],
+      validation: ss
+        ? { label: "Validated by · where", lines: [{ gate: "–", where: "No meeting", who: "Self-service: the function configures the tool" }] }
+        : { label: "Validated by · where", lines: [{ gate: "G4", where: board, who: "Mainly the Transformation Office and the Data & AI office, supported by the other functions" }] },
       gates: [{ id: "G4", label: "Mode", type: "human" }],
     },
   ];
@@ -109,7 +126,7 @@ export const IntakeHome: React.FC<IntakeHomeProps> = ({ tier, onOpenStep, onOpen
         </h2>
         <p className="mt-1 flex items-center gap-1.5 text-sm text-gray-600">
           <MousePointerClick className="h-4 w-4 shrink-0" aria-hidden="true" />
-          Click a step to see what is inside, or open the next step for your mode.
+          Click a step to see what is inside. Each step says who validates it, and where (current tier: {ss ? "Self-serve" : tier}).
         </p>
       </div>
 
@@ -126,13 +143,13 @@ export const IntakeHome: React.FC<IntakeHomeProps> = ({ tier, onOpenStep, onOpen
               >
                 <div
                   className={cx(
-                    "relative flex h-14 items-center justify-center gap-2 px-6 text-base font-black text-white transition-colors",
+                    "relative flex h-16 items-center justify-center gap-2 pl-8 pr-9 text-center text-sm font-black leading-tight text-white transition-colors",
                     s.noAction ? "bg-violet-600 group-hover:bg-violet-800" : "bg-pink-600 group-hover:bg-pink-800"
                   )}
                   style={{ clipPath: i === 0 ? CHEVRON_FIRST : CHEVRON }}
                 >
                   <span aria-hidden="true">{s.emoji}</span>
-                  <span>Step {s.n}</span>
+                  <span>Step {s.n}: {s.name}</span>
                 </div>
                 <div
                   className={cx(
@@ -149,8 +166,7 @@ export const IntakeHome: React.FC<IntakeHomeProps> = ({ tier, onOpenStep, onOpen
                     s.noAction ? "border-violet-300 group-hover:border-violet-600" : "border-pink-200 group-hover:border-pink-600"
                   )}
                 >
-                  <div className="text-sm font-black leading-snug text-gray-900">{s.name}</div>
-                  <div className="mt-1 text-xs font-semibold text-opella-forest">{s.oneLiner}</div>
+                  <div className="text-sm font-black leading-snug text-gray-900">{s.oneLiner}</div>
                   {s.noAction && (
                     <div className="mt-3 flex items-center gap-2 rounded-lg border-2 border-dashed border-violet-400 bg-violet-50 px-2.5 py-1.5 text-xs font-bold text-violet-800">
                       <span aria-hidden="true">🤖</span> No action needed from you: the agent does it
@@ -164,7 +180,28 @@ export const IntakeHome: React.FC<IntakeHomeProps> = ({ tier, onOpenStep, onOpen
                       </li>
                     ))}
                   </ul>
-                  <div className="mt-auto flex items-center gap-1 pt-4 text-[11px] font-bold text-opella-forest opacity-60 transition-opacity group-hover:opacity-100">
+                  <div className="mt-auto pt-4">
+                    <div className="space-y-2 rounded-lg border border-opella-border bg-[#F7F5EF] p-2.5">
+                      <div className="text-[10px] font-black uppercase tracking-wider text-gray-500">{s.validation.label}</div>
+                      {s.validation.lines.map((v) => (
+                        <div key={v.gate + v.where} className="flex items-start gap-2">
+                          <span
+                            className={cx(
+                              "mt-px inline-flex h-5 min-w-[30px] shrink-0 items-center justify-center rounded px-1 text-[10px] font-black",
+                              v.agent ? "border-2 border-dashed border-violet-500 bg-violet-50 text-violet-800" : "bg-pink-600 text-white"
+                            )}
+                          >
+                            {v.gate}
+                          </span>
+                          <span className="text-[11px] leading-snug">
+                            <span className="font-bold text-gray-900">{v.where}</span>
+                            <span className="block text-gray-600">{v.who}</span>
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-1 pt-3 text-[11px] font-bold text-opella-forest opacity-60 transition-opacity group-hover:opacity-100">
                     <MousePointerClick className="h-3.5 w-3.5" aria-hidden="true" /> Open this step
                   </div>
                 </div>
@@ -174,7 +211,7 @@ export const IntakeHome: React.FC<IntakeHomeProps> = ({ tier, onOpenStep, onOpen
             {/* After step 4: the next step, by mode */}
             <div className="flex flex-col">
               <div
-                className="relative flex h-14 items-center justify-center gap-2 px-6 text-base font-black text-opella-forest bg-emerald-100"
+                className="relative flex h-16 items-center justify-center gap-2 px-6 text-sm font-black text-opella-forest bg-emerald-100"
                 style={{ clipPath: CHEVRON }}
               >
                 <span aria-hidden="true">🚀</span>
@@ -264,7 +301,7 @@ export const IntakeHome: React.FC<IntakeHomeProps> = ({ tier, onOpenStep, onOpen
             </span>
             <span className="flex items-center gap-2">
               <span className="inline-block h-3.5 w-3.5 rotate-45 border-2 border-dashed border-violet-500 bg-violet-50" />
-              Automatic gate: reviewed by an agent
+              Automatic gate: agent, then the Transformation Office
             </span>
             <span className="flex items-center gap-2">
               <span className="inline-block h-3.5 w-3.5 rotate-45 bg-pink-500" />
