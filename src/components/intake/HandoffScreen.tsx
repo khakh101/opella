@@ -97,7 +97,8 @@ export const HandoffScreen: React.FC<HandoffScreenProps> = ({ kind, tier, bet, f
         ) : (
           <Row n="2" title="Stream allocation · your use case joins a Butterfly stream">
             Proposed stream: <strong>{stream.stream}</strong>. {stream.why} The comitology is organised by stream, so this stream&apos;s
-            committees will review your use case. You can correct the stream with the Transformation Office.
+            committees are informed of your use case. <strong>This only informs them: it does not validate your use case yet.</strong> You can
+            correct the stream with the Transformation Office.
           </Row>
         )}
         <Row n="3" title={`Then you build your ${BC_NAME[tier]}`}>

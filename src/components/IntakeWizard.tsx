@@ -1890,7 +1890,7 @@ export const IntakeWizard: React.FC<IntakeWizardProps> = ({
             <div>
               <h2 className="text-xl font-bold text-opella-forest flex items-center gap-2">
                 <Bot className="w-6 h-6 text-emerald-700 animate-pulse" />
-                OpellaGPT Charter Agent Automated Triage
+                Agent Automated Triage
               </h2>
               <p className="text-sm text-gray-600 mt-1">
                 The AI Charter Agent is analyzing your intake against Butterfly governance rules, the 4 questions, and EU AI Act constraints.

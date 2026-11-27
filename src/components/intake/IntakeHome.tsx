@@ -65,7 +65,7 @@ export const IntakeHome: React.FC<IntakeHomeProps> = ({ tier, onOpenStep, onOpen
       n: 2,
       emoji: "🤖",
       name: "Agent triage",
-      oneLiner: "OpellaGPT charter agent: tier and speed",
+      oneLiner: "Agent automated triage: tier and speed",
       bullets: [
         "Scans the AI Registry for duplicate solutions",
         "Checks budget and scope against Big Bet boundaries",
