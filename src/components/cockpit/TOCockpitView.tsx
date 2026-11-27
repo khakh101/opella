@@ -1,5 +1,6 @@
 "use client";
 
+import { ButterflySticker } from "@/components/ui/ButterflySticker";
 import React, { useMemo, useState } from "react";
 import { MousePointerClick, RotateCcw } from "lucide-react";
 import { BACKLOG, COCKPIT_STEPS, COCKPIT_WEEK_START, PIPELINE, PipelineUseCase } from "@/lib/toCockpitData";
@@ -349,6 +350,7 @@ export const TOCockpitView: React.FC = () => {
         <section id="committees" aria-label="Committees" className="scroll-mt-20">
           <h3 className={sectionTitle}>4. Committees: we reuse Butterfly&apos;s</h3>
           <p className="mb-3 mt-1 text-sm text-[#33403A]">No new governance layer: use cases go through the committees that already run. AmplifAI adds only one optional meeting, for bets across several streams.</p>
+          <ButterflySticker className="mb-3" title="From Butterfly">The committees are the same as in Butterfly.</ButterflySticker>
           <div className="overflow-x-auto rounded-xl border border-gray-200 bg-white shadow-sm">
             <table className="w-full min-w-[960px] border-collapse text-sm">
               <thead>

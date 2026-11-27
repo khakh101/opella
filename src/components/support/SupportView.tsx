@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import { ArrowRight, Info } from "lucide-react";
+import { BUILD_MODES, BuildMode, ORIGIN, TEAM_VIEWS } from "@/lib/miroBuild";
 import { AnyTier, FORUM, Kind, RoleId, StageId, SUPPORT_ROLES, TierId } from "@/lib/supportModel";
 
 const STAGES: [StageId, string, string][] = [
@@ -18,7 +19,7 @@ const KIND: Record<Kind, { label: string; bg: string; fg: string; bd: string; da
   n: { label: "Not involved", bg: "transparent", fg: "#55605A", bd: "#B9BDB5", dash: true },
 };
 
-const TIERS: Record<AnyTier, { title: string; short: string; color: string; rule: string; note: string }> = {
+export const TIERS: Record<AnyTier, { title: string; short: string; color: string; rule: string; note: string }> = {
   T1: { title: "T1 · Transform", short: "T1", color: "#0D3824", rule: "Big bet, Butterfly core platforms or scope, or more than €1m.", note: "Full business case, validated outside meetings by the support functions (G2). Priority and mode at the Portfolio board; SteerCo validates the use case; cross stream meeting if several streams (optional)." },
   T2: { title: "T2 · Scale", short: "T2", color: "#0369A1", rule: "Value proven in a pilot, and it needs reach (2+ functions or regions, 500+ users), hub capacity or €200k to €1m.", note: "Light business case, validated outside meetings by the support functions (G2). Priority and mode at the Portfolio board. At the scale gate, Program Sponsors (CDO and CFO) approve." },
   T3: { title: "T3 · Fast lane", short: "T3", color: "#B45309", rule: "A new idea or build with a value hypothesis to test.", note: "One-page canvas, validated outside meetings (G2), 6 to 8 week MVP, then the scale gate. The Portfolio board is the only forum." },
@@ -32,7 +33,7 @@ const QUESTIONS = [
 ] as const;
 
 const MODES = ["Mode 1 · Do it for me", "Mode 2 · Do it with me", "Mode 3 · Enable me"];
-const MODE_INFO = [
+export const MODE_INFO = [
   { title: "Mode 1 · Do it for me", text: "Nothing to build on the business side. The hub builds and runs it." },
   { title: "Mode 2 · Do it with me", text: "Some work: a shared build between the function and the hub." },
   { title: "Mode 3 · Enable me", text: "Most of the work: the function builds, with the hub's platform, standards and coaching." },
@@ -40,6 +41,24 @@ const MODE_INFO = [
 
 type Answer = boolean | null;
 export interface SupportPreset { screen?: "role" | "tier" | "sheet"; role?: RoleId; tier?: AnyTier }
+
+
+// ---- Squad roles (Pillar 2 of the operating model deck): who sits in the squad, per delivery mode.
+const MODE_IDS: BuildMode[] = ["for-me", "with-me", "enable-me"];
+const SQUAD_ROLES = ["BO / PO", "Business analytics", "Business architect", "AI builder", "FDE", "Digital PO", "Data scientist", "AI engineer", "Data eng. / architect"];
+const chipMatches = (role: string, label: string) => {
+  if (label === role) return true;
+  if (role === "BO / PO") return ["Business owner", "Potential PO"].includes(label);
+  if (["Data scientist", "AI engineer", "Data eng. / architect"].includes(role)) return /engineers/i.test(label);
+  return false;
+};
+
+// What changes for Data & AI with the delivery mode, at the Build stage.
+const DA_BUILD: [string, string][] = [
+  ["You build end to end: you prioritise the use case in your backlog, build the MVP and run the tests. You also handle the solution when it is bought.", "Function (business owner), AI catalyst"],
+  ["You co-build with the function in one shared squad: your engineers take the complex scope and the data. The function can add external consultants.", "Function engineers, external consultants"],
+  ["You enable: platform, standards, supervision and audit. The function builds, and self-service sits inside this mode.", "Function AI builders, external providers"],
+];
 
 const chip = (k: (typeof KIND)[Kind]): React.CSSProperties => ({
   background: k.bg, color: k.fg, border: `1px ${k.dash ? "dashed" : "solid"} ${k.bd}`,
@@ -53,6 +72,7 @@ export const SupportView: React.FC<{ preset?: SupportPreset }> = ({ preset }) =>
   const [forcedTier, setForcedTier] = useState<AnyTier | null>(preset?.tier ?? null);
   const [mode, setMode] = useState(1);
   const [info, setInfo] = useState(false);
+  const [squadRole, setSquadRole] = useState<string | null>(null);
   const [tierInfo, setTierInfo] = useState(false);
 
   const tierInfoButton = (
@@ -243,6 +263,50 @@ export const SupportView: React.FC<{ preset?: SupportPreset }> = ({ preset }) =>
                     </div>
                   )}
                   <p className="text-sm leading-normal"><strong>In {MODES[mode]}:</strong> {R.modes[mode]}</p>
+                  {(() => {
+                    const mid = MODE_IDS[mode];
+                    const team = TEAM_VIEWS[mid]!;
+                    const here = new Map(team.roles.map((r) => [r.role, r]));
+                    const other = (n: string) => MODE_IDS.map((m) => TEAM_VIEWS[m]!.roles.find((r) => r.role === n)).find(Boolean)!;
+                    const sel = squadRole && here.has(squadRole) ? squadRole : null;
+                    const steps = sel ? ([1, 2, 3, 4] as const).map((n) => ({ n, cell: BUILD_MODES[mid].steps[n] })).filter(({ cell }) => cell.who.some((c) => chipMatches(sel, c.label))) : [];
+                    const daRoles = R.id === "DA" ? [...team.roles.filter((r) => r.origin === "dai").map((r) => r.role), ...(team.inSupport ?? []).map((r) => `${r.role} (in support)`)] : [];
+                    return (
+                      <div className="flex flex-col gap-3 rounded-[14px] border border-opella-border bg-[#FAF9F5] p-4">
+                        <div className="flex flex-wrap items-baseline justify-between gap-2">
+                          <h4 className="text-sm font-bold">Who is in the squad in {MODES[mode]}</h4>
+                          <span className="text-xs text-[#55605A]">Select a role. Roles that do not exist in this mode are greyed out.</span>
+                        </div>
+                        {R.id === "DA" && (
+                          <p className="text-sm leading-snug"><strong>Data &amp; AI profiles in this mode:</strong> {daRoles.length ? daRoles.join(", ") : "none, Data & AI only supports and audits"}.</p>
+                        )}
+                        <div className="flex flex-wrap gap-2">
+                          {SQUAD_ROLES.map((n) => {
+                            const present = here.has(n);
+                            const o = ORIGIN[(here.get(n) ?? other(n)).origin];
+                            return (
+                              <button key={n} disabled={!present} onClick={() => setSquadRole(sel === n ? null : n)} aria-pressed={sel === n}
+                                title={present ? undefined : "Not in this delivery mode"}
+                                className={`min-h-[44px] rounded-full border px-4 text-sm font-semibold ${present ? "" : "cursor-not-allowed border-dashed opacity-40"}`}
+                                style={present ? { background: sel === n ? o.color : o.soft, borderColor: o.color, color: sel === n ? "#fff" : "#1f2937" } : { borderColor: "#B9BDB5", color: "#55605A" }}>
+                                {n}{!present && " · not in this mode"}
+                              </button>
+                            );
+                          })}
+                        </div>
+                        {sel && (
+                          <div className="rounded-xl border border-opella-border bg-white p-3.5 text-sm leading-snug">
+                            <p><strong>{sel}</strong> · {ORIGIN[here.get(sel)!.origin].label}{here.get(sel)!.note ? `. ${here.get(sel)!.note}` : ""}</p>
+                            {steps.length ? (
+                              <ul className="mt-2 flex flex-col gap-1.5">
+                                {steps.map(({ n, cell }) => <li key={n}><strong>Build step {n}:</strong> {cell.short}.</li>)}
+                              </ul>
+                            ) : <p className="mt-2 text-[#55605A]">Part of the squad, not named at a specific build step.</p>}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })()}
                 </div>
               )}
             </div>
@@ -253,7 +317,7 @@ export const SupportView: React.FC<{ preset?: SupportPreset }> = ({ preset }) =>
                   <h3 className="text-lg font-bold">When you interact</h3>
                   <ol aria-label="Lifecycle stages" className="grid grid-cols-4 gap-2 md:grid-cols-8">
                     {STAGES.map(([s, sub]) => {
-                      const k = KIND[R.stages[s][tk][0]];
+                      const k = KIND[R.id === "DA" && s === "Build" && mode === 2 ? "c" : R.stages[s][tk][0]];
                       return (
                         <li key={s} className="flex min-h-[112px] flex-col gap-1 rounded-xl p-3" style={{ background: k.bg, color: k.fg, border: `2px ${k.dash ? "dashed" : "solid"} ${k.bd}` }}>
                           <span className="text-[15px] font-bold">{s}</span>
@@ -277,7 +341,8 @@ export const SupportView: React.FC<{ preset?: SupportPreset }> = ({ preset }) =>
                         {["Stage", "Your role", "What you do", "With whom", "Where"].map((h) => <span key={h} className="px-4 py-3">{h}</span>)}
                       </div>
                       {STAGES.map(([s, , long]) => {
-                        const [k, what, withWhom] = R.stages[s][tk];
+                        let [k, what, withWhom] = R.stages[s][tk];
+                        if (R.id === "DA" && s === "Build") { [what, withWhom] = DA_BUILD[mode]; if (mode === 2) k = "c"; }
                         const K = KIND[k];
                         return (
                           <div key={s} className={`grid grid-cols-[150px_150px_minmax(0,1fr)_200px_200px] border-t border-opella-border ${k === "n" ? "bg-[#FAF9F5] text-[#55605A]" : "bg-white"}`}>

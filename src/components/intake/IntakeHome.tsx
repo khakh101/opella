@@ -1,5 +1,6 @@
 "use client";
 
+import { ButterflySticker } from "@/components/ui/ButterflySticker";
 import React from "react";
 import { MousePointerClick } from "lucide-react";
 import { cx } from "@/components/miro/MiroPrimitives";
@@ -24,6 +25,7 @@ interface HomeStep {
   validation: { label: string; lines: { gate: string; agent?: boolean; where: string; who: string }[] };
   gates: HomeGate[];
   gateNote?: string;
+  sticker?: { title: string; text: string };
 }
 
 interface IntakeHomeProps {
@@ -80,6 +82,7 @@ export const IntakeHome: React.FC<IntakeHomeProps> = ({ tier, onOpenStep, onOpen
       n: 3,
       emoji: "📊",
       name: "Business case",
+      sticker: { title: "From Butterfly", text: "The Butterfly business case is leveraged, adjusted for AI." },
       oneLiner: `The business case depends on the tier (current: ${tier})`,
       bullets: [
         "T1: Full Business Case",
@@ -128,6 +131,7 @@ export const IntakeHome: React.FC<IntakeHomeProps> = ({ tier, onOpenStep, onOpen
           <MousePointerClick className="h-4 w-4 shrink-0" aria-hidden="true" />
           Click a step to see what is inside. Each step says who validates it, and where (current tier: {ss ? "Self-serve" : tier}).
         </p>
+        <ButterflySticker className="mt-3" title="From Butterfly" tilt={-1}>The committees are the same as in Butterfly: Portfolio board and SteerCo. The only addition is one optional cross stream meeting.</ButterflySticker>
       </div>
 
       <div className="overflow-x-auto pb-2">
@@ -167,6 +171,7 @@ export const IntakeHome: React.FC<IntakeHomeProps> = ({ tier, onOpenStep, onOpen
                   )}
                 >
                   <div className="text-sm font-black leading-snug text-gray-900">{s.oneLiner}</div>
+                  {s.sticker && <ButterflySticker className="mt-3" title={s.sticker.title}>{s.sticker.text}</ButterflySticker>}
                   {s.noAction && (
                     <div className="mt-3 flex items-center gap-2 rounded-lg border-2 border-dashed border-violet-400 bg-violet-50 px-2.5 py-1.5 text-xs font-bold text-violet-800">
                       <span aria-hidden="true">🤖</span> No action needed from you: the agent does it
@@ -220,7 +225,7 @@ export const IntakeHome: React.FC<IntakeHomeProps> = ({ tier, onOpenStep, onOpen
               <div className="mt-[34px] flex min-h-[250px] flex-1 flex-col rounded-xl border-2 border-dashed border-emerald-300 bg-emerald-50/60 p-4">
                 <div className="text-sm font-black leading-snug text-gray-900">Next step: Build (MVP)</div>
                 <div className="mt-1 text-xs font-semibold text-opella-forest">
-                  Build and test the MVP in the selected mode
+                  Build and test the MVP in the selected delivery mode
                 </div>
                 <div className="mt-3 space-y-2">
                   {NEXT_MODES.map((m) => (

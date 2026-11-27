@@ -47,6 +47,51 @@ export const BuildCanvas: React.FC<BuildCanvasProps> = ({ example, onBackToFrami
         </div>
       </div>
 
+      {/* One process for every tier, from Build on */}
+      <div className="mb-5 rounded-xl border border-gray-200 bg-white px-5 py-4 shadow-sm">
+        <div className="flex flex-wrap items-baseline justify-between gap-2">
+          <h3 className="text-base font-black text-gray-900">From Build on, one simple process for every tier</h3>
+          <span className="text-xs font-semibold text-gray-500">T1, T2, T3 and self-service follow the same path</span>
+        </div>
+        <div className="mt-3 grid grid-cols-3 gap-4 text-sm leading-snug text-gray-800">
+          <div className="rounded-lg bg-[#F4F3EE] p-3">
+            <div className="mb-1 text-[11px] font-black uppercase tracking-wider text-gray-500">Same for every tier</div>
+            <ul className="list-disc space-y-1 pl-4">
+              <li>The same 4 steps, in the three delivery modes</li>
+              <li>The mode is chosen once, at G4: the tier no longer changes who builds</li>
+              <li>No new gate until G5</li>
+            </ul>
+          </div>
+          <div className="rounded-lg bg-[#E4EFE7] p-3">
+            <div className="mb-1 text-[11px] font-black uppercase tracking-wider text-gray-500">Lighter than Framing</div>
+            <ul className="list-disc space-y-1 pl-4">
+              <li>No new business case and no new validation: the follow-up is only tracking</li>
+              <li>No committee to convene for the build itself</li>
+            </ul>
+          </div>
+          <div className="rounded-lg bg-[#FFF1D6] p-3">
+            <div className="mb-1 text-[11px] font-black uppercase tracking-wider text-gray-500">Heavier than Framing</div>
+            <ul className="list-disc space-y-1 pl-4">
+              <li>The real work starts: builders, squad time and user tests</li>
+            </ul>
+          </div>
+        </div>
+        <div className="mt-3 grid grid-cols-3 gap-4 text-sm leading-snug text-gray-800">
+          <div className="rounded-lg border-2 p-3" style={{ borderColor: BUILD_MODES["for-me"].color }}>
+            <div className="font-black">Do it for me</div>
+            <p className="mt-1">100% of the work of the Data & AI office: it prioritises the use case in its backlog, builds the MVP and runs the tests. It also handles the solution when it is bought.</p>
+          </div>
+          <div className="rounded-lg border-2 p-3" style={{ borderColor: BUILD_MODES["with-me"].color }}>
+            <div className="font-black">Do it with me</div>
+            <p className="mt-1">The same, but co-built between the function and the Data & AI office. The function can also be helped by external consultants.</p>
+          </div>
+          <div className="rounded-lg border-2 p-3" style={{ borderColor: BUILD_MODES["enable-me"].color }}>
+            <div className="font-black">Enable me</div>
+            <p className="mt-1">Built by the function itself, with the Data & AI platform, standards and coaching. Self-service belongs inside Enable me.</p>
+          </div>
+        </div>
+      </div>
+
       {/* Step header */}
       <div className="mb-3 grid" style={GRID}>
         <div className="flex items-end pb-1 text-[11px] font-black uppercase tracking-wider text-gray-400">GO BUILD (after G4)</div>

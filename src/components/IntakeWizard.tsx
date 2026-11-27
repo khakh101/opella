@@ -1,5 +1,6 @@
 "use client";
 
+import { ButterflySticker } from "@/components/ui/ButterflySticker";
 import React, { useState, useEffect } from "react";
 import { Details } from "@/components/ui/Details";
 import { IntakeHome } from "@/components/intake/IntakeHome";
@@ -2599,10 +2600,12 @@ export const IntakeWizard: React.FC<IntakeWizardProps> = ({
                     ? "Self-serve: no meeting. Your registry line is enough; guardrails and the cost cap apply."
                     : `G2: each support function validates its part, outside meetings. G3 and G4: the ${BOARD(decision.tier as "T1")}${decision.tier === "T1" ? ", then SteerCo for G3" : ""}.`}
                 </p>
+                <ButterflySticker className="mt-2" title="From Butterfly">The committees are the same as in Butterfly.</ButterflySticker>
               </div>
             </div>
             </Details>
 
+            <ButterflySticker title="From Butterfly" className="mb-3">The business case from Butterfly is leveraged: same template, adjusted for AI.</ButterflySticker>
             <Details tone="light" title={`Information to collect for your business case (${decision.tier})`}>
             {/* Information you will need to collect for the business case */}
             <div className="bg-white rounded-xl p-4 border border-[#9FC3AC] space-y-2">

@@ -68,7 +68,7 @@ export const NextStepOnePager: React.FC<NextStepOnePagerProps> = ({
             <h2 className="mt-1 flex items-center gap-2 text-2xl font-black text-opella-forest">
               <span aria-hidden="true">🚀</span> Next step: Build (MVP)
             </h2>
-            <p className="mt-1 text-sm text-gray-600">Build and test the MVP in the selected mode</p>
+            <p className="mt-1 text-sm text-gray-600">Build and test the MVP in the selected delivery mode</p>
           </div>
           <div role="tablist" aria-label="Delivery mode" className="flex flex-wrap gap-2">
             {MODE_TABS.map((t) => {

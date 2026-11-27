@@ -59,6 +59,10 @@ export const PreScaleCanvas: React.FC<PreScaleCanvasProps> = ({ example, onOpenD
   const BC = { x: 340, y: 445, w: 310, h: 250 };
 
   return (
+    <div style={{ width: W }}>
+      <div className="mb-4 rounded-xl border border-gray-200 bg-white px-5 py-3 text-sm leading-snug text-gray-800 shadow-sm">
+        <strong>Reminder:</strong> from Build on, the process is the same for every tier (see the Build step). The weight comes back here: T1 and T2 prepare the detailed business case, while T3 and self-service first complete the T2 assessment, back in Framing.
+      </div>
     <div className="relative" style={{ width: W, height: H }}>
       {/* ============================================================= */}
       {/* Band A: T3 and self-service, back to Framing */}
@@ -295,6 +299,7 @@ export const PreScaleCanvas: React.FC<PreScaleCanvasProps> = ({ example, onOpenD
       <ExampleNote example={example} noteKey="g5" width={326} style={!mergedActive ? { left: 720, top: BC.y + 230 } : { display: "none" }} />
 
       <div className="absolute" style={{ left: 340, top: BC.y + BC.h + 30 }} />
+    </div>
     </div>
   );
 };

@@ -1,5 +1,6 @@
 "use client";
 
+import { ButterflySticker } from "@/components/ui/ButterflySticker";
 import React from "react";
 import { ArrowRight, Lightbulb } from "lucide-react";
 import { ExampleCase, MODES, PATHS, PATH_ORDER, PathId } from "@/lib/miroLifecycle";
@@ -44,6 +45,9 @@ export const FramingCanvas: React.FC<FramingCanvasProps> = ({ example, onOpenDet
 
   return (
     <div className="relative" style={{ width: W, height: H }}>
+      <div className="absolute z-20" style={{ left: 12, top: 24, width: 470 }}>
+        <ButterflySticker title="From Butterfly" tilt={-1.5}>Same committees as in Butterfly: Portfolio board and SteerCo. The business case from Butterfly is leveraged.</ButterflySticker>
+      </div>
       {/* ----------------------------------------------------------- */}
       {/* Lane bands */}
       {/* ----------------------------------------------------------- */}

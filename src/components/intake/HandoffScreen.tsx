@@ -1,5 +1,6 @@
 "use client";
 
+import { ButterflySticker } from "@/components/ui/ButterflySticker";
 import React from "react";
 import { ArrowLeft, ArrowRight } from "lucide-react";
 import type { BigBetId } from "@/types";
@@ -175,6 +176,8 @@ export const HandoffScreen: React.FC<HandoffScreenProps> = ({ kind, tier, bet, f
         <span className={"rounded-full px-3 py-1 text-xs font-bold " + badge.cls}>{badge.text}</span>
       </div>
       {body}
+      {kind === "g2" && !ss && <ButterflySticker title="From Butterfly">The business case from Butterfly is leveraged, adjusted for AI. The committees are the same as in Butterfly.</ButterflySticker>}
+      {kind === "g4" && <ButterflySticker title="From Butterfly">The Portfolio board is the same as in Butterfly.</ButterflySticker>}
       <div className="flex flex-wrap justify-between gap-3 border-t border-opella-border pt-4">
         <button
           type="button"
