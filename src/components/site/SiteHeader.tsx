@@ -5,7 +5,7 @@ import type { TabId } from "@/lib/supportModel";
 
 export const SITE_TABS: { id: TabId; label: string }[] = [
   { id: "overview", label: "1. What we aim to achieve" },
-  { id: "user", label: "2. User experience" },
+  { id: "user", label: "2. BO experience" },
   { id: "support", label: "3. Support employee experience" },
   { id: "cockpit", label: "4. Q&A" },
   { id: "tocockpit", label: "5. TO cockpit" },

@@ -122,7 +122,7 @@ export const IntakeHome: React.FC<IntakeHomeProps> = ({ tier, onOpenStep, onOpen
     <div className="space-y-6">
       <div>
         <h2 className="text-2xl font-black tracking-tight text-opella-forest">
-          User experience
+          BO experience
         </h2>
         <p className="mt-1 flex items-center gap-1.5 text-sm text-gray-600">
           <MousePointerClick className="h-4 w-4 shrink-0" aria-hidden="true" />
